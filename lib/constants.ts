@@ -1,0 +1,58 @@
+import type { Locale } from "@/lib/types";
+
+export const APP_NAME = "DaKi";
+export const APP_DESCRIPTION =
+  "DaKi — виробник верхнього жіночого одягу. Оптовий каталог, замовлення та партнерство.";
+
+export const SUPPORTED_LOCALES: Locale[] = ["ru", "uk", "en"];
+export const DEFAULT_LOCALE: Locale = "uk";
+
+export const PROTECTED_ROUTES = ["/profile", "/settings", "/orders", "/admin", "/dashboard"];
+export const AUTH_ROUTES = ["/login", "/signup", "/verify", "/forgot-password", "/new-password"];
+
+export const CATALOG_CATEGORIES = [
+  "Пальто",
+  "Пуховики",
+  "Куртки",
+  "Тренчи",
+  "Парки",
+  "Жилеты",
+];
+
+export const MODEL_STYLES = [
+  "Классика",
+  "Urban",
+  "Minimal",
+  "Premium",
+  "Sport Chic",
+  "Oversize",
+];
+
+export const MODEL_SEASONS = ["Зима", "Весна", "Лето", "Осень", "Деми"];
+
+export const DEFAULT_SIZE_SCALE = ["42", "44", "46", "48", "50", "52", "54"];
+
+export const NAV_LINKS = {
+  marketing: [
+    { href: "/catalog", labelKey: "nav.catalog" },
+    // { href: "/catalog?sale=true", labelKey: "nav.sale" },
+    { href: "/about", labelKey: "nav.about" },
+    { href: "/contact", labelKey: "nav.contact" },
+  ],
+  dashboard: [
+    { href: "/profile", labelKey: "nav.profile" },
+    { href: "/orders", labelKey: "nav.orders" },
+    { href: "/settings", labelKey: "nav.settings" },
+    { href: "/admin", labelKey: "nav.admin" },
+  ],
+};
+
+export const CONTACTS = {
+  phones: [] as string[],
+  email: "info@daki.ua",
+  telegram: "https://t.me/DaKiWholesale",
+  telegram_support_id: "8476169500",
+  viber: "",
+  whatsapp: "",
+  instagram: "https://instagram.com/daki.ua",
+};
