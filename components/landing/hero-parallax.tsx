@@ -6,8 +6,8 @@ import { useRef } from "react";
 import { SmartImage } from "@/components/ui/smart-image";
 
 const SUPABASE_STORAGE =
-  "https://kisoqylqmbajwbffnrpj.supabase.co/storage/v1/object/public/media/landing";
-const DEFAULT_VIDEO = `${SUPABASE_STORAGE}/1366.1.mp4`;
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/landing`;
+const DEFAULT_VIDEO = "";
 
 interface HeroParallaxProps {
   title?: string;

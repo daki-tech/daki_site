@@ -1,4 +1,4 @@
-const LOGO_URL = "https://kisoqylqmbajwbffnrpj.supabase.co/storage/v1/object/public/media/branding/mini-logo.svg";
+const LOGO_URL = `${process.env.NEXT_PUBLIC_APP_URL || "https://dakifashion.com"}/mini-logo.svg`;
 
 /**
  * Unified DaKi email template wrapper.

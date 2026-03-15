@@ -7,8 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 import { SmartImage } from "@/components/ui/smart-image";
 
-const DEFAULT_IMAGE =
-  "https://kisoqylqmbajwbffnrpj.supabase.co/storage/v1/object/public/media/landing/about.svg";
+const DEFAULT_IMAGE = "";
 
 interface AboutPreviewProps {
   title?: string;
