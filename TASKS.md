@@ -263,14 +263,42 @@ DaKi — це сімейна компанія з багаторічною іст
 
 ---
 
+---
+
+### Миграция на новые аккаунты (15.03.2026)
+
+| Шаг | Статус | Детали |
+|-----|--------|--------|
+| GitHub → daki-tech/daki_site | ✅ | Чистая история без секретов |
+| Supabase → goihhwjnsbzdtfzldxzb | ✅ | schema.sql выполнен, RLS + SECURITY DEFINER |
+| Vercel → new-site (daki-techs-projects) | ✅ | Все env vars прописаны, домен привязан |
+| Resend → новый API key | ✅ | re_casvDpV8... |
+| Google OAuth → новый Client ID | ✅ | 968181026367-... в Supabase + Google Console |
+| Google Sheets → новый webhook | ✅ | AKfycbxI3E... |
+| Домен dakifashion.com | ✅ | Верифицирован и привязан к new-site |
+| Supabase Storage — перенос медиа | ⬜ | Фото/видео пока грузятся со старого Supabase |
+| Cloudflare | ⬜ | Настроить WAF, DDoS, SSL через Dashboard |
+| admin_settings — заполнить | ⬜ | Контакты, hero, about — нужно заново ввести через админку |
+
+**Важно для всех программистов:**
+- `.env.local` — локальные ключи, НЕ коммитить
+- `supabase/schema.sql` — единый SQL для развёртывания на чистом Supabase
+- `MIGRATION.md` — пошаговая инструкция для переноса на новые аккаунты
+- GitHub token и другие секреты НИКОГДА не коммитить в репо
+
+---
+
 #### Что ещё НЕ сделано (для следующего специалиста):
 
 | Задача | Приоритет | Файлы |
 |--------|-----------|-------|
+| Перенести медиа из старого Supabase Storage в новый | Высокий | Supabase Dashboard → Storage |
+| Заполнить admin_settings (контакты, hero, about) через админку | Высокий | Админ-панель |
 | Для vitpad17@gmail.com — только админка, без профиля | Средний | middleware.ts + layout |
-| Заказ не отображается в "Мої замовлення" | Высокий | ✅ Исправлено: GET /api/orders с admin client (обходит RLS). Нужно применить SECURITY DEFINER в SQL |
-| Cloudflare — настройка безопасности | Высокий | Внешний сервис |
+| Cloudflare — настройка безопасности | Средний | Внешний сервис |
+| Запустить npm run sync для каталога (или добавить через админку) | Высокий | scripts/sync-catalog.ts |
 | Универсальный blueprint файл | Низкий | Новый файл |
+| Удалить лишние проекты в Vercel (daki-site, site, daki-ua-site) | Низкий | Vercel Dashboard |
 
 #### Ключевые архитектурные решения:
 - **admin_settings** таблица в Supabase используется для всех настроек (главная, контакты). Ключи: `hero_title`, `hero_subtitle`, `hero_bg_url`, `about_title`, `about_subtitle`, `about_text`, `about_media_url`, `contact_phone`, `contact_email`, `contact_telegram`, `contact_instagram`, `contact_viber`, `contact_whatsapp`, `contact_address`
