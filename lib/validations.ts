@@ -37,7 +37,7 @@ export const modelSchema = z.object({
         total_stock: z.number().int().min(0),
       }),
     )
-    .min(1),
+    .default([]),
 });
 
 export const inventoryMovementSchema = z.object({

@@ -297,9 +297,15 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
   const handleUpload = useCallback(async (file: File) => {
     setUploading(true);
     try {
-      const isLarge = file.size > 4 * 1024 * 1024; // >4MB → direct upload
-      if (isLarge) {
-        // Get signed URL, then upload directly to Supabase Storage
+      // Try server upload first (works for files up to ~4.5MB on Vercel)
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const json = await res.json();
+        onChange(json.url);
+      } else {
+        // Fallback: signed URL direct upload for large files
         const meta = await fetch("/api/admin/upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -312,15 +318,11 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           headers: { "Content-Type": file.type },
           body: file,
         });
-        if (!up.ok) throw new Error("Direct upload failed");
+        if (!up.ok) {
+          const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+          throw new Error(`Файл занадто великий (${sizeMB} MB). Максимум ~4 MB`);
+        }
         onChange(metaJson.publicUrl);
-      } else {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Upload failed");
-        onChange(json.url);
       }
       toast.success("Файл загружен");
     } catch (e) {
@@ -534,7 +536,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) { toast.error("Ошибка обновления"); return; }
+    if (!res.ok) { const err = await res.json().catch(() => ({})); toast.error(err.error ? `Ошибка: ${typeof err.error === "string" ? err.error : JSON.stringify(err.error)}` : "Ошибка обновления"); return; }
     toast.success("Модель обновлена");
     setEditingModel(null);
     await refreshModels();
@@ -559,7 +561,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) { toast.error("Ошибка создания"); return; }
+    if (!res.ok) { const err = await res.json().catch(() => ({})); toast.error(err.error ? `Ошибка: ${typeof err.error === "string" ? err.error : JSON.stringify(err.error)}` : "Ошибка создания"); return; }
     toast.success("Товар создан");
     setIsCreating(false);
     setCreateForm(emptyForm);
