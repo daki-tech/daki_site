@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Reorder } from "framer-motion";
 import {
   Ban,
   Eye,
   EyeOff,
-  GripVertical,
   Home,
   ImagePlus,
   Loader2,
@@ -173,10 +171,6 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
     [urls],
   );
 
-  const handleReorder = (newItems: PhotoItem[]) => {
-    onChange(newItems.map((it) => it.url));
-  };
-
   const uploadSingleFile = useCallback(async (file: File): Promise<string> => {
     if (file.size > 4 * 1024 * 1024) {
       const meta = await fetch("/api/admin/upload-url", {
@@ -219,40 +213,52 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
     onChange(urls.filter((u) => u !== url));
   };
 
+  const handleMove = (fromIdx: number, toIdx: number) => {
+    const next = [...urls];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    onChange(next);
+  };
+
   return (
     <div>
       <p className={S.label}>Фото товара</p>
       <p className="text-xs text-neutral-400 mt-0.5">Рекомендовано: 3:4 (наприклад 900×1200 px)</p>
       <div className="mt-2 flex flex-wrap gap-3 items-start">
-        {items.length > 0 && (
-          <Reorder.Group
-            axis="x"
-            values={items}
-            onReorder={handleReorder}
-            className="flex flex-wrap gap-3"
-            as="div"
+        {items.map((item, i) => (
+          <div
+            key={item.id}
+            className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group"
           >
-            {items.map((item) => (
-              <Reorder.Item
-                key={item.id}
-                value={item}
-                as="div"
-                className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-shadow group"
+            <SmartImage src={item.url} alt="" fill className="object-cover" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleRemove(item.url); }}
+              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="h-3 w-3" />
+            </button>
+            {i > 0 && (
+              <button
+                type="button"
+                onClick={() => handleMove(i, i - 1)}
+                className="absolute bottom-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
               >
-                <SmartImage src={item.url} alt="" fill className="object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleRemove(item.url); }}
-                  className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-                <GripVertical className="absolute bottom-0.5 left-0.5 h-3.5 w-3.5 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
-              </Reorder.Item>
-            ))}
-          </Reorder.Group>
-        )}
+                ←
+              </button>
+            )}
+            {i < items.length - 1 && (
+              <button
+                type="button"
+                onClick={() => handleMove(i, i + 1)}
+                className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+              >
+                →
+              </button>
+            )}
+          </div>
+        ))}
 
         <input
           ref={inputRef}
