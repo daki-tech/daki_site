@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
 import {
   Ban,
@@ -213,11 +216,15 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
     onChange(urls.filter((u) => u !== url));
   };
 
-  const handleMove = (fromIdx: number, toIdx: number) => {
-    const next = [...urls];
-    const [moved] = next.splice(fromIdx, 1);
-    next.splice(toIdx, 0, moved);
-    onChange(next);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIdx = items.findIndex((it) => it.id === active.id);
+      const newIdx = items.findIndex((it) => it.id === over.id);
+      onChange(arrayMove(urls, oldIdx, newIdx));
+    }
   };
 
   return (
@@ -225,40 +232,13 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
       <p className={S.label}>Фото товара</p>
       <p className="text-xs text-neutral-400 mt-0.5">Рекомендовано: 3:4 (наприклад 900×1200 px)</p>
       <div className="mt-2 flex flex-wrap gap-3 items-start">
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group"
-          >
-            <SmartImage src={item.url} alt="" fill className="object-cover" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); handleRemove(item.url); }}
-              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-3 w-3" />
-            </button>
-            {i > 0 && (
-              <button
-                type="button"
-                onClick={() => handleMove(i, i - 1)}
-                className="absolute bottom-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-              >
-                ←
-              </button>
-            )}
-            {i < items.length - 1 && (
-              <button
-                type="button"
-                onClick={() => handleMove(i, i + 1)}
-                className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-              >
-                →
-              </button>
-            )}
-          </div>
-        ))}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={items.map((it) => it.id)} strategy={rectSortingStrategy}>
+            {items.map((item) => (
+              <SortablePhoto key={item.id} item={item} onRemove={handleRemove} />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         <input
           ref={inputRef}
@@ -282,6 +262,26 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
           <span className="text-[9px] font-medium">Добавить</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+function SortablePhoto({ item, onRemove }: { item: PhotoItem; onRemove: (url: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 0 };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+      <SmartImage src={item.url} alt="" fill className="object-cover pointer-events-none" />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onRemove(item.url); }}
+        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <X className="h-3 w-3" />
+      </button>
     </div>
   );
 }

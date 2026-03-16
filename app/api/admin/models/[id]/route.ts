@@ -15,7 +15,7 @@ export async function PATCH(
 
   if (body.action === "update") {
     const updatePayload: Record<string, unknown> = {};
-    const fields = ["sku", "name", "category", "style", "season", "year", "base_price", "discount_percent", "description", "image_urls", "fabric", "filling", "care_instructions", "is_active", "delivery_info", "return_info", "size_chart", "detail_images"];
+    const fields = ["sku", "name", "category", "style", "season", "year", "base_price", "discount_percent", "description", "image_urls", "fabric", "filling", "care_instructions", "is_active", "detail_images"];
     for (const key of fields) {
       if (key in body) updatePayload[key] = body[key];
     }
@@ -29,7 +29,7 @@ export async function PATCH(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Update color variants if provided
+    // Update color variants with per-color image_urls
     const colorVariants = (body.color_variants ?? body.colors) as Array<{ name: string; hex: string; image_urls?: string[] }> | undefined;
     if (colorVariants && colorVariants.length > 0) {
       await auth.supabase.from("model_colors").delete().eq("model_id", id);

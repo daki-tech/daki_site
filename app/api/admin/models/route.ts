@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { sizes, ...modelData } = parsed.data;
+  // Strip fields that don't exist in catalog_models table
+  const { sizes, delivery_info, return_info, size_chart, ...modelData } = parsed.data;
   const colorVariants = (body.color_variants ?? body.colors ?? []) as Array<{ name: string; hex: string; image_urls?: string[] }>;
 
   const { data: model, error: modelError } = await auth.supabase
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: sizeError.message }, { status: 500 });
   }
 
-  // Insert color variants with their photos
+  // Insert color variants with per-color image_urls
   let createdColors: unknown[] = [];
   if (colorVariants.length > 0) {
     const colorRows = colorVariants.map((c, i) => ({
