@@ -1080,7 +1080,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         {/* ====================== ПОЛЬЗОВАТЕЛИ ====================== */}
         <TabsContent value="users" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Всего: {users.length}</p>
+            <p className="text-sm text-muted-foreground">Всего: {filteredUsers.length}</p>
             <Select value={userSort} onValueChange={(v) => setUserSort(v as typeof userSort)}>
               <SelectTrigger className={`w-[200px] ${S.select}`}><SelectValue /></SelectTrigger>
               <SelectContent>
