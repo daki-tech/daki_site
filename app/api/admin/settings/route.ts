@@ -1,4 +1,5 @@
-﻿import { NextResponse } from "next/server";
+﻿import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/server-auth";
 import { adminSettingsSchema } from "@/lib/validations";
@@ -34,6 +35,9 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Revalidate all pages that use settings (homepage, footer, etc.)
+  revalidatePath("/", "layout");
 
   return NextResponse.json(data);
 }

@@ -29,15 +29,15 @@ export async function PATCH(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Update colors if provided
-    const colors = body.colors as Array<{ name: string; hex: string }> | undefined;
-    if (colors && colors.length > 0) {
+    // Update color variants if provided
+    const colorVariants = (body.color_variants ?? body.colors) as Array<{ name: string; hex: string; image_urls?: string[] }> | undefined;
+    if (colorVariants && colorVariants.length > 0) {
       await auth.supabase.from("model_colors").delete().eq("model_id", id);
-      const colorRows = colors.map((c, i) => ({
+      const colorRows = colorVariants.map((c, i) => ({
         model_id: id,
         name: c.name || c.hex,
         hex: c.hex,
-        image_urls: [],
+        image_urls: c.image_urls ?? [],
         is_default: i === 0,
       }));
       const { data: newColors } = await auth.supabase.from("model_colors").insert(colorRows).select("*");

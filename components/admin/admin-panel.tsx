@@ -106,6 +106,8 @@ interface AdminPanelProps {
   users: Profile[];
 }
 
+interface ColorVariant { name: string; hex: string; image_urls: string[] }
+
 interface ModelFormData {
   sku: string;
   name: string;
@@ -114,13 +116,12 @@ interface ModelFormData {
   base_price: string;
   discount_percent: string;
   description: string;
-  image_urls: string[];
   care_instructions: string;
   delivery_info: string;
   return_info: string;
   care_media_url: string;
   delivery_media_url: string;
-  colors: { name: string; hex: string }[];
+  color_variants: ColorVariant[];
   sizes: { size_label: string; total_stock: number }[];
   size_chart: { size: string; chest: string; waist: string; hips: string; available: string }[];
 }
@@ -128,9 +129,9 @@ interface ModelFormData {
 const emptyForm: ModelFormData = {
   sku: "", name: "", category: "puhovik", season: "Зима",
   base_price: "0", discount_percent: "0", description: "",
-  image_urls: [], care_instructions: "", delivery_info: "", return_info: "",
+  care_instructions: "", delivery_info: "", return_info: "",
   care_media_url: "", delivery_media_url: "",
-  colors: [{ name: "", hex: "#000000" }],
+  color_variants: [{ name: "", hex: "#000000", image_urls: [] }],
   sizes: [{ size_label: "", total_stock: 0 }],
   size_chart: [{ size: "", chest: "", waist: "", hips: "", available: "" }],
 };
@@ -141,11 +142,12 @@ function modelToForm(m: CatalogModel): ModelFormData {
     sku: m.sku, name: m.name, category: m.category, season: m.season,
     base_price: String(m.base_price), discount_percent: String(m.discount_percent),
     description: m.description ?? "",
-    image_urls: m.image_urls?.length ? m.image_urls : [],
     care_instructions: m.care_instructions ?? "", delivery_info: m.delivery_info ?? "",
     return_info: m.return_info ?? "",
     care_media_url: m.detail_images?.[0] ?? "", delivery_media_url: m.detail_images?.[1] ?? "",
-    colors: m.model_colors?.length ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex })) : [{ name: "", hex: "#000000" }],
+    color_variants: m.model_colors?.length
+      ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex, image_urls: c.image_urls ?? [] }))
+      : [{ name: "", hex: "#000000", image_urls: m.image_urls?.length ? m.image_urls : [] }],
     sizes: m.model_sizes?.length ? m.model_sizes.map((s) => ({ size_label: s.size_label, total_stock: s.total_stock })) : [{ size_label: "", total_stock: 0 }],
     size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "", available: "" }],
   };
@@ -504,13 +506,13 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       season: editForm.season,
       base_price: Number(editForm.base_price), discount_percent: Number(editForm.discount_percent),
       description: editForm.description || null,
-      image_urls: editForm.image_urls.filter(Boolean),
+      image_urls: editForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: editForm.care_instructions || null,
       delivery_info: editForm.delivery_info || null,
       return_info: editForm.return_info || null,
       detail_images: [editForm.care_media_url, editForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(editForm.size_chart.filter((r) => r.size)),
-      colors: editForm.colors.filter((c) => c.hex),
+      color_variants: editForm.color_variants.filter((c) => c.hex),
       sizes: editForm.sizes.filter((s) => s.size_label),
     };
     const res = await fetch(`/api/admin/models/${editingModel.id}`, {
@@ -529,13 +531,13 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       season: createForm.season,
       base_price: Number(createForm.base_price), discount_percent: Number(createForm.discount_percent),
       description: createForm.description || null,
-      image_urls: createForm.image_urls.filter(Boolean),
+      image_urls: createForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: createForm.care_instructions || null,
       delivery_info: createForm.delivery_info || null,
       return_info: createForm.return_info || null,
       detail_images: [createForm.care_media_url, createForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(createForm.size_chart.filter((r) => r.size)),
-      colors: createForm.colors.filter((c) => c.hex),
+      color_variants: createForm.color_variants.filter((c) => c.hex),
       sizes: createForm.sizes.filter((s) => s.size_label),
     };
     const res = await fetch("/api/admin/models", {
@@ -613,7 +615,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   }, [orders]);
 
   const filteredUsers = useMemo(() => {
-    let list = users;
+    let list = users.filter((u) => !u.is_admin);
     if (userSearch.trim()) {
       const q = userSearch.toLowerCase();
       list = list.filter((u) => (u.full_name ?? "").toLowerCase().includes(q) || (u.email ?? "").toLowerCase().includes(q));
@@ -627,16 +629,18 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const saveHomepage = async () => {
     setHomepageLoading(true);
     try {
-      for (const s of [
+      const entries = [
         { key: "hero_title", value: heroTitle }, { key: "hero_subtitle", value: heroSubtitle },
         { key: "hero_bg_url", value: heroBgUrl }, { key: "about_title", value: aboutTitle },
         { key: "about_subtitle", value: aboutSubtitle }, { key: "about_text", value: aboutText },
         { key: "about_media_url", value: aboutMediaUrl },
-      ]) {
-        await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
+      ];
+      for (const s of entries) {
+        const res = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error ?? `Failed to save ${s.key}`); }
       }
       toast.success("Главная страница обновлена");
-    } catch { toast.error("Ошибка сохранения"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Ошибка сохранения"); }
     finally { setHomepageLoading(false); }
   };
 
@@ -644,17 +648,19 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const saveContacts = async () => {
     setContactsLoading(true);
     try {
-      for (const s of [
+      const entries = [
         { key: "contact_phones", value: JSON.stringify(ctPhones.filter(Boolean)) },
         { key: "contact_email", value: ctEmail },
         { key: "contact_telegram", value: ctTelegram }, { key: "contact_instagram", value: ctInstagram },
         { key: "contact_viber", value: ctViber }, { key: "contact_whatsapp", value: ctWhatsapp },
         { key: "contact_tiktok", value: ctTiktok },
-      ]) {
-        await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
+      ];
+      for (const s of entries) {
+        const res = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error ?? `Failed to save ${s.key}`); }
       }
       toast.success("Контакты обновлены");
-    } catch { toast.error("Ошибка сохранения"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Ошибка сохранения"); }
     finally { setContactsLoading(false); }
   };
 
@@ -1323,28 +1329,26 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       <div className={S.divider} />
 
-      {/* Photos */}
-      <PhotoUploadGrid urls={form.image_urls} onChange={(urls) => update("image_urls", urls)} />
-
-      <div className={S.divider} />
-
-      {/* Colors */}
+      {/* Color variants (photos + color in one block) */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className={S.label}>Цвета</p>
-          <button type="button" onClick={() => update("colors", [...form.colors, { name: "", hex: "#000000" }])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Добавить
+        <div className="flex items-center justify-between mb-3">
+          <p className={S.label}>Варіанти кольорів</p>
+          <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
+            <Plus className="h-3 w-3" /> Додати варіант
           </button>
         </div>
-        <div className="space-y-2">
-          {form.colors.map((color, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input value={color.name} onChange={(e) => { const c = [...form.colors]; c[i] = { ...c[i], name: e.target.value }; update("colors", c); }} placeholder="Название" className={`flex-1 ${S.input}`} />
-              <input type="color" value={color.hex} onChange={(e) => { const c = [...form.colors]; c[i] = { ...c[i], hex: e.target.value }; update("colors", c); }} className="h-9 w-9 rounded-xl border border-gray-200 cursor-pointer" />
-              <Input value={color.hex} onChange={(e) => { const c = [...form.colors]; c[i] = { ...c[i], hex: e.target.value }; update("colors", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
-              {form.colors.length > 1 && (
-                <button type="button" onClick={() => update("colors", form.colors.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
-              )}
+        <div className="space-y-4">
+          {form.color_variants.map((variant, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Назва кольору" className={`flex-1 ${S.input}`} />
+                <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl border border-gray-200 cursor-pointer" />
+                <Input value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
+                {form.color_variants.length > 1 && (
+                  <button type="button" onClick={() => update("color_variants", form.color_variants.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
+                )}
+              </div>
+              <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
             </div>
           ))}
         </div>

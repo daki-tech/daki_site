@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const { sizes, ...modelData } = parsed.data;
-  const colors = (body.colors ?? []) as Array<{ name: string; hex: string }>;
+  const colorVariants = (body.color_variants ?? body.colors ?? []) as Array<{ name: string; hex: string; image_urls?: string[] }>;
 
   const { data: model, error: modelError } = await auth.supabase
     .from("catalog_models")
@@ -62,14 +62,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: sizeError.message }, { status: 500 });
   }
 
-  // Insert colors
+  // Insert color variants with their photos
   let createdColors: unknown[] = [];
-  if (colors.length > 0) {
-    const colorRows = colors.map((c, i) => ({
+  if (colorVariants.length > 0) {
+    const colorRows = colorVariants.map((c, i) => ({
       model_id: model.id,
       name: c.name || c.hex,
       hex: c.hex,
-      image_urls: [],
+      image_urls: c.image_urls ?? [],
       is_default: i === 0,
     }));
     const { data: colorData } = await auth.supabase
