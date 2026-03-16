@@ -140,16 +140,6 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-4 py-8 sm:py-12">
-      {/* Page title */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-light uppercase tracking-[0.15em] sm:text-3xl">
-          Мій профіль
-        </h1>
-        {profile?.email && (
-          <p className="mt-1 text-sm text-neutral-500">{profile.email}</p>
-        )}
-      </div>
-
       {/* Tabs — iOS pill style */}
       <div className="mb-8 flex justify-center">
         <div className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">

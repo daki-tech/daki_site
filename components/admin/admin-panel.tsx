@@ -28,15 +28,18 @@ import { toast } from "sonner";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 // Round checkbox component
-function RoundCheck({ checked, onChange, accent = "neutral" }: { checked: boolean; onChange: () => void; accent?: "neutral" | "green" }) {
-  const colors = accent === "green"
-    ? "border-green-400 bg-green-500 text-white"
-    : "border-neutral-400 bg-neutral-900 text-white";
+function RoundCheck({ checked, onChange, accent = "neutral" }: { checked: boolean; onChange: () => void; accent?: "neutral" | "green" | "blue" | "orange" }) {
+  const colorMap = {
+    green: "border-green-400 bg-green-500 text-white",
+    blue: "border-blue-400 bg-blue-500 text-white",
+    orange: "border-amber-400 bg-amber-500 text-white",
+    neutral: "border-neutral-400 bg-neutral-900 text-white",
+  };
   return (
     <button
       type="button"
       onClick={(e) => { e.stopPropagation(); onChange(); }}
-      className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${checked ? colors : "border-neutral-300 bg-white"}`}
+      className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${checked ? colorMap[accent] : "border-neutral-300 bg-white"}`}
     >
       {checked && <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
     </button>
@@ -162,7 +165,7 @@ interface ModelFormData {
   delivery_media_url: string;
   color_variants: ColorVariant[];
   sizes: { size_label: string; total_stock: number }[];
-  size_chart: { size: string; chest: string; waist: string; hips: string }[];
+  size_chart: { size: string; chest: string; waist: string; hips: string; available: string }[];
 }
 
 const emptyForm: ModelFormData = {
@@ -172,7 +175,7 @@ const emptyForm: ModelFormData = {
   care_media_url: "", delivery_media_url: "",
   color_variants: [{ name: "", hex: "#000000", image_urls: [] }],
   sizes: [{ size_label: "", total_stock: 0 }],
-  size_chart: [{ size: "", chest: "", waist: "", hips: "" }],
+  size_chart: [{ size: "", chest: "", waist: "", hips: "", available: "" }],
 };
 
 function modelToForm(m: CatalogModel): ModelFormData {
@@ -188,11 +191,11 @@ function modelToForm(m: CatalogModel): ModelFormData {
       ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex, image_urls: c.image_urls ?? [] }))
       : [{ name: "", hex: "#000000", image_urls: m.image_urls?.length ? m.image_urls : [] }],
     sizes: m.model_sizes?.length ? m.model_sizes.map((s) => ({ size_label: s.size_label, total_stock: s.total_stock })) : [{ size_label: "", total_stock: 0 }],
-    size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "" }],
+    size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "", available: "" }],
   };
 }
 
-const statusLabels: Record<string, string> = { pending: "Ожидает", confirmed: "Подтверждён", shipped: "Отправлен", completed: "Завершён", cancelled: "Отменён" };
+const statusLabels: Record<string, string> = { pending: "Ожидает", draft: "Новый", confirmed: "Подтверждён", shipped: "Отправлен", completed: "Завершён", cancelled: "Отменён" };
 const statusColors: Record<string, "default" | "secondary" | "outline" | "destructive"> = { pending: "outline", confirmed: "secondary", shipped: "default", completed: "default", cancelled: "destructive" };
 
 /* ------------------------------------------------------------------ */
@@ -640,14 +643,20 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     return list;
   }, [orders, orderSearch, orderSort, orderMonthFilter, orderYearFilter]);
 
-  const handleShipOrder = async (order: WholesaleOrder) => {
-    const newStatus = order.status === "shipped" || order.status === "completed" ? "confirmed" : "shipped";
+  const handleSetOrderStatus = async (order: WholesaleOrder, targetStatus: string) => {
+    // Toggle: if already at this status, go back to previous
+    const statusFlow = ["draft", "confirmed", "shipped", "completed"];
+    const currentIdx = statusFlow.indexOf(order.status);
+    // If clicking the current status, go back one step
+    const newStatus = order.status === targetStatus
+      ? (currentIdx > 0 ? statusFlow[currentIdx - 1] : "draft")
+      : targetStatus;
     const res = await fetch("/api/admin/orders", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId: order.id, status: newStatus }),
     });
     if (!res.ok) { toast.error("Ошибка"); return; }
-    toast.success(newStatus === "shipped" ? "Заказ отправлен" : "Статус обновлен");
+    toast.success("Статус обновлен");
     await refreshOrders();
   };
 
@@ -807,13 +816,13 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       <Tabs defaultValue="products" className="space-y-6" style={{ minHeight: "70vh" }}>
         <div className="flex justify-center">
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
-            <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товари</TabsTrigger>
-            <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Замовлення</TabsTrigger>
-            <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> Виручка</TabsTrigger>
-            <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> Користувачі</TabsTrigger>
-            <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> Головна</TabsTrigger>
-            <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> Контакти</TabsTrigger>
-            <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> Розсилка</TabsTrigger>
+            <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
+            <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
+            <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> Выручка</TabsTrigger>
+            <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> Пользователи</TabsTrigger>
+            <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> Главная</TabsTrigger>
+            <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> Контакты</TabsTrigger>
+            <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> Рассылка</TabsTrigger>
           </TabsList>
         </div>
 
@@ -942,7 +951,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
             <Select value={orderYearFilter} onValueChange={setOrderYearFilter}>
               <SelectTrigger className={`w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Все годы</SelectItem>
+                <SelectItem value="all">За все время</SelectItem>
                 {orderYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -978,14 +987,20 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
                       <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead>
                       <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
-                      <TableHead className="text-center">Отправлен</TableHead><TableHead></TableHead>
+                      <TableHead className="text-center text-blue-500 text-[10px]">Підтв.</TableHead>
+                      <TableHead className="text-center text-amber-500 text-[10px]">Відпр.</TableHead>
+                      <TableHead className="text-center text-green-500 text-[10px]">Дост.</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.map((order) => {
-                      const isShipped = order.status === "shipped" || order.status === "completed";
+                      const isConfirmed = ["confirmed", "shipped", "completed"].includes(order.status);
+                      const isShipped = ["shipped", "completed"].includes(order.status);
+                      const isDelivered = order.status === "completed";
+                      const rowBg = isDelivered ? "bg-green-50/50" : isShipped ? "bg-amber-50/50" : isConfirmed ? "bg-blue-50/50" : "";
                       return (
-                        <TableRow key={order.id} className={`cursor-pointer ${isShipped ? "bg-green-50 dark:bg-green-950/20" : ""}`} onClick={() => setSelectedOrder(order)}>
+                        <TableRow key={order.id} className={`cursor-pointer ${rowBg}`} onClick={() => setSelectedOrder(order)}>
                           <TableCell><RoundCheck checked={selectedOrderIds.has(order.id)} onChange={() => toggleOrderSelect(order.id)} /></TableCell>
                           <TableCell className="font-mono text-xs">{order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)}</TableCell>
                           <TableCell className="text-sm">{format(new Date(order.created_at), "dd.MM.yyyy HH:mm")}</TableCell>
@@ -1001,7 +1016,13 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <RoundCheck checked={isShipped} onChange={() => handleShipOrder(order)} accent="green" />
+                            <RoundCheck checked={isConfirmed} onChange={() => handleSetOrderStatus(order, "confirmed")} accent="blue" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <RoundCheck checked={isShipped} onChange={() => handleSetOrderStatus(order, "shipped")} accent="orange" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <RoundCheck checked={isDelivered} onChange={() => handleSetOrderStatus(order, "completed")} accent="green" />
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }} title="Удалить"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -1042,7 +1063,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Имя</p>
-                        <p className="text-sm font-semibold">{selectedOrder.customer_name ?? "-"}</p>
+                        <p className="text-sm font-semibold cursor-pointer hover:text-blue-600 transition-colors" onClick={() => copyToClipboard(selectedOrder.customer_name ?? "")} title="Нажмите чтобы скопировать">{selectedOrder.customer_name ?? "-"}</p>
                       </div>
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Телефон</p>
@@ -1102,7 +1123,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
             <Select value={revenueYear} onValueChange={setRevenueYear}>
               <SelectTrigger className={`w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Все годы</SelectItem>
+                <SelectItem value="all">За все время</SelectItem>
                 {orderYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -1414,7 +1435,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
             <div key={i} className="rounded-xl border border-gray-200 p-3 space-y-3">
               <div className="flex items-center gap-2">
                 <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Назва кольору" className={`flex-1 ${S.input}`} />
-                <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl border border-gray-200 cursor-pointer" />
+                <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl cursor-pointer appearance-none border-0 p-0" />
                 <Input value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
                 {form.color_variants.length > 1 && (
                   <button type="button" onClick={() => update("color_variants", form.color_variants.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
@@ -1465,6 +1486,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           <Textarea rows={2} value={form.care_instructions} onChange={(e) => update("care_instructions", e.target.value)} placeholder="Состав и уход..." className={S.textarea} />
         </div>
         <SingleMediaUpload value={form.care_media_url} onChange={(v) => update("care_media_url", v)} label="Медиа — склад и уход" />
+        <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
       </div>
 
       {/* Delivery */}
@@ -1474,6 +1496,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           <Textarea rows={2} value={form.delivery_info} onChange={(e) => update("delivery_info", e.target.value)} placeholder="Правила доставки..." className={S.textarea} />
         </div>
         <SingleMediaUpload value={form.delivery_media_url} onChange={(v) => update("delivery_media_url", v)} label="Медиа — доставка" />
+        <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
       </div>
 
       {/* Return */}
@@ -1495,13 +1518,14 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Грудь</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талия</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Стегна</th>
+                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Наличие</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {form.size_chart.map((row, i) => (
                 <tr key={i} className="border-t border-gray-100">
-                  {(["size","chest","waist","hips"] as const).map((f) => (
+                  {(["size","chest","waist","hips","available"] as const).map((f) => (
                     <td key={f} className="px-1 py-1">
                       <Input value={row[f]} onChange={(e) => { const c = [...form.size_chart]; c[i] = { ...c[i], [f]: e.target.value }; update("size_chart", c); }} className={`h-8 text-xs ${S.input}`} />
                     </td>
@@ -1516,7 +1540,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
             </tbody>
           </table>
         </div>
-        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
+        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
           <Plus className="h-3.5 w-3.5" /> Додати рядок
         </button>
       </div>

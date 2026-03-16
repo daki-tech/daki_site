@@ -136,30 +136,30 @@ export function MarketingHeader() {
                   <span className="absolute bottom-0 left-1/2 h-[1.5px] w-0 -translate-x-1/2 bg-black transition-all duration-300 group-hover:w-5" />
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-48 border border-border bg-background shadow-lg z-50">
-                    <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground truncate">
+                  <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-neutral-200/60 bg-white/95 backdrop-blur-xl shadow-lg z-50 overflow-hidden">
+                    <div className="px-4 py-3 text-xs text-neutral-400 truncate">
                       {userEmail}
                     </div>
                     {isAdmin ? (
                       <Link
                         href="/admin"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition"
+                        className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium hover:bg-neutral-50 transition border-t border-neutral-100"
                       >
-                        <User className="h-3.5 w-3.5" /> Адмін-панель
+                        <User className="h-3.5 w-3.5 text-neutral-400" /> Адмін-панель
                       </Link>
                     ) : (
                       <Link
                         href="/profile"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition"
+                        className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium hover:bg-neutral-50 transition border-t border-neutral-100"
                       >
-                        <User className="h-3.5 w-3.5" /> Мій профіль
+                        <User className="h-3.5 w-3.5 text-neutral-400" /> Мій профіль
                       </Link>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm hover:bg-muted transition"
+                      className="flex w-full items-center gap-2.5 border-t border-neutral-100 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 transition"
                     >
                       <LogOut className="h-3.5 w-3.5" /> Вийти
                     </button>

@@ -1,5 +1,3 @@
-const LOGO_URL = `${process.env.NEXT_PUBLIC_APP_URL || "https://dakifashion.com"}/logo.jpg`;
-
 /**
  * Unified DaKi email template wrapper.
  * All company emails (order confirmations, verification, subscriptions, etc.) should use this.
@@ -8,7 +6,6 @@ export function dakiEmailWrapper(content: string): string {
   return `
     <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff">
       <div style="text-align:center;padding:32px 24px 20px;border-bottom:1px solid #e5e5e5">
-        <img src="${LOGO_URL}" alt="DaKi" width="64" height="64" style="display:inline-block;margin-bottom:12px;border-radius:8px" />
         <h1 style="font-size:32px;font-weight:300;letter-spacing:0.35em;margin:0;color:#000">D A K I</h1>
       </div>
       <div style="padding:32px 24px">

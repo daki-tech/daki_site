@@ -78,7 +78,7 @@ export default function CartPage() {
         <p className="mt-2 text-xs text-muted-foreground">{t("cart.emptySub")}</p>
         <Link
           href="/catalog"
-          className="mt-6 border border-foreground px-8 py-3 text-xs font-medium uppercase tracking-[0.1em] transition hover:bg-foreground hover:text-background"
+          className="mt-6 rounded-xl bg-black px-8 py-3 text-xs font-medium uppercase tracking-[0.1em] text-white transition hover:bg-neutral-800"
         >
           {t("cart.continueShopping")}
         </Link>
@@ -102,13 +102,13 @@ export default function CartPage() {
         </h1>
         <button
           onClick={clearCart}
-          className="text-xs text-muted-foreground transition hover:text-foreground"
+          className="text-xs text-neutral-400 transition hover:text-neutral-700"
         >
           {t("cart.clearCart")}
         </button>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
         {/* Items */}
         <div className="divide-y divide-border">
           {items.map((item) => {
@@ -287,7 +287,7 @@ export default function CartPage() {
 
         {/* Summary sidebar */}
         <div className="lg:sticky lg:top-24">
-          <div className="border border-border p-6">
+          <div className="rounded-2xl bg-neutral-50/80 p-6">
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{t("cart.subtotal")}</span>
@@ -312,9 +312,9 @@ export default function CartPage() {
                 <button
                   onClick={() => !incomplete && setCheckoutOpen(true)}
                   disabled={incomplete}
-                  className={`mt-6 w-full py-3 text-xs font-medium uppercase tracking-[0.15em] transition ${
+                  className={`mt-6 w-full rounded-xl py-3 text-xs font-medium uppercase tracking-[0.15em] transition ${
                     incomplete
-                      ? "cursor-not-allowed bg-neutral-300 text-neutral-500"
+                      ? "cursor-not-allowed bg-neutral-200 text-neutral-400"
                       : "bg-black text-white hover:bg-neutral-800"
                   }`}
                   title={incomplete ? "Оберіть колір та розмір для всіх товарів" : undefined}
@@ -345,7 +345,7 @@ export default function CartPage() {
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center border border-border text-muted-foreground transition hover:text-foreground"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-neutral-900 hover:bg-neutral-900 hover:text-white"
                         aria-label={label}
                       >
                         <Icon className="h-4 w-4" />
@@ -359,7 +359,7 @@ export default function CartPage() {
             <div className="mt-4 text-center">
               <Link
                 href="/catalog"
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
+                className="inline-flex items-center gap-1 text-xs text-neutral-400 transition hover:text-neutral-700"
               >
                 <ArrowLeft className="h-3 w-3" />
                 {t("cart.continueShopping")}

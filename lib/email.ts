@@ -16,12 +16,34 @@ export async function sendEmail(input: SendEmailInput) {
     return { skipped: true };
   }
 
-  return resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? "DaKi <noreply@dakifashion.com>",
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-  });
+  const from = process.env.RESEND_FROM_EMAIL ?? "DaKi <noreply@dakifashion.com>";
+  const recipients = Array.isArray(input.to) ? input.to : [input.to];
+
+  // For single recipient, send normally
+  if (recipients.length === 1) {
+    return resend.emails.send({
+      from,
+      to: recipients[0],
+      subject: input.subject,
+      html: input.html,
+    });
+  }
+
+  // For multiple recipients, send individually to protect privacy (no BCC exposure)
+  const results = await Promise.allSettled(
+    recipients.map((email) =>
+      resend.emails.send({
+        from,
+        to: email,
+        subject: input.subject,
+        html: input.html,
+      })
+    )
+  );
+
+  const sent = results.filter((r) => r.status === "fulfilled").length;
+  const failed = results.filter((r) => r.status === "rejected").length;
+  return { sent, failed, total: recipients.length };
 }
 
 export function subscriptionPurchaseTemplate(companyName: string) {
