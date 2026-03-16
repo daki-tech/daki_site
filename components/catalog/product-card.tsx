@@ -54,8 +54,7 @@ export function ProductCard({ model }: ProductCardProps) {
     // Add 1 unit of first available size
     const sizes = model.model_sizes ?? [];
     const availableSize = sizes.find((s) => s.total_stock - s.sold_stock - s.reserved_stock > 0);
-    const sizeLabel = availableSize?.size_label || sizes[0]?.size_label || "";
-    if (!sizeLabel) return;
+    const sizeLabel = availableSize?.size_label || sizes[0]?.size_label || "Один розмір";
 
     addToCart({
       modelId: model.id,

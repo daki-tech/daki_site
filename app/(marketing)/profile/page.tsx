@@ -8,10 +8,6 @@ import {
   ChevronLeft,
   Package,
   User,
-  Phone,
-  Mail,
-  MapPin,
-  Save,
   Loader2,
   Search,
 } from "lucide-react";
@@ -154,30 +150,32 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="mb-8 flex gap-0 border-b border-neutral-200">
-        <button
-          onClick={() => setTab("orders")}
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium uppercase tracking-[0.08em] transition ${
-            tab === "orders"
-              ? "border-black text-black"
-              : "border-transparent text-neutral-400 hover:text-neutral-600"
-          }`}
-        >
-          <Package className="h-4 w-4" />
-          Мої замовлення
-        </button>
-        <button
-          onClick={() => setTab("profile")}
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium uppercase tracking-[0.08em] transition ${
-            tab === "profile"
-              ? "border-black text-black"
-              : "border-transparent text-neutral-400 hover:text-neutral-600"
-          }`}
-        >
-          <User className="h-4 w-4" />
-          Мої дані
-        </button>
+      {/* Tabs — iOS pill style */}
+      <div className="mb-8 flex justify-center">
+        <div className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
+          <button
+            onClick={() => setTab("orders")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-all ${
+              tab === "orders"
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            Мої замовлення
+          </button>
+          <button
+            onClick={() => setTab("profile")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-all ${
+              tab === "profile"
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            Мої дані
+          </button>
+        </div>
       </div>
 
       {/* Tab content */}
@@ -238,7 +236,7 @@ function OrderCard({ order }: { order: WholesaleOrder }) {
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <div className="border border-neutral-200 transition hover:border-neutral-300">
+    <div className="rounded-2xl border border-neutral-200/60 bg-white/90 backdrop-blur-xl shadow-sm transition hover:shadow-md overflow-hidden">
       {/* Header row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -442,56 +440,46 @@ function ProfileTab({
     setShowWhDD(false);
   }
 
+  const inputCls = "w-full rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm transition-colors focus:bg-white focus:border-neutral-400 focus:outline-none focus:ring-0";
+
   return (
-    <div className="max-w-[480px] space-y-6">
+    <div className="max-w-[480px] space-y-5">
       {/* Email (read-only) */}
-      <div>
-        <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
-          <Mail className="h-3.5 w-3.5" />
-          Email
-        </label>
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Email</label>
         <input
           type="email"
           value={profile?.email || ""}
           disabled
-          className="w-full border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500"
+          className={`${inputCls} opacity-60`}
         />
       </div>
 
       {/* Full name */}
-      <div>
-        <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
-          <User className="h-3.5 w-3.5" />
-          Повне ім&apos;я
-        </label>
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Повне ім&apos;я</label>
         <input
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           placeholder="Ваше ім'я"
-          className="w-full border border-neutral-200 px-4 py-3 text-sm transition focus:border-black focus:outline-none"
+          className={inputCls}
         />
       </div>
 
       {/* Phone */}
-      <div>
-        <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
-          <Phone className="h-3.5 w-3.5" />
-          Телефон
-        </label>
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Телефон</label>
         <PhoneInput
           value={phone}
           onChange={(v) => setPhone(v)}
-          className="w-full border border-neutral-200 text-sm focus-within:border-black focus-within:ring-0 focus-within:ring-offset-0"
+          className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 text-sm transition-colors focus-within:bg-white focus-within:border-neutral-400 focus-within:ring-0 focus-within:ring-offset-0"
         />
       </div>
 
       {/* City — NP autocomplete */}
-      <div className="relative">
-        <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
-          <MapPin className="h-3.5 w-3.5" />
-          Місто доставки
-        </label>
+      <div className="relative space-y-1.5">
+        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Місто доставки</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-300" />
           <input
@@ -500,12 +488,12 @@ function ProfileTab({
             onChange={(e) => handleCityInput(e.target.value)}
             onFocus={() => cityOptions.length > 0 && setShowCityDD(true)}
             placeholder="Почніть вводити назву міста..."
-            className="w-full border border-neutral-200 pl-9 pr-4 py-3 text-sm transition focus:border-black focus:outline-none"
+            className={`${inputCls} pl-9`}
           />
           {cityLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-neutral-300" />}
         </div>
         {showCityDD && cityOptions.length > 0 && (
-          <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto border border-neutral-200 bg-white shadow-lg">
+          <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-lg">
             {cityOptions.map((c) => (
               <button key={c.ref} type="button" onClick={() => selectCity(c)}
                 className="w-full px-4 py-2.5 text-left text-sm hover:bg-neutral-50 transition">
@@ -518,11 +506,8 @@ function ProfileTab({
       </div>
 
       {/* Warehouse — NP autocomplete */}
-      <div className="relative">
-        <label className="mb-1.5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
-          <Package className="h-3.5 w-3.5" />
-          Відділення Нової Пошти
-        </label>
+      <div className="relative space-y-1.5">
+        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Відділення Нової Пошти</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-300" />
           <input
@@ -532,12 +517,12 @@ function ProfileTab({
             onFocus={() => whOptions.length > 0 && setShowWhDD(true)}
             disabled={!cityRef && !deliveryCity}
             placeholder={cityRef || deliveryCity ? "Номер або адреса відділення..." : "Спочатку оберіть місто"}
-            className="w-full border border-neutral-200 pl-9 pr-4 py-3 text-sm transition focus:border-black focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
+            className={`${inputCls} pl-9 disabled:opacity-60`}
           />
           {whLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-neutral-300" />}
         </div>
         {showWhDD && whOptions.length > 0 && (
-          <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto border border-neutral-200 bg-white shadow-lg">
+          <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-lg">
             {whOptions.map((w) => (
               <button key={w.ref} type="button" onClick={() => selectWh(w)}
                 className="w-full px-4 py-2.5 text-left text-sm hover:bg-neutral-50 transition">
@@ -565,14 +550,9 @@ function ProfileTab({
       <button
         onClick={onSave}
         disabled={saving}
-        className="inline-flex items-center gap-2 border border-black bg-black px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-white transition hover:bg-neutral-800 disabled:opacity-50"
+        className="w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
       >
-        {saving ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Save className="h-3.5 w-3.5" />
-        )}
-        Зберегти
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Зберегти"}
       </button>
 
     </div>

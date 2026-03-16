@@ -27,11 +27,12 @@ export async function POST(request: Request) {
       .is("unsubscribed_at", null)
       .limit(500);
 
-    // Also include profiles with newsletter_subscribed = true
+    // Also include profiles with newsletter_subscribed = true (exclude admins)
     const { data: profileSubs } = await auth.supabase
       .from("profiles")
       .select("email")
       .eq("newsletter_subscribed", true)
+      .neq("is_admin", true)
       .not("email", "is", null)
       .limit(500);
 
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     (profileSubs ?? []).forEach((p) => p.email && allEmails.add(p.email));
     emails = Array.from(allEmails);
   } else {
-    let query = auth.supabase.from("profiles").select("email").not("email", "is", null);
+    let query = auth.supabase.from("profiles").select("email").not("email", "is", null).neq("is_admin", true);
     if (audience !== "all") query = query.eq("subscription_tier", audience);
     const { data: recipients } = await query.limit(500);
     emails = (recipients ?? []).map((item) => item.email).filter(Boolean) as string[];

@@ -162,7 +162,7 @@ interface ModelFormData {
   delivery_media_url: string;
   color_variants: ColorVariant[];
   sizes: { size_label: string; total_stock: number }[];
-  size_chart: { size: string; chest: string; waist: string; hips: string; available: string }[];
+  size_chart: { size: string; chest: string; waist: string; hips: string }[];
 }
 
 const emptyForm: ModelFormData = {
@@ -172,7 +172,7 @@ const emptyForm: ModelFormData = {
   care_media_url: "", delivery_media_url: "",
   color_variants: [{ name: "", hex: "#000000", image_urls: [] }],
   sizes: [{ size_label: "", total_stock: 0 }],
-  size_chart: [{ size: "", chest: "", waist: "", hips: "", available: "" }],
+  size_chart: [{ size: "", chest: "", waist: "", hips: "" }],
 };
 
 function modelToForm(m: CatalogModel): ModelFormData {
@@ -188,7 +188,7 @@ function modelToForm(m: CatalogModel): ModelFormData {
       ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex, image_urls: c.image_urls ?? [] }))
       : [{ name: "", hex: "#000000", image_urls: m.image_urls?.length ? m.image_urls : [] }],
     sizes: m.model_sizes?.length ? m.model_sizes.map((s) => ({ size_label: s.size_label, total_stock: s.total_stock })) : [{ size_label: "", total_stock: 0 }],
-    size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "", available: "" }],
+    size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "" }],
   };
 }
 
@@ -804,7 +804,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   return (
     <div className="space-y-4">
       <ConfirmDialog />
-      <Tabs defaultValue="products" className="space-y-6">
+      <Tabs defaultValue="products" className="space-y-6" style={{ minHeight: "70vh" }}>
         <div className="flex justify-center">
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
             <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товари</TabsTrigger>
@@ -1495,14 +1495,13 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Грудь</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талия</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Стегна</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Наличие</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {form.size_chart.map((row, i) => (
                 <tr key={i} className="border-t border-gray-100">
-                  {(["size","chest","waist","hips","available"] as const).map((f) => (
+                  {(["size","chest","waist","hips"] as const).map((f) => (
                     <td key={f} className="px-1 py-1">
                       <Input value={row[f]} onChange={(e) => { const c = [...form.size_chart]; c[i] = { ...c[i], [f]: e.target.value }; update("size_chart", c); }} className={`h-8 text-xs ${S.input}`} />
                     </td>
@@ -1517,7 +1516,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
             </tbody>
           </table>
         </div>
-        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
+        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
           <Plus className="h-3.5 w-3.5" /> Додати рядок
         </button>
       </div>
