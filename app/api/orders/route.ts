@@ -112,6 +112,17 @@ async function sendTelegramNotification(order: {
     order.notes ? `📝 ${order.notes}` : "",
   ].filter(Boolean).join("\n");
 
+  // Inline buttons for order management
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [
+        { text: "✅ Підтверджено", callback_data: `order_status:${order.id}:confirmed` },
+        { text: "📦 Відправлено", callback_data: `order_status:${order.id}:shipped` },
+        { text: "🏠 Доставлено", callback_data: `order_status:${order.id}:completed` },
+      ],
+    ],
+  };
+
   // Send to all subscribers in parallel
   const results = await Promise.allSettled(
     chatIds.map(async (cid) => {
@@ -119,12 +130,15 @@ async function sendTelegramNotification(order: {
         const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: cid, text }),
+          body: JSON.stringify({
+            chat_id: cid,
+            text,
+            reply_markup: inlineKeyboard,
+          }),
         });
         const json = await res.json();
         if (!json.ok) {
           console.error(`[Telegram] Error sending to ${cid}:`, JSON.stringify(json));
-          // If user blocked the bot, try to mark as inactive
           if (json.error_code === 403) {
             try {
               const adm = createAdminClient();
@@ -132,7 +146,18 @@ async function sendTelegramNotification(order: {
             } catch { /* table may not exist */ }
           }
         } else {
-          console.log(`[Telegram] ✓ Sent to ${cid}`);
+          console.log(`[Telegram] ✓ Sent to ${cid}, message_id: ${json.result?.message_id}`);
+          // Save message_id for later button updates
+          if (json.result?.message_id) {
+            try {
+              const adm = createAdminClient();
+              await adm.from("telegram_order_messages").insert({
+                order_id: order.id,
+                chat_id: cid,
+                message_id: json.result.message_id,
+              });
+            } catch { /* table may not exist yet */ }
+          }
         }
       } catch (err) {
         console.error(`[Telegram] Failed to send to ${cid}:`, err);
