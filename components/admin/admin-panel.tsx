@@ -987,9 +987,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
                       <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead>
                       <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
-                      <TableHead className="text-center text-blue-500 text-[10px]">Підтв.</TableHead>
-                      <TableHead className="text-center text-amber-500 text-[10px]">Відпр.</TableHead>
-                      <TableHead className="text-center text-green-500 text-[10px]">Дост.</TableHead>
+                      <TableHead className="text-center text-blue-500 text-[10px] w-14">Підтв.</TableHead>
+                      <TableHead className="text-center text-amber-500 text-[10px] w-14">Відпр.</TableHead>
+                      <TableHead className="text-center text-green-500 text-[10px] w-14">Дост.</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
