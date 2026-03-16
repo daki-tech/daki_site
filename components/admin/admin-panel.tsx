@@ -333,17 +333,27 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = useCallback(async (file: File) => {
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB Supabase limit
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      toast.error(`Файл занадто великий (${sizeMB} MB). Максимум 50 MB. Стисніть відео перед завантаженням.`);
+      return;
+    }
     setUploading(true);
     try {
-      // Try server upload first (works for files up to ~4.5MB on Vercel)
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      if (res.ok) {
-        const json = await res.json();
-        onChange(json.url);
+      if (file.size <= 4 * 1024 * 1024) {
+        // Small files: direct server upload (works for files up to ~4.5MB on Vercel)
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        if (res.ok) {
+          const json = await res.json();
+          onChange(json.url);
+        } else {
+          throw new Error("Upload failed");
+        }
       } else {
-        // Fallback: signed URL direct upload for large files
+        // Large files: signed URL direct upload to Supabase Storage
         const meta = await fetch("/api/admin/upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -357,8 +367,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           body: file,
         });
         if (!up.ok) {
-          const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-          throw new Error(`Файл занадто великий (${sizeMB} MB). Максимум ~4 MB`);
+          throw new Error("Помилка завантаження на сервер. Спробуйте менший файл.");
         }
         onChange(metaJson.publicUrl);
       }

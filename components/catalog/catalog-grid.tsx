@@ -47,7 +47,7 @@ export function CatalogGrid({ models }: CatalogGridProps) {
           {t("catalog.empty")}
         </div>
       ) : (
-        <div className="grid gap-x-3 gap-y-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-x-3 gap-y-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((model) => (
             <ProductCard key={model.id} model={model} />
           ))}
