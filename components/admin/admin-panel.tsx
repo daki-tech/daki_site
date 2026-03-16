@@ -200,14 +200,14 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
 
   const handleUploadBatch = useCallback(async (files: File[]) => {
     setUploading(true);
-    const uploaded: string[] = [];
+    let done = 0;
     for (const file of files) {
       try {
         const url = await uploadSingleFile(file);
-        uploaded.push(url);
-        // Update immediately after each file so user sees progress
-        onChange([...urlsRef.current.filter(Boolean), ...uploaded]);
-        toast.success(`Фото загружено (${uploaded.length}/${files.length})`);
+        done++;
+        // urlsRef.current is always fresh after parent re-render from previous onChange
+        onChange([...urlsRef.current.filter(Boolean), url]);
+        toast.success(`Фото загружено (${done}/${files.length})`);
       } catch (e) {
         toast.error(`${file.name}: ${e instanceof Error ? e.message : "Ошибка"}`);
       }
