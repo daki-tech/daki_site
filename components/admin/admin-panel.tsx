@@ -165,6 +165,8 @@ interface PhotoItem { id: string; url: string }
 function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: string[]) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const urlsRef = useRef(urls);
+  urlsRef.current = urls;
 
   const items: PhotoItem[] = useMemo(
     () => urls.filter(Boolean).map((url, i) => ({ id: `${i}-${url.slice(-20)}`, url })),
@@ -175,36 +177,43 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
     onChange(newItems.map((it) => it.url));
   };
 
-  const handleUpload = useCallback(async (file: File) => {
-    setUploading(true);
-    try {
-      let uploadedUrl: string;
-      if (file.size > 4 * 1024 * 1024) {
-        const meta = await fetch("/api/admin/upload-url", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
-        });
-        const metaJson = await meta.json();
-        if (!meta.ok) throw new Error(metaJson.error ?? "Failed to get upload URL");
-        const up = await fetch(metaJson.signedUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-        if (!up.ok) throw new Error("Direct upload failed");
-        uploadedUrl = metaJson.publicUrl;
-      } else {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Upload failed");
-        uploadedUrl = json.url;
-      }
-      onChange([...urls.filter(Boolean), uploadedUrl]);
-      toast.success("Фото загружено");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Ошибка загрузки");
-    } finally {
-      setUploading(false);
+  const uploadSingleFile = useCallback(async (file: File): Promise<string> => {
+    if (file.size > 4 * 1024 * 1024) {
+      const meta = await fetch("/api/admin/upload-url", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+      });
+      const metaJson = await meta.json();
+      if (!meta.ok) throw new Error(metaJson.error ?? "Failed to get upload URL");
+      const up = await fetch(metaJson.signedUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!up.ok) throw new Error("Direct upload failed");
+      return metaJson.publicUrl;
+    } else {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed");
+      return json.url;
     }
-  }, [urls, onChange]);
+  }, []);
+
+  const handleUploadBatch = useCallback(async (files: File[]) => {
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadSingleFile(file);
+        uploaded.push(url);
+        // Update immediately after each file so user sees progress
+        onChange([...urlsRef.current.filter(Boolean), ...uploaded]);
+        toast.success(`Фото загружено (${uploaded.length}/${files.length})`);
+      } catch (e) {
+        toast.error(`${file.name}: ${e instanceof Error ? e.message : "Ошибка"}`);
+      }
+    }
+    setUploading(false);
+  }, [onChange, uploadSingleFile]);
 
   const handleRemove = (url: string) => {
     onChange(urls.filter((u) => u !== url));
@@ -253,7 +262,7 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
           multiple
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
-            files.forEach((f) => handleUpload(f));
+            if (files.length > 0) handleUploadBatch(files);
             e.target.value = "";
           }}
         />
