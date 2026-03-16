@@ -116,13 +116,13 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
       {rawDeliveryMedia && (
         <div
           className="relative w-full overflow-hidden rounded-sm bg-neutral-100"
-          style={{ aspectRatio: "2/3", pointerEvents: "none" }}
+          style={{ maxHeight: "80vh", aspectRatio: "3/4", pointerEvents: "none" }}
         >
           <SmartMedia
             src={rawDeliveryMedia}
             alt={`${model.name} — доставка`}
             fill
-            className="object-cover"
+            className="object-contain object-top"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>

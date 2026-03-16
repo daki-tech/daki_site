@@ -66,6 +66,11 @@ export default function ProfilePage() {
         return;
       }
 
+      // Ensure profile exists and email is synced with auth
+      try {
+        await fetch("/api/ensure-profile", { method: "POST" });
+      } catch {}
+
       // Load profile
       const { data: profileData } = await supabase
         .from("profiles")
@@ -74,7 +79,9 @@ export default function ProfilePage() {
         .maybeSingle();
 
       if (profileData) {
-        setProfile(profileData as Profile);
+        // Always use auth user's email as the source of truth
+        const profileWithEmail = { ...profileData, email: user.email ?? profileData.email };
+        setProfile(profileWithEmail as Profile);
         setFullName(profileData.full_name || "");
         setPhone(profileData.phone || "");
         setDeliveryCity(profileData.delivery_city || "");

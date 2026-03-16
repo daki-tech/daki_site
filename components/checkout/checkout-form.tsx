@@ -90,7 +90,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
         if (user && !cancelled) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("full_name, email")
+            .select("full_name, email, phone, delivery_city, delivery_branch")
             .eq("id", user.id)
             .single();
 
@@ -106,7 +106,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
           if (!cancelled) {
             const name = lastOrder?.customer_name || profile?.full_name || "";
             const email = lastOrder?.customer_email || profile?.email || user.email || "";
-            const phone = lastOrder?.customer_phone || "";
+            const phone = lastOrder?.customer_phone || profile?.phone || "";
 
             setForm((prev) => ({
               ...prev,
@@ -114,16 +114,18 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               customer_email: email || prev.customer_email,
               customer_phone: phone || prev.customer_phone,
               delivery_region: lastOrder?.delivery_oblast || prev.delivery_region,
-              delivery_city: lastOrder?.delivery_city || prev.delivery_city,
-              delivery_branch: lastOrder?.delivery_branch || prev.delivery_branch,
+              delivery_city: lastOrder?.delivery_city || profile?.delivery_city || prev.delivery_city,
+              delivery_branch: lastOrder?.delivery_branch || profile?.delivery_branch || prev.delivery_branch,
             }));
 
-            // Set search field values if we have last order delivery info
-            if (lastOrder?.delivery_city) {
-              setCityQuery(lastOrder.delivery_city);
+            // Set search field values if we have delivery info
+            const prefillCity = lastOrder?.delivery_city || profile?.delivery_city;
+            const prefillBranch = lastOrder?.delivery_branch || profile?.delivery_branch;
+            if (prefillCity) {
+              setCityQuery(prefillCity);
             }
-            if (lastOrder?.delivery_branch) {
-              setWarehouseQuery(lastOrder.delivery_branch);
+            if (prefillBranch) {
+              setWarehouseQuery(prefillBranch);
             }
           }
         }

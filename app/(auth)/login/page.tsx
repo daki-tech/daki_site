@@ -105,7 +105,7 @@ function LoginForm() {
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="email">{t("auth.email")}</Label>
-          <Input id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Input id="email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">{t("auth.password")}</Label>
@@ -118,6 +118,7 @@ function LoginForm() {
               onKeyUp={(event) => setCapsLock(event.getModifierState("CapsLock"))}
               onKeyDown={(event) => setCapsLock(event.getModifierState("CapsLock"))}
               onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
               className="pr-10"
             />
             <button
