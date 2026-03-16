@@ -160,7 +160,11 @@ async function appendToGoogleSheets(order: {
   contactMe?: boolean;
 }) {
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-  if (!webhookUrl) return;
+  if (!webhookUrl) {
+    console.warn("[Google Sheets] GOOGLE_SHEETS_WEBHOOK_URL not configured, skipping");
+    return;
+  }
+  console.log(`[Google Sheets] Sending ${order.items.length} item(s) to webhook`);
 
   const nameParts = order.customerName.trim().split(/\s+/);
   const firstName = nameParts[0] || "";
@@ -200,13 +204,15 @@ async function appendToGoogleSheets(order: {
   }
 
   try {
-    await fetch(webhookUrl, {
+    const resp = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rows }),
     });
+    const text = await resp.text();
+    console.log(`[Google Sheets] Response: ${resp.status} ${text.slice(0, 200)}`);
   } catch (err) {
-    console.error("Google Sheets append failed:", err);
+    console.error("[Google Sheets] Append failed:", err);
   }
 }
 
