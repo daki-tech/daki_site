@@ -79,6 +79,44 @@ import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
 
 /* ------------------------------------------------------------------ */
+/*  Custom confirm dialog (replaces browser native confirm())          */
+/* ------------------------------------------------------------------ */
+
+function useConfirmDialog() {
+  const [state, setState] = useState<{ open: boolean; title: string; description: string; resolve: ((v: boolean) => void) | null }>({ open: false, title: "", description: "", resolve: null });
+  const confirm = useCallback((title: string, description = "") => {
+    return new Promise<boolean>((resolve) => {
+      setState({ open: true, title, description, resolve });
+    });
+  }, []);
+  const handleClose = useCallback((result: boolean) => {
+    state.resolve?.(result);
+    setState({ open: false, title: "", description: "", resolve: null });
+  }, [state]);
+  const ConfirmDialog = useMemo(() => {
+    return function ConfirmDialogInner() {
+      return (
+        <Dialog open={state.open} onOpenChange={(open) => !open && handleClose(false)}>
+          <DialogContent className="rounded-2xl border-0 shadow-2xl p-0 max-w-sm">
+            <div className="px-6 pb-5 pt-6 space-y-4">
+              <DialogHeader>
+                <DialogTitle className="text-base font-semibold">{state.title}</DialogTitle>
+                {state.description && <DialogDescription className="text-sm text-gray-500">{state.description}</DialogDescription>}
+              </DialogHeader>
+              <DialogFooter className="flex gap-3 sm:gap-3">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => handleClose(false)}>Скасувати</Button>
+                <Button variant="destructive" className="flex-1 rounded-xl" onClick={() => handleClose(true)}>Підтвердити</Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    };
+  }, [state.open, state.title, state.description, handleClose]);
+  return { confirm, ConfirmDialog };
+}
+
+/* ------------------------------------------------------------------ */
 /*  iOS-inspired style tokens                                          */
 /* ------------------------------------------------------------------ */
 
@@ -271,8 +309,8 @@ function SortablePhoto({ item, onRemove }: { item: PhotoItem; onRemove: (url: st
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 0 };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
-      <SmartImage src={item.url} alt="" fill className="object-cover pointer-events-none" />
+    <div ref={setNodeRef} style={style} className="relative w-[72px] h-[96px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-grab active:cursor-grabbing bg-neutral-50" {...attributes} {...listeners}>
+      <SmartImage src={item.url} alt="" fill className="object-contain pointer-events-none" />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
       <button
         type="button"
@@ -343,8 +381,8 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }}
       />
       {value ? (
-        <div className="mt-2 relative w-[120px] h-[80px] rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
-          <SmartImage src={value} alt={label} fill className="object-cover" />
+        <div className="mt-2 relative w-[120px] h-[160px] rounded-xl overflow-hidden border border-gray-200 shadow-sm group bg-neutral-50">
+          <SmartImage src={value} alt={label} fill className="object-contain" />
           <button
             type="button"
             onClick={() => onChange("")}
@@ -373,6 +411,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
 /* ================================================================== */
 
 export function AdminPanel({ initialModels, orders: initialOrders, stats, users: initialUsers }: AdminPanelProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [models, setModels] = useState<CatalogModel[]>(initialModels);
   const [orders, setOrders] = useState<WholesaleOrder[]>(initialOrders);
   const [users] = useState<Profile[]>(initialUsers);
@@ -503,7 +542,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleDeleteModel = async (id: string) => {
-    if (!confirm("Удалить этот товар навсегда?")) return;
+    if (!(await confirm("Видалити цей товар назавжди?", "Цю дію неможливо скасувати."))) return;
     const res = await fetch(`/api/admin/models/${id}`, { method: "DELETE" });
     if (!res.ok) { toast.error("Ошибка удаления"); return; }
     toast.success("Товар удален");
@@ -604,7 +643,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm("Удалить этот заказ?")) return;
+    if (!(await confirm("Видалити це замовлення?", "Цю дію неможливо скасувати."))) return;
     const res = await fetch("/api/admin/orders", {
       method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId }),
@@ -701,7 +740,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   // Bulk delete orders
   const handleBulkDeleteOrders = async () => {
     if (selectedOrderIds.size === 0) return;
-    if (!confirm(`Удалить ${selectedOrderIds.size} заказ(ов)?`)) return;
+    if (!(await confirm(`Видалити ${selectedOrderIds.size} замовлень?`, "Цю дію неможливо скасувати."))) return;
     for (const id of selectedOrderIds) {
       await fetch("/api/admin/orders", {
         method: "DELETE", headers: { "Content-Type": "application/json" },
@@ -752,18 +791,22 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   /* ================================================================ */
   /*  RENDER                                                           */
   /* ================================================================ */
+  const tabTriggerCls = "gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all";
   return (
     <div className="space-y-4">
+      <ConfirmDialog />
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
-          <TabsTrigger value="products" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
-          <TabsTrigger value="orders" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
-          <TabsTrigger value="revenue" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><TrendingUp className="h-3.5 w-3.5" /> Выручка</TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><Users className="h-3.5 w-3.5" /> Пользователи</TabsTrigger>
-          <TabsTrigger value="homepage" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><Home className="h-3.5 w-3.5" /> Главная</TabsTrigger>
-          <TabsTrigger value="contacts" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><Phone className="h-3.5 w-3.5" /> Контакты</TabsTrigger>
-          <TabsTrigger value="newsletter" className="gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"><Mail className="h-3.5 w-3.5" /> Рассылка</TabsTrigger>
-        </TabsList>
+        <div className="flex justify-center">
+          <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
+            <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товари</TabsTrigger>
+            <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Замовлення</TabsTrigger>
+            <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> Виручка</TabsTrigger>
+            <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> Користувачі</TabsTrigger>
+            <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> Головна</TabsTrigger>
+            <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> Контакти</TabsTrigger>
+            <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> Розсилка</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ====================== ТОВАРЫ ====================== */}
         <TabsContent value="products" className="space-y-4">
@@ -1188,13 +1231,21 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     </div>
                   </div>
 
+                  <div className="bg-gray-50/50 rounded-2xl p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Розсилка</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${selectedUser.newsletter_subscribed ? "bg-green-500" : "bg-neutral-300"}`} />
+                      <p className="text-sm font-medium">{selectedUser.newsletter_subscribed ? "Підписаний" : "Не підписаний"}</p>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50/50 rounded-2xl p-5">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Заказов</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Замовлень</p>
                       <p className="text-3xl font-bold">{userOrderCounts[selectedUser.id] ?? 0}</p>
                     </div>
                     <div className="bg-gray-50/50 rounded-2xl p-5">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Регистрация</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Реєстрація</p>
                       <p className="text-lg font-semibold">{format(new Date(selectedUser.created_at), "dd.MM.yyyy")}</p>
                     </div>
                   </div>
@@ -1335,12 +1386,12 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
       {/* Row 3: Price + Discount */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className={S.label}>Цена (UAH)</Label>
-          <Input type="number" value={form.base_price} onChange={(e) => update("base_price", e.target.value)} className={S.input} />
+          <Label className={S.label}>Ціна (UAH)</Label>
+          <Input type="number" value={form.base_price} onChange={(e) => update("base_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("base_price", ""); }} className={S.input} />
         </div>
         <div>
-          <Label className={S.label}>Скидка %</Label>
-          <Input type="number" value={form.discount_percent} onChange={(e) => update("discount_percent", e.target.value)} className={S.input} />
+          <Label className={S.label}>Знижка %</Label>
+          <Input type="number" value={form.discount_percent} onChange={(e) => update("discount_percent", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("discount_percent", ""); }} className={S.input} />
         </div>
       </div>
 
@@ -1348,12 +1399,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       {/* Color variants (photos + color in one block) */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className={S.label}>Варіанти кольорів</p>
-          <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Додати варіант
-          </button>
-        </div>
+        <p className={`${S.label} mb-3`}>Варіанти кольорів</p>
         <div className="space-y-4">
           {form.color_variants.map((variant, i) => (
             <div key={i} className="rounded-xl border border-gray-200 p-3 space-y-3">
@@ -1368,6 +1414,9 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
               <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
             </div>
           ))}
+          <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className={`w-full py-2.5 ${S.addBtn} flex items-center justify-center gap-1.5`}>
+            <Plus className="h-3.5 w-3.5" /> Додати варіант кольору
+          </button>
         </div>
       </div>
 
@@ -1375,22 +1424,20 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       {/* Sizes & stock */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className={S.label}>Размеры и остатки</p>
-          <button type="button" onClick={() => update("sizes", [...form.sizes, { size_label: "", total_stock: 0 }])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Добавить
-          </button>
-        </div>
+        <p className={`${S.label} mb-2`}>Розміри та залишки</p>
         <div className="space-y-2">
           {form.sizes.map((size, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Input value={size.size_label} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], size_label: e.target.value }; update("sizes", c); }} placeholder="Размер" className={`w-24 ${S.input}`} />
-              <Input type="number" value={String(size.total_stock)} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], total_stock: Number(e.target.value) }; update("sizes", c); }} placeholder="Кол-во" className={`w-24 ${S.input}`} />
+              <Input value={size.size_label} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], size_label: e.target.value }; update("sizes", c); }} placeholder="Розмір" className={`w-24 ${S.input}`} />
+              <Input type="number" value={String(size.total_stock)} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], total_stock: Number(e.target.value) }; update("sizes", c); }} placeholder="К-сть" className={`w-24 ${S.input}`} />
               {form.sizes.length > 1 && (
                 <button type="button" onClick={() => update("sizes", form.sizes.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
               )}
             </div>
           ))}
+          <button type="button" onClick={() => update("sizes", [...form.sizes, { size_label: "", total_stock: 0 }])} className={`w-full py-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
+            <Plus className="h-3.5 w-3.5" /> Додати розмір
+          </button>
         </div>
       </div>
 
@@ -1430,12 +1477,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       {/* Size chart table */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className={S.label}>Таблица размеров</p>
-          <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Строка
-          </button>
-        </div>
+        <p className={`${S.label} mb-2`}>Таблиця розмірів</p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
             <thead>
@@ -1466,6 +1508,9 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
             </tbody>
           </table>
         </div>
+        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
+          <Plus className="h-3.5 w-3.5" /> Додати рядок
+        </button>
       </div>
     </div>
   );

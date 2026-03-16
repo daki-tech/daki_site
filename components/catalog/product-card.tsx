@@ -146,17 +146,7 @@ export function ProductCard({ model }: ProductCardProps) {
             )}
           </div>
 
-          {/* Carousel dots */}
-          {hasMultipleImages && isHovering && (
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1">
-              {images.map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === currentIdx ? "w-3 bg-white" : "w-1 bg-white/50"}`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Carousel dots removed per design */}
         </div>
 
         {/* Info */}

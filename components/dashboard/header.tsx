@@ -42,19 +42,21 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
         <Link href="/" className="font-logo text-[28px] tracking-[0.2em] uppercase">
           DAKI
         </Link>
-        <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
-          {links.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
-                pathname === item.href && "bg-muted text-foreground",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden flex-1 items-center justify-center md:flex">
+          <div className="inline-flex h-9 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
+            {links.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "rounded-xl px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all",
+                  pathname === item.href && "bg-white text-foreground shadow-sm",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </nav>
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground hidden md:inline">
@@ -62,7 +64,7 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
           </span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-neutral-100 hover:text-foreground"
             title="Вийти"
           >
             <LogOut className="h-4 w-4" />

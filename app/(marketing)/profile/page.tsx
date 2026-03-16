@@ -52,6 +52,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [deliveryCity, setDeliveryCity] = useState("");
   const [deliveryBranch, setDeliveryBranch] = useState("");
+  const [newsletter, setNewsletter] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function ProfilePage() {
         setPhone(profileData.phone || "");
         setDeliveryCity(profileData.delivery_city || "");
         setDeliveryBranch(profileData.delivery_branch || "");
+        setNewsletter(profileData.newsletter_subscribed ?? false);
       }
 
       // Load orders via API (bypasses RLS recursion issue)
@@ -116,6 +118,7 @@ export default function ProfilePage() {
           phone: phone || null,
           delivery_city: deliveryCity || null,
           delivery_branch: deliveryBranch || null,
+          newsletter_subscribed: newsletter,
         }),
       });
       if (res.ok) {
@@ -190,6 +193,8 @@ export default function ProfilePage() {
           setDeliveryCity={setDeliveryCity}
           deliveryBranch={deliveryBranch}
           setDeliveryBranch={setDeliveryBranch}
+          newsletter={newsletter}
+          setNewsletter={setNewsletter}
           saving={saving}
           onSave={handleSave}
         />
@@ -334,6 +339,8 @@ function ProfileTab({
   setDeliveryCity,
   deliveryBranch,
   setDeliveryBranch,
+  newsletter,
+  setNewsletter,
   saving,
   onSave,
 }: {
@@ -346,6 +353,8 @@ function ProfileTab({
   setDeliveryCity: (v: string) => void;
   deliveryBranch: string;
   setDeliveryBranch: (v: string) => void;
+  newsletter: boolean;
+  setNewsletter: (v: boolean) => void;
   saving: boolean;
   onSave: () => void;
 }) {
@@ -538,6 +547,19 @@ function ProfileTab({
           </div>
         )}
       </div>
+
+      {/* Newsletter subscription */}
+      <label className="flex items-center gap-3 cursor-pointer py-2">
+        <div
+          className={`h-5 w-9 rounded-full p-0.5 transition-colors cursor-pointer ${newsletter ? "bg-black" : "bg-neutral-300"}`}
+          onClick={() => setNewsletter(!newsletter)}
+        >
+          <div className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${newsletter ? "translate-x-4" : "translate-x-0"}`} />
+        </div>
+        <span className="text-sm text-neutral-600">
+          Підписатися на розсилку новинок та спецпропозицій
+        </span>
+      </label>
 
       {/* Save button */}
       <button

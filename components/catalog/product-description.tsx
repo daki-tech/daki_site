@@ -25,7 +25,11 @@ interface ProductDescriptionProps {
 }
 
 export function ProductDescription({ model, selectedColor }: ProductDescriptionProps) {
-  const descriptionItems = model.description
+  const isHtml = (text: string | null | undefined): boolean =>
+    !!text && /<[a-z][\s\S]*>/i.test(text);
+
+  const descriptionIsHtml = isHtml(model.description);
+  const descriptionItems = !descriptionIsHtml && model.description
     ? model.description
         .split("\n")
         .map((line) => line.trim())
@@ -33,7 +37,8 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
         .map((line) => line.replace(/^[-•]\s*/, ""))
     : [];
 
-  const careItems = model.care_instructions
+  const careIsHtml = isHtml(model.care_instructions);
+  const careItems = !careIsHtml && model.care_instructions
     ? model.care_instructions
         .split("\n")
         .map((line) => line.trim())
@@ -70,7 +75,12 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
         <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-5">
           Опис
         </p>
-        {descriptionItems.length > 0 ? (
+        {descriptionIsHtml ? (
+          <div
+            className="text-sm text-neutral-700 leading-relaxed tracking-wide prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: model.description! }}
+          />
+        ) : descriptionItems.length > 0 ? (
           <ul className="divide-y divide-neutral-100">
             {descriptionItems.map((item, idx) => (
               <li key={idx} className="flex items-start gap-4 py-3">
@@ -94,42 +104,51 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
           Склад і догляд
         </p>
 
-        {fabricLines.length > 0 && (
-          <div className="space-y-2.5 mb-6">
-            {fabricLines.map((line, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <span className="mt-2 h-px w-4 flex-shrink-0 bg-neutral-300" />
-                <span className="text-sm text-neutral-600 leading-relaxed">{line}</span>
+        {careIsHtml ? (
+          <div
+            className="text-sm text-neutral-600 leading-relaxed prose prose-sm max-w-none mb-6"
+            dangerouslySetInnerHTML={{ __html: model.care_instructions! }}
+          />
+        ) : (
+          <>
+            {fabricLines.length > 0 && (
+              <div className="space-y-2.5 mb-6">
+                {fabricLines.map((line, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <span className="mt-2 h-px w-4 flex-shrink-0 bg-neutral-300" />
+                    <span className="text-sm text-neutral-600 leading-relaxed">{line}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {model.filling && (
-          <div className="flex items-start gap-3 mb-6">
-            <span className="mt-2 h-px w-4 flex-shrink-0 bg-neutral-300" />
-            <span className="text-sm text-neutral-600 leading-relaxed">{model.filling}</span>
-          </div>
-        )}
+            {model.filling && (
+              <div className="flex items-start gap-3 mb-6">
+                <span className="mt-2 h-px w-4 flex-shrink-0 bg-neutral-300" />
+                <span className="text-sm text-neutral-600 leading-relaxed">{model.filling}</span>
+              </div>
+            )}
 
-        {careItems.length > 0 && (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-1">
-            {careItems.map((item, idx) => {
-              const match = Object.entries(CARE_ICONS).find(([key]) =>
-                item.toUpperCase().includes(key)
-              );
-              return (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
-                    {match ? match[1].icon : <Sparkles className="h-4 w-4" />}
-                  </span>
-                  <span className="text-[11px] uppercase tracking-[0.08em] text-neutral-500 leading-tight">
-                    {match ? match[1].label : item}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+            {careItems.length > 0 && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-1">
+                {careItems.map((item, idx) => {
+                  const match = Object.entries(CARE_ICONS).find(([key]) =>
+                    item.toUpperCase().includes(key)
+                  );
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
+                        {match ? match[1].icon : <Sparkles className="h-4 w-4" />}
+                      </span>
+                      <span className="text-[11px] uppercase tracking-[0.08em] text-neutral-500 leading-tight">
+                        {match ? match[1].label : item}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

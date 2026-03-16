@@ -24,6 +24,8 @@ const DEFAULT_DELIVERY_INFO = `Пункти відбору Meest ПОШТА (7-1
 
 const DEFAULT_RETURN_INFO = `Ви можете повернути товар в інтернет-магазин протягом 30 днів, заповнивши форму на сайті.`;
 
+const isHtml = (text: string): boolean => /<[a-z][\s\S]*>/i.test(text);
+
 interface ProductDeliveryProps {
   model: CatalogModel;
   selectedColor?: ModelColor | null;
@@ -31,11 +33,9 @@ interface ProductDeliveryProps {
 
 function renderDeliveryLines(text: string) {
   const lines = text.split("\n").map((l) => l.trim());
-  // Filter out empty lines — service name spacing handles visual grouping
   const nonEmpty = lines.filter(Boolean);
 
   return nonEmpty.map((line, idx) => {
-    // Free delivery highlight
     if (/^безкоштовна/i.test(line)) {
       return (
         <p
@@ -47,7 +47,6 @@ function renderDeliveryLines(text: string) {
       );
     }
 
-    // Price / payment line
     if (/UAH|грн|Оплата/i.test(line) && !/^Пункти|^Кур/i.test(line)) {
       return (
         <p key={idx} className="mt-1.5 pl-5 text-sm text-neutral-500">
@@ -56,7 +55,6 @@ function renderDeliveryLines(text: string) {
       );
     }
 
-    // Note in parentheses
     if (line.startsWith("(")) {
       return (
         <p key={idx} className="mt-0.5 pl-5 text-xs italic text-neutral-400">
@@ -65,7 +63,6 @@ function renderDeliveryLines(text: string) {
       );
     }
 
-    // Warning / notice line
     if (/Попереджаємо|→/i.test(line)) {
       return (
         <p key={idx} className="mt-3 text-xs text-neutral-400 leading-relaxed">
@@ -74,7 +71,6 @@ function renderDeliveryLines(text: string) {
       );
     }
 
-    // Service name (main line)
     return (
       <p
         key={idx}
@@ -89,6 +85,8 @@ function renderDeliveryLines(text: string) {
 export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) {
   const deliveryText = model.delivery_info || DEFAULT_DELIVERY_INFO;
   const returnText = model.return_info || DEFAULT_RETURN_INFO;
+  const deliveryIsHtml = isHtml(deliveryText);
+  const returnIsHtml = isHtml(returnText);
 
   const rawDeliveryMedia =
     selectedColor?.delivery_image ??
@@ -102,13 +100,27 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
         <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-6">
           Правила доставки
         </p>
-        <div>{renderDeliveryLines(deliveryText)}</div>
+        {deliveryIsHtml ? (
+          <div
+            className="text-sm text-neutral-700 leading-relaxed prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: deliveryText }}
+          />
+        ) : (
+          <div>{renderDeliveryLines(deliveryText)}</div>
+        )}
 
         <div className="mt-10">
           <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-4">
             Правила повернення
           </p>
-          <p className="text-sm text-neutral-700 leading-relaxed">{returnText}</p>
+          {returnIsHtml ? (
+            <div
+              className="text-sm text-neutral-700 leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: returnText }}
+            />
+          ) : (
+            <p className="text-sm text-neutral-700 leading-relaxed">{returnText}</p>
+          )}
         </div>
       </div>
 

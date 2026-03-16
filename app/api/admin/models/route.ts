@@ -29,8 +29,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Strip fields that don't exist in catalog_models table
-  const { sizes, delivery_info, return_info, size_chart, ...modelData } = parsed.data;
+  // Extract sizes separately (they go into model_sizes table)
+  const { sizes, ...modelData } = parsed.data;
   const colorVariants = (body.color_variants ?? body.colors ?? []) as Array<{ name: string; hex: string; image_urls?: string[] }>;
 
   const { data: model, error: modelError } = await auth.supabase

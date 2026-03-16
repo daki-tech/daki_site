@@ -8,10 +8,6 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { useLanguage } from "@/components/providers/language-provider";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -28,7 +24,7 @@ function LoginForm() {
 
   const next = searchParams.get("next") || "/profile";
 
-  // Autofill email from localStorage if "remember me" was previously checked
+  // Autofill email and password from localStorage if "remember me" was previously checked
   useEffect(() => {
     try {
       const savedRemember = localStorage.getItem("remember-me");
@@ -100,31 +96,34 @@ function LoginForm() {
     }
   };
 
+  const inputCls = "w-full rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm transition-colors focus:bg-white focus:border-neutral-400 focus:outline-none focus:ring-0";
+
   return (
     <AuthShell title={t("auth.loginTitle")} subtitle={t("auth.loginSubtitle")}>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="email">{t("auth.email")}</Label>
-          <Input id="email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t("auth.email")}</label>
+          <input id="email" name="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">{t("auth.password")}</Label>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t("auth.password")}</label>
           <div className="relative">
-            <Input
+            <input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               required
               value={password}
-              onKeyUp={(event) => setCapsLock(event.getModifierState("CapsLock"))}
-              onKeyDown={(event) => setCapsLock(event.getModifierState("CapsLock"))}
-              onChange={(event) => setPassword(event.target.value)}
+              onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+              onKeyDown={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+              onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              className="pr-10"
+              className={`${inputCls} pr-10`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -134,26 +133,39 @@ function LoginForm() {
         </div>
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Checkbox checked={rememberMe} onCheckedChange={(checked) => setRememberMe(Boolean(checked))} />
-            {t("auth.remember")}
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <div
+              className={`h-5 w-9 rounded-full p-0.5 transition-colors cursor-pointer ${rememberMe ? "bg-black" : "bg-neutral-300"}`}
+              onClick={() => setRememberMe(!rememberMe)}
+            >
+              <div className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${rememberMe ? "translate-x-4" : "translate-x-0"}`} />
+            </div>
+            <span className="text-sm text-neutral-600">{t("auth.remember")}</span>
           </label>
-          <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+          <Link href="/forgot-password" className="text-sm text-neutral-500 hover:text-black transition">
             {t("auth.forgot")}
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
+        >
           {loading ? t("common.loading") : t("common.login")}
-        </Button>
+        </button>
 
-        <Button type="button" className="w-full" variant="outline" onClick={handleGoogle}>
+        <button
+          type="button"
+          onClick={handleGoogle}
+          className="w-full rounded-xl border border-neutral-200 bg-white py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+        >
           Google
-        </Button>
+        </button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-neutral-500">
           {t("auth.noAccount")}{" "}
-          <Link href="/signup" className="text-primary hover:underline">
+          <Link href="/signup" className="text-black font-medium hover:underline">
             {t("common.signup")}
           </Link>
         </p>

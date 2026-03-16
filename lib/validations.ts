@@ -9,6 +9,7 @@ export const profileSchema = z.object({
   delivery_branch: z.string().max(300).nullable().optional(),
   interface_language: z.enum(["ru", "uk", "en"]).optional(),
   theme: z.enum(["light", "dark"]).optional(),
+  newsletter_subscribed: z.boolean().optional(),
 });
 
 export const modelSchema = z.object({

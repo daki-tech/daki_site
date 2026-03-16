@@ -8,9 +8,6 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { useLanguage } from "@/components/providers/language-provider";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -74,58 +71,63 @@ export default function SignupPage() {
     }
   };
 
+  const inputCls = "w-full rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm transition-colors focus:bg-white focus:border-neutral-400 focus:outline-none focus:ring-0";
+
   return (
     <AuthShell title={t("auth.signupTitle")} subtitle={t("auth.signupSubtitle")}>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="fullName">{t("auth.fullName")}</Label>
-          <Input
+        <div className="space-y-1.5">
+          <label htmlFor="fullName" className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t("auth.fullName")}</label>
+          <input
             id="fullName"
             value={fullName}
             required
-            onChange={(event) => setFullName(event.target.value)}
+            onChange={(e) => setFullName(e.target.value)}
+            className={inputCls}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">{t("auth.email")}</Label>
-          <Input id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t("auth.email")}</label>
+          <input id="email" name="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">{t("auth.password")}</Label>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t("auth.password")}</label>
           <div className="relative">
-            <Input
+            <input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               required
               value={password}
-              onKeyUp={(event) => setCapsLock(event.getModifierState("CapsLock"))}
-              onKeyDown={(event) => setCapsLock(event.getModifierState("CapsLock"))}
-              onChange={(event) => setPassword(event.target.value)}
-              className="pr-10"
+              autoComplete="new-password"
+              onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+              onKeyDown={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${inputCls} pr-10`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-            {capsLock ? <p className="text-xs text-amber-600">{t("auth.capsLock")}</p> : null}
+          {capsLock ? <p className="text-xs text-amber-600">{t("auth.capsLock")}</p> : null}
         </div>
 
-        {/* Customer type selector */}
-        <div className="space-y-2">
-          <Label>Тип покупця</Label>
-          <div className="flex gap-3">
+        {/* Customer type selector - iOS style */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Тип покупця</label>
+          <div className="inline-flex h-10 items-center gap-0.5 rounded-xl bg-neutral-100 p-1 w-full">
             <button
               type="button"
               onClick={() => setCustomerType("retail")}
-              className={`flex-1 border py-2.5 text-sm font-medium transition ${
+              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
                 customerType === "retail"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border bg-background text-foreground hover:border-foreground/50"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700"
               }`}
             >
               Роздріб
@@ -133,45 +135,53 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setCustomerType("wholesale")}
-              className={`flex-1 border py-2.5 text-sm font-medium transition ${
+              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
                 customerType === "wholesale"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border bg-background text-foreground hover:border-foreground/50"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700"
               }`}
             >
               Опт
             </button>
           </div>
           {customerType === "wholesale" && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-neutral-500">
               Оптовим покупцям доступні спеціальні ціни та замовлення ростовками
             </p>
           )}
         </div>
 
-        <label className="flex items-start gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={newsletter}
-            onChange={(e) => setNewsletter(e.target.checked)}
-            className="mt-0.5 h-4 w-4 border border-border accent-foreground"
-          />
-          <span className="text-sm text-muted-foreground">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <div
+            className={`h-5 w-9 rounded-full p-0.5 transition-colors cursor-pointer ${newsletter ? "bg-black" : "bg-neutral-300"}`}
+            onClick={() => setNewsletter(!newsletter)}
+          >
+            <div className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${newsletter ? "translate-x-4" : "translate-x-0"}`} />
+          </div>
+          <span className="text-sm text-neutral-600">
             Підписатися на розсилку новинок та спецпропозицій
           </span>
         </label>
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
+        >
           {loading ? t("common.loading") : t("common.signup")}
-        </Button>
+        </button>
 
-        <Button type="button" className="w-full" variant="outline" onClick={handleGoogle}>
+        <button
+          type="button"
+          onClick={handleGoogle}
+          className="w-full rounded-xl border border-neutral-200 bg-white py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+        >
           Google
-        </Button>
+        </button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-neutral-500">
           {t("auth.haveAccount")}{" "}
-          <Link href="/login" className="text-primary hover:underline">
+          <Link href="/login" className="text-black font-medium hover:underline">
             {t("common.login")}
           </Link>
         </p>
