@@ -150,6 +150,7 @@ export function ProductCard({ model }: ProductCardProps) {
 
         {/* Info */}
         <div className="mt-3 space-y-1">
+          <p className="text-[11px] text-muted-foreground">{model.sku}</p>
           <h3 className="text-sm font-normal text-foreground">{model.name}</h3>
 
           <div className="flex items-baseline gap-2">
