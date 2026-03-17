@@ -170,7 +170,7 @@ D:\DaKi/
 | **Resend** | Email (подтверждение регистрации, рассылки) | API key в env, домен dakifashion.com |
 | **Google Sheets** | Дублирование заказов | Webhook URL в env |
 | **Nova Poshta API** | Поиск городов и отделений для доставки | API key в env |
-| **Cloudflare** | DNS, SSL | Dashboard (WAF не настроен) |
+| **Cloudflare** | DNS, SSL, WAF, DDoS protection | Dashboard — WAF настроен (Bot Fight Mode, DDoS L7, Hotlink Protection, HSTS, SSL Full Strict, Leaked Credentials Detection) |
 | **Google OAuth** | Вход через Google | Client ID/Secret в env + Supabase Auth providers |
 
 ---
@@ -263,20 +263,29 @@ Vercel автоматически деплоит при push в main.
 - **Telegram bot whitelist:** Ограничение доступа через TELEGRAM_ALLOWED_USERS
 - **Unified schema.sql:** Все миграции в одном файле
 
+### Сессия 4 (17.03):
+- **Responsive design:** Проверка всех страниц (mobile 375px, tablet 768px, desktop 1280px)
+- **Burger menu fix:** Heart/User иконки убраны из мобильного header (показываются только на lg+)
+- **GIF upload:** Поддержка image/gif в загрузке фото и медиа в админке
+- **Color selectors:** Кружочки вместо квадратов на страницах товара (rounded-full)
+- **"Інші моделі" carousel:** Исправлен горизонтальный скролл (overflow-hidden)
+- **Contacts page:** Разделены на 4 блока: Телефон, Email, Месенджери, Соцмережі
+- **Cloudflare WAF:** Настроена защита (Bot Fight Mode, DDoS L7, Hotlink Protection, HSTS, SSL Full Strict, Leaked Credentials Detection)
+- **Vercel deploy:** Настроен .vercelignore (исключены .claude, .git, /catalog, /style)
+- **Git push:** Все изменения залиты на GitHub
+
 ---
 
 ## 10. Что НЕ сделано (задачи для нового разработчика)
 
 | # | Задача | Приоритет | Подробности |
 |---|--------|-----------|-------------|
-| 1 | **Деплой на Vercel** | КРИТИЧЕСКИЙ | Все изменения ЛОКАЛЬНЫЕ. Живой сайт dakifashion.com работает на СТАРОМ коде! Нужен `git push` + деплой |
-| 2 | **Vercel env: TELEGRAM_ALLOWED_USERS** | КРИТИЧЕСКИЙ | Добавить в Vercel Dashboard → Settings → Environment Variables |
-| 3 | **Добавить chat_id 3 менеджеров** | Высокий | Каждый шлет /start боту → получает свой chat_id → добавить в TELEGRAM_ALLOWED_USERS через запятую |
-| 4 | **Supabase SQL** | Высокий | Выполнить если ещё не: `ALTER PUBLICATION supabase_realtime ADD TABLE orders, catalog_models;` и `SELECT setval(pg_get_serial_sequence('orders', 'order_number'), 1397, true);` |
-| 5 | **Cloudflare WAF** | Средний | Настроить защиту: rate limiting, bot protection, WAF rules |
-| 6 | **Универсальный blueprint** | Низкий | Объединить PROJECT-BLUEPRINT.md + project-config.md в один файл |
-| 7 | **Email рассылка тест** | Средний | Протестировать раздел "Розсилка" в админке |
-| 8 | **vitpad17@gmail.com только админка** | Низкий | В middleware.ts перенаправлять admin-email на /admin |
+| 1 | **Vercel env: TELEGRAM_ALLOWED_USERS** | КРИТИЧЕСКИЙ | Добавить в Vercel Dashboard → Settings → Environment Variables |
+| 2 | **Добавить chat_id менеджеров** | Высокий | Заранее узнать chat_id, добавить в TELEGRAM_ALLOWED_USERS через запятую |
+| 3 | **Supabase SQL** | Высокий | Выполнить если ещё не: `ALTER PUBLICATION supabase_realtime ADD TABLE orders, catalog_models;` и `SELECT setval(pg_get_serial_sequence('orders', 'order_number'), 1397, true);` |
+| 4 | **Vercel домен** | Высокий | dakifashion.com привязан к старому проекту Vercel. Переназначить на проект `new-site` в Vercel Dashboard |
+| 5 | **Email рассылка тест** | Средний | Протестировать раздел "Розсилка" в админке |
+| 6 | **vitpad17@gmail.com только админка** | Низкий | В middleware.ts перенаправлять admin-email на /admin |
 
 ---
 

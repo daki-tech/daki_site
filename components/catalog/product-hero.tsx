@@ -164,7 +164,7 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
                 <button
                   key={color.id}
                   onClick={() => handleColorChange(color)}
-                  className={`h-7 w-7 rounded-sm border-2 transition-all ${
+                  className={`h-7 w-7 rounded-full border-2 transition-all ${
                     selectedColor?.id === color.id
                       ? "border-neutral-900 scale-110"
                       : "border-neutral-300 hover:border-neutral-500"

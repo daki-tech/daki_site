@@ -22,7 +22,7 @@ export function RelatedModels({ models }: RelatedModelsProps) {
   const visible = models.slice(offset, offset + VISIBLE);
 
   return (
-    <div>
+    <div className="overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl font-light tracking-wide">Інші моделі</h2>
         {models.length > VISIBLE && (

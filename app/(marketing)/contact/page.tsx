@@ -1,4 +1,4 @@
-import { Instagram, Mail, Phone } from "lucide-react";
+import { Instagram, Mail, MessageCircle, Phone } from "lucide-react";
 import { getHomepageSettings } from "@/lib/data";
 import { CONTACTS } from "@/lib/constants";
 import { TelegramIcon } from "@/components/icons/telegram";
@@ -52,9 +52,9 @@ export default async function ContactPage() {
         </p>
       </div>
 
-      {/* Two-column: Phone+Messengers | Email+Socials */}
+      {/* Four sections: Phones, Email, Messengers, Social Networks */}
       <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
-        {/* Phone card */}
+        {/* Phones */}
         {phones.length > 0 && (
           <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
@@ -74,38 +74,12 @@ export default async function ContactPage() {
                 </a>
               ))}
             </div>
-            {/* Messengers under phone */}
-            {messengers.length > 0 && (
-              <div className="mt-4 w-full border-t border-neutral-200 pt-4">
-                <p className="text-center text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground mb-3">
-                  Месенджери
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {messengers.map(({ href, icon: Icon, label }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex flex-col items-center gap-1.5"
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                        {label}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Email card */}
-        <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
-          {email && (
+        {/* Email */}
+        {email && (
+          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <a
               href={`mailto:${email}`}
               className="flex flex-col items-center gap-3 transition hover:opacity-80"
@@ -118,34 +92,68 @@ export default async function ContactPage() {
               </p>
               <p className="text-sm font-medium">{email}</p>
             </a>
-          )}
-          {/* Social networks under email */}
-          {socialNetworks.length > 0 && (
-            <div className="mt-4 w-full border-t border-neutral-200 pt-4">
-              <p className="text-center text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground mb-3">
-                Соцмережі
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {socialNetworks.map(({ href, icon: Icon, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col items-center gap-1.5"
-                  >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {label}
-                    </span>
-                  </a>
-                ))}
-              </div>
+          </div>
+        )}
+
+        {/* Messengers */}
+        {messengers.length > 0 && (
+          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
+              <MessageCircle className="h-5 w-5" />
             </div>
-          )}
-        </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              Месенджери
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+              {messengers.map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col items-center gap-1.5"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {label}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Social Networks */}
+        {socialNetworks.length > 0 && (
+          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
+              <Instagram className="h-5 w-5" />
+            </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              Соцмережі
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+              {socialNetworks.map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col items-center gap-1.5"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {label}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
