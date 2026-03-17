@@ -33,18 +33,22 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
 
   const onCropComplete = useCallback((_: Area, px: Area) => setCroppedAreaPixels(px), []);
 
-  // Create a dedicated DOM node for the portal
+  // Create portal container on mount, remove on unmount
   useEffect(() => {
     const el = document.createElement("div");
-    el.id = "image-cropper-portal";
-    el.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;";
+    // Style the portal container itself to cover viewport and block all events below
+    el.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;pointer-events:auto;";
     document.body.appendChild(el);
     portalRef.current = el;
-    document.body.style.overflow = "hidden";
     setMounted(true);
+
+    // Prevent body scroll
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     return () => {
+      document.body.style.overflow = prev;
       document.body.removeChild(el);
-      document.body.style.overflow = "";
     };
   }, []);
 
@@ -65,41 +69,63 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
   if (!mounted || !portalRef.current) return null;
 
   return createPortal(
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)" }}>
-      {/* White card */}
-      <div style={{
-        background: "#fff",
-        borderRadius: 16,
-        width: 580,
-        maxWidth: "calc(100% - 32px)",
-        maxHeight: "calc(100% - 32px)",
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget) onCancel();
+      }}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.5)",
         display: "flex",
-        flexDirection: "column",
-        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
-      }}>
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      {/* White card */}
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          width: 580,
+          maxWidth: "100%",
+          maxHeight: "calc(100vh - 32px)",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+          overflow: "hidden",
+          pointerEvents: "auto",
+        }}
+      >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #f5f5f5", flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#999" }}
-          >
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", borderBottom: "1px solid #f0f0f0", flexShrink: 0,
+        }}>
+          <button type="button" onClick={onCancel} style={closeBtnStyle}>
             <X size={20} strokeWidth={1.5} />
           </button>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>Редактирование</span>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            style={{ height: 36, padding: "0 20px", borderRadius: 18, border: "none", background: "#111", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: saving ? 0.4 : 1 }}
-          >
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#111", userSelect: "none" }}>
+            Редагування
+          </span>
+          <button type="button" onClick={handleSave} disabled={saving} style={{ ...saveBtnStyle, opacity: saving ? 0.4 : 1 }}>
             {saving && <Loader2 size={14} className="animate-spin" />}
-            {saving ? "Сохраняю..." : "Сохранить"}
+            {saving ? "Зберігаю..." : "Зберегти"}
           </button>
         </div>
 
-        {/* Crop area — inline styles only, no Tailwind */}
-        <div style={{ position: "relative", width: "100%", height: 400, overflow: "hidden", background: "#f0f0f0", flexShrink: 0 }}>
+        {/* Crop area */}
+        <div style={{ position: "relative", width: "100%", height: 400, background: "#e5e5e5", flexShrink: 0 }}>
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -110,14 +136,17 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid
+            style={{
+              containerStyle: { width: "100%", height: "100%", position: "absolute", top: 0, left: 0 },
+            }}
           />
         </div>
 
         {/* Controls */}
-        <div style={{ padding: "14px 16px", borderTop: "1px solid #f5f5f5", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
+        <div style={{ padding: "14px 16px", borderTop: "1px solid #f0f0f0", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
           {/* Zoom */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.15))} style={btnStyle}>
+            <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.15))} style={circBtnStyle}>
               <ZoomOut size={16} strokeWidth={1.5} />
             </button>
             <input
@@ -125,7 +154,7 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
               onChange={(e) => setZoom(Number(e.target.value))}
               style={{ flex: 1, accentColor: "#111" }}
             />
-            <button type="button" onClick={() => setZoom((z) => Math.min(3, z + 0.15))} style={btnStyle}>
+            <button type="button" onClick={() => setZoom((z) => Math.min(3, z + 0.15))} style={circBtnStyle}>
               <ZoomIn size={16} strokeWidth={1.5} />
             </button>
           </div>
@@ -136,18 +165,20 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
               {ASPECTS.map((a) => {
                 const on = !freeAspect && aspect === a.value;
                 return (
-                  <button type="button" key={a.label} onClick={() => { setAspect(a.value); setFreeAspect(false); }}
-                    style={{ ...segStyle, ...(on ? segActiveStyle : {}) }}>
+                  <button type="button" key={a.label}
+                    onClick={() => { setAspect(a.value); setFreeAspect(false); }}
+                    style={{ ...segStyle, ...(on ? segOn : {}) }}>
                     {a.label}
                   </button>
                 );
               })}
               <button type="button" onClick={() => setFreeAspect((f) => !f)}
-                style={{ ...segStyle, ...(freeAspect ? segActiveStyle : {}), padding: "6px 10px" }}>
+                style={{ ...segStyle, padding: "6px 10px", ...(freeAspect ? segOn : {}) }}>
                 <Maximize2 size={14} strokeWidth={2} />
               </button>
             </div>
-            <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)} style={{ ...btnStyle, borderRadius: 10 }}>
+            <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)}
+              style={{ ...circBtnStyle, borderRadius: 10 }}>
               <RotateCw size={16} strokeWidth={1.5} />
             </button>
           </div>
@@ -158,7 +189,21 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
   );
 }
 
-const btnStyle: React.CSSProperties = {
+/* ── Styles ── */
+
+const closeBtnStyle: React.CSSProperties = {
+  width: 36, height: 36, borderRadius: "50%", border: "none",
+  background: "transparent", cursor: "pointer", display: "flex",
+  alignItems: "center", justifyContent: "center", color: "#999",
+};
+
+const saveBtnStyle: React.CSSProperties = {
+  height: 36, padding: "0 20px", borderRadius: 18, border: "none",
+  background: "#111", color: "#fff", fontSize: 13, fontWeight: 600,
+  cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+};
+
+const circBtnStyle: React.CSSProperties = {
   width: 32, height: 32, borderRadius: "50%", border: "1px solid #e5e5e5",
   background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
   justifyContent: "center", color: "#999", flexShrink: 0,
@@ -170,7 +215,7 @@ const segStyle: React.CSSProperties = {
   display: "flex", alignItems: "center",
 };
 
-const segActiveStyle: React.CSSProperties = {
+const segOn: React.CSSProperties = {
   background: "#fff", color: "#111", boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
 };
 
