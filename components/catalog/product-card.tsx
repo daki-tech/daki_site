@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CatalogModel } from "@/lib/types";
+import type { CustomerType } from "@/hooks/use-customer-type";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
 import { useWishlist } from "@/lib/wishlist-store";
@@ -11,13 +12,17 @@ import { useCart } from "@/lib/cart-store";
 
 interface ProductCardProps {
   model: CatalogModel;
+  customerType?: CustomerType;
 }
 
-export function ProductCard({ model }: ProductCardProps) {
+export function ProductCard({ model, customerType = "retail" }: ProductCardProps) {
   const { toggle, has } = useWishlist();
   const { addToCart } = useCart();
   const isFav = has(model.id);
   const finalPrice = model.base_price * (1 - model.discount_percent / 100);
+  const isWholesale = customerType === "wholesale";
+  const wholesalePrice = model.wholesale_price || 0;
+  const displayPrice = isWholesale && wholesalePrice > 0 ? wholesalePrice : finalPrice;
   const images = model.image_urls?.length ? model.image_urls : [];
   const hasMultipleImages = images.length > 1;
 
@@ -155,11 +160,14 @@ export function ProductCard({ model }: ProductCardProps) {
           <h3 className="text-sm font-normal text-foreground">{model.name}</h3>
 
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
+            <span className="text-sm font-medium">{formatCurrency(displayPrice)}</span>
             {model.discount_percent > 0 && (
               <span className="text-xs text-muted-foreground line-through">
                 {formatCurrency(model.base_price)}
               </span>
+            )}
+            {isWholesale && wholesalePrice > 0 && (
+              <span className="text-[10px] bg-neutral-900 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Опт</span>
             )}
           </div>
         </div>

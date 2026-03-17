@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     CHECK (theme IN ('light','dark')),
   is_admin boolean NOT NULL DEFAULT false,
   newsletter_subscribed boolean NOT NULL DEFAULT false,
+  customer_type text NOT NULL DEFAULT 'retail',
+  company_name text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -94,6 +96,8 @@ CREATE TABLE IF NOT EXISTS public.catalog_models (
   base_price numeric(10,2) NOT NULL,
   discount_percent numeric(5,2) NOT NULL DEFAULT 0
     CHECK (discount_percent >= 0 AND discount_percent <= 100),
+  wholesale_price numeric(10,2) NOT NULL DEFAULT 0,
+  min_wholesale_qty integer NOT NULL DEFAULT 1,
   image_urls text[] NOT NULL DEFAULT '{}',
   detail_images text[] NOT NULL DEFAULT '{}',
   colors jsonb DEFAULT '[]',
@@ -146,6 +150,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   delivery_city text,
   delivery_branch text,
   payment_method text,
+  order_type text NOT NULL DEFAULT 'retail',
   notes text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -245,11 +250,12 @@ CREATE TRIGGER orders_updated_at BEFORE UPDATE ON public.orders
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
+  INSERT INTO public.profiles (id, email, full_name, customer_type)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', '')
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'customer_type', 'retail')
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;

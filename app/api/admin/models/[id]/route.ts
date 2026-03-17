@@ -17,7 +17,7 @@ export async function PATCH(
   if (body.action === "update") {
     const admin = createAdminClient();
     const updatePayload: Record<string, unknown> = {};
-    const fields = ["sku", "name", "category", "style", "season", "year", "base_price", "discount_percent", "description", "image_urls", "fabric", "filling", "care_instructions", "is_active", "detail_images", "delivery_info", "return_info", "size_chart"];
+    const fields = ["sku", "name", "category", "style", "season", "year", "base_price", "discount_percent", "wholesale_price", "min_wholesale_qty", "description", "image_urls", "fabric", "filling", "care_instructions", "is_active", "detail_images", "delivery_info", "return_info", "size_chart"];
     for (const key of fields) {
       if (key in body) updatePayload[key] = body[key];
     }

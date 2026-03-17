@@ -89,6 +89,7 @@ interface ParsedInfo {
   name: string;
   price: number;
   wholesalePrice: number;
+  minWholesaleQty: number;
   colors: { name: string; hex: string }[];
   sizes: string[];
   description: string[];
@@ -122,6 +123,7 @@ function parseInfoFile(content: string): ParsedInfo {
     name: "",
     price: 0,
     wholesalePrice: 0,
+    minWholesaleQty: 1,
     colors: [],
     sizes: [],
     description: [],
@@ -354,6 +356,8 @@ async function syncCatalog() {
         description: descriptionText,
         base_price: info.price || 0,
 
+        wholesale_price: info.wholesalePrice || 0,
+        min_wholesale_qty: info.minWholesaleQty || 1,
         discount_percent: 0,
         image_urls: mainImageUrls,
         detail_images: [],

@@ -6,6 +6,7 @@ import { ArrowLeft, Minus, Plus, ShoppingBag, X, AlertCircle } from "lucide-reac
 import { useState, useEffect } from "react";
 
 import { useLanguage } from "@/components/providers/language-provider";
+import { useCustomerType } from "@/hooks/use-customer-type";
 import { TelegramIcon } from "@/components/icons/telegram";
 import { ViberIcon } from "@/components/icons/viber";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
@@ -22,10 +23,12 @@ interface ModelMeta {
 
 export default function CartPage() {
   const { t } = useLanguage();
+  const { customerType } = useCustomerType();
   const { items, totalItems, totalAmount, removeFromCart, updateCartItemSize, clearCart } = useCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [modelMeta, setModelMeta] = useState<Record<string, ModelMeta>>({});
+  const [wholesaleInfo, setWholesaleInfo] = useState<Record<string, { min_wholesale_qty: number; wholesale_price: number }>>({});
   // Track which items originally needed color/size selection
   const [itemsNeedingSelection, setItemsNeedingSelection] = useState<Set<string>>(new Set());
 
@@ -69,6 +72,26 @@ export default function CartPage() {
       setModelMeta(meta);
     })();
   }, [items]);
+
+  // Fetch min wholesale qty for wholesale users
+  useEffect(() => {
+    if (customerType !== "wholesale" || items.length === 0) return;
+    const supabase = createClient();
+    const ids = items.map((i) => i.modelId);
+    (async () => {
+      const { data } = await supabase
+        .from("catalog_models")
+        .select("id, min_wholesale_qty, wholesale_price")
+        .in("id", ids);
+      if (data) {
+        const info: Record<string, { min_wholesale_qty: number; wholesale_price: number }> = {};
+        data.forEach((m: { id: string; min_wholesale_qty: number; wholesale_price: number }) => {
+          info[m.id] = { min_wholesale_qty: m.min_wholesale_qty ?? 1, wholesale_price: m.wholesale_price ?? 0 };
+        });
+        setWholesaleInfo(info);
+      }
+    })();
+  }, [customerType, items.length]);
 
   if (items.length === 0 && !checkoutOpen && !orderSuccess) {
     return (
@@ -279,6 +302,16 @@ export default function CartPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     {itemQty} {t("cart.units")} = {formatCurrency(itemQty * finalPrice)}
                   </p>
+                  {customerType === "wholesale" && wholesaleInfo[item.modelId] && (() => {
+                    const totalQty = item.sizes.reduce((s, sz) => s + sz.quantity, 0);
+                    const minQty = wholesaleInfo[item.modelId].min_wholesale_qty;
+                    return totalQty < minQty ? (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                        <AlertCircle className="h-3 w-3" />
+                        Мін. замовлення: {minQty} шт.
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             );

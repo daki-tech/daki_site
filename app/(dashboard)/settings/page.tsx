@@ -18,12 +18,14 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [companyName, setCompanyName] = useState(profile?.company_name ?? "");
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     setLoading(true);
     const payload = {
       full_name: fullName,
+      company_name: companyName,
       interface_language: locale,
       theme: (theme ?? "light") as "light" | "dark",
     };
@@ -60,6 +62,12 @@ export default function SettingsPage() {
             <Label>{t("auth.fullName")}</Label>
             <Input value={fullName} onChange={(event) => setFullName(event.target.value)} />
           </div>
+          {profile?.customer_type === "wholesale" && (
+            <div className="space-y-2">
+              <Label>Название компании</Label>
+              <Input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="ООО Ваша компания" />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>{t("auth.email")}</Label>
             <Input value={profile?.email ?? ""} disabled />

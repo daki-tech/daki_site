@@ -159,6 +159,8 @@ interface ModelFormData {
   season: string;
   base_price: string;
   discount_percent: string;
+  wholesale_price: string;
+  min_wholesale_qty: string;
   description: string;
   care_instructions: string;
   delivery_info: string;
@@ -172,7 +174,7 @@ interface ModelFormData {
 
 const emptyForm: ModelFormData = {
   sku: "", name: "", category: "puhovik", season: "Зима",
-  base_price: "0", discount_percent: "0", description: "",
+  base_price: "0", discount_percent: "0", wholesale_price: "0", min_wholesale_qty: "1", description: "",
   care_instructions: "", delivery_info: "", return_info: "",
   care_media_url: "", delivery_media_url: "",
   color_variants: [{ name: "", hex: "#000000", image_urls: [] }],
@@ -185,6 +187,7 @@ function modelToForm(m: CatalogModel): ModelFormData {
   return {
     sku: m.sku, name: m.name, category: m.category, season: m.season,
     base_price: String(m.base_price), discount_percent: String(m.discount_percent),
+    wholesale_price: String(m.wholesale_price ?? 0), min_wholesale_qty: String(m.min_wholesale_qty ?? 1),
     description: m.description ?? "",
     care_instructions: m.care_instructions ?? "", delivery_info: m.delivery_info ?? "",
     return_info: m.return_info ?? "",
@@ -463,6 +466,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [orderSort, setOrderSort] = useState<"date_desc"|"date_asc"|"amount_desc"|"amount_asc">("date_desc");
   const [orderMonthFilter, setOrderMonthFilter] = useState("all");
   const [orderYearFilter, setOrderYearFilter] = useState(String(new Date().getFullYear()));
+  const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<WholesaleOrder | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
 
@@ -602,6 +606,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: editForm.sku, name: editForm.name, category: editForm.category,
       season: editForm.season,
       base_price: Number(editForm.base_price), discount_percent: Number(editForm.discount_percent),
+      wholesale_price: Number(editForm.wholesale_price), min_wholesale_qty: Number(editForm.min_wholesale_qty),
       description: editForm.description || null,
       image_urls: editForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: editForm.care_instructions || null,
@@ -627,6 +632,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: createForm.sku, name: createForm.name, category: createForm.category,
       season: createForm.season,
       base_price: Number(createForm.base_price), discount_percent: Number(createForm.discount_percent),
+      wholesale_price: Number(createForm.wholesale_price), min_wholesale_qty: Number(createForm.min_wholesale_qty),
       description: createForm.description || null,
       image_urls: createForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: createForm.care_instructions || null,
@@ -661,6 +667,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     let list = orders;
     if (orderYearFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getFullYear()) === orderYearFilter);
     if (orderMonthFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getMonth() + 1) === orderMonthFilter);
+    if (orderTypeFilter !== "all") list = list.filter((o) => o.order_type === orderTypeFilter);
     if (orderSearch.trim()) {
       const q = orderSearch.toLowerCase();
       list = list.filter((o) => (o.customer_name ?? "").toLowerCase().includes(q) || String(o.order_number ?? "").includes(q));
@@ -670,7 +677,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     else if (orderSort === "amount_desc") list = [...list].sort((a, b) => b.total_amount - a.total_amount);
     else if (orderSort === "amount_asc") list = [...list].sort((a, b) => a.total_amount - b.total_amount);
     return list;
-  }, [orders, orderSearch, orderSort, orderMonthFilter, orderYearFilter]);
+  }, [orders, orderSearch, orderSort, orderMonthFilter, orderYearFilter, orderTypeFilter]);
 
   const handleSetOrderStatus = async (order: WholesaleOrder, targetStatus: string) => {
     // Toggle: if already at this status, go back to previous
@@ -977,6 +984,14 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               </Button>
             )}
             <div className="flex-1" />
+            <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
+              <SelectTrigger className={`w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все типы</SelectItem>
+                <SelectItem value="retail">Розница</SelectItem>
+                <SelectItem value="wholesale">Опт</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={orderYearFilter} onValueChange={setOrderYearFilter}>
               <SelectTrigger className={`w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -1014,7 +1029,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
-                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead>
+                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead><TableHead>Тип</TableHead>
                       <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
                       <TableHead className="text-center text-blue-500 text-[10px] w-14">Подтв.</TableHead>
                       <TableHead className="text-center text-amber-500 text-[10px] w-14">Отпр.</TableHead>
@@ -1034,6 +1049,11 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                           <TableCell className="font-mono text-xs">{order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)}</TableCell>
                           <TableCell className="text-sm">{format(new Date(order.created_at), "dd.MM.yyyy HH:mm")}</TableCell>
                           <TableCell className="text-sm">{order.customer_name ?? "-"}</TableCell>
+                          <TableCell>
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${order.order_type === "wholesale" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"}`}>
+                              {order.order_type === "wholesale" ? "Опт" : "Розн."}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-sm">{order.customer_phone ?? "-"}</TableCell>
                           <TableCell className="font-medium">{formatCurrency(order.total_amount)}</TableCell>
                           <TableCell>
@@ -1444,8 +1464,8 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
         </div>
       </div>
 
-      {/* Row 3: Price + Discount */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Row 3: Price + Discount + Wholesale */}
+      <div className="grid grid-cols-4 gap-3">
         <div>
           <Label className={S.label}>Цена (UAH)</Label>
           <Input type="number" value={form.base_price} onChange={(e) => update("base_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("base_price", ""); }} className={S.input} />
@@ -1453,6 +1473,14 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
         <div>
           <Label className={S.label}>Скидка %</Label>
           <Input type="number" value={form.discount_percent} onChange={(e) => update("discount_percent", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("discount_percent", ""); }} className={S.input} />
+        </div>
+        <div>
+          <Label className={S.label}>Опт цена (UAH)</Label>
+          <Input type="number" value={form.wholesale_price} onChange={(e) => update("wholesale_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("wholesale_price", ""); }} className={S.input} />
+        </div>
+        <div>
+          <Label className={S.label}>Мін. замовлення (шт)</Label>
+          <Input type="number" value={form.min_wholesale_qty} onChange={(e) => update("min_wholesale_qty", e.target.value)} onFocus={(e) => { if (e.target.value === "1") update("min_wholesale_qty", ""); }} className={S.input} />
         </div>
       </div>
 

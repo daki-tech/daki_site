@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useCustomerType } from "@/hooks/use-customer-type";
 
 interface CheckoutFormProps {
   open: boolean;
@@ -50,6 +51,7 @@ const PAYMENT_METHODS = [
 
 export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
   const { items, totalItems, totalAmount, clearCart } = useCart();
+  const { customerType } = useCustomerType();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ orderNumber: number; orderId: string; contactMe: boolean } | null>(null);
   const [form, setForm] = useState<FormData>({
@@ -287,6 +289,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
           paymentMethod: form.payment_method === "cash_on_delivery" ? "cod" : form.payment_method === "card" ? "online" : form.payment_method,
           notes: form.notes,
           contactMe: form.contact_me,
+          orderType: customerType,
         }),
       });
 

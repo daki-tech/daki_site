@@ -42,6 +42,7 @@ export interface CatalogModel {
   description: string | null;
   base_price: number;
   wholesale_price: number;
+  min_wholesale_qty: number;
   discount_percent: number;
   image_urls: string[];
   is_active: boolean;
@@ -84,6 +85,7 @@ export interface WholesaleOrder {
   payment_method: string | null;
   created_at: string;
   notes: string | null;
+  order_type: "retail" | "wholesale";
   order_items?: OrderItem[];
 }
 
