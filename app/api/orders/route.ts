@@ -329,7 +329,7 @@ export async function POST(req: Request) {
       }[];
       customerName: string;
       customerPhone: string;
-      customerEmail?: string;
+      customerEmail: string;
       delivery?: { oblast: string; city: string; branch: string };
       paymentMethod?: string;
       notes?: string;
@@ -340,8 +340,8 @@ export async function POST(req: Request) {
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
-    if (!customerName || !customerPhone) {
-      return NextResponse.json({ error: "Name and phone required" }, { status: 400 });
+    if (!customerName || !customerPhone || !customerEmail) {
+      return NextResponse.json({ error: "Name, phone and email required" }, { status: 400 });
     }
 
     // Calculate total
@@ -463,6 +463,22 @@ export async function POST(req: Request) {
         appendToGoogleSheets(orderData),
         sendOrderConfirmationEmail(orderData),
       ]);
+
+      // Auto-subscribe customer email to newsletter
+      if (customerEmail) {
+        try {
+          const admin = createAdminClient();
+          await admin
+            .from("newsletter_subscribers")
+            .upsert(
+              { email: customerEmail.toLowerCase().trim() },
+              { onConflict: "email" }
+            );
+          console.log(`[Newsletter] Subscribed ${customerEmail}`);
+        } catch (err) {
+          console.error("[Newsletter] Auto-subscribe failed:", err);
+        }
+      }
     });
 
     return NextResponse.json({ orderId, orderNumber, totalAmount });
