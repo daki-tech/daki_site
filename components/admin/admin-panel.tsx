@@ -368,7 +368,7 @@ function SortablePhoto({ item, onRemove }: { item: PhotoItem; onRemove: (url: st
 
   return (
     <div ref={setNodeRef} style={style} className="relative w-[72px] h-[96px] rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-grab active:cursor-grabbing bg-neutral-50" {...attributes} {...listeners}>
-      <SmartImage src={item.url} alt="" fill className="object-contain pointer-events-none" />
+      <SmartImage src={item.url} alt="" fill className="object-cover pointer-events-none" />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
       <button
         type="button"
@@ -486,7 +486,7 @@ function SingleMediaUpload({ value, onChange, label, aspect }: { value: string; 
       />
       {value ? (
         <div className="mt-2 relative w-[120px] h-[160px] rounded-xl overflow-hidden border border-gray-200 shadow-sm group bg-neutral-50">
-          <SmartImage src={value} alt={label} fill className="object-contain" />
+          <SmartImage src={value} alt={label} fill className="object-cover" />
           <button
             type="button"
             onClick={() => onChange("")}

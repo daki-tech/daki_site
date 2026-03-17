@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { Loader2 } from "lucide-react";
@@ -44,7 +45,14 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
     }
   };
 
-  return (
+  // Lock body scroll while cropper is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const content = (
     <>
       {/* CSS for iOS-native crop styling */}
       <style>{`
@@ -134,7 +142,7 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid
-            objectFit="contain"
+            objectFit="vertical-cover"
             style={{
               containerStyle: { background: "#000" },
               cropAreaStyle: {
@@ -221,6 +229,9 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
       </div>
     </>
   );
+
+  // Render via Portal to escape any overflow:hidden/scroll containers
+  return createPortal(content, document.body);
 }
 
 /* ── Canvas crop ── */
