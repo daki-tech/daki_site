@@ -112,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-[100dvh] flex-col overflow-hidden">
           <DashboardHeader profile={profile} />
           <main className="flex-1 overflow-y-auto">
-            <div className="container py-6">{children}</div>
+            <div className="container py-3">{children}</div>
           </main>
         </div>
       </ProfileProvider>

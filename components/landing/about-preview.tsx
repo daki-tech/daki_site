@@ -49,7 +49,7 @@ export function AboutPreview({ title, subtitle, text, mediaUrl }: AboutPreviewPr
                 className="object-cover"
               />
             ) : (
-              <SmartImage src={mediaSrc} alt="Про компанію DaKi" fill className="object-cover" />
+              <SmartImage src={mediaSrc} alt="Про компанію DaKi" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
             )}
           </div>
 

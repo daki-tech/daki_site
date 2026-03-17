@@ -37,7 +37,7 @@ export function HeroParallax({ title, subtitle, bgUrl }: HeroParallaxProps) {
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <SmartImage src={bgSrc} alt="" fill className="object-cover" />
+        <SmartImage src={bgSrc} alt="" fill className="object-cover" sizes="100vw" priority />
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-black/10" />

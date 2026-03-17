@@ -840,10 +840,10 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   /* ================================================================ */
   const tabTriggerCls = "gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all";
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <ConfirmDialog />
-      <Tabs defaultValue="products" className="space-y-6" style={{ minHeight: "70vh" }}>
-        <div className="flex justify-center py-2 mb-2">
+      <Tabs defaultValue="products" className="space-y-4" style={{ minHeight: "70vh" }}>
+        <div className="flex justify-center">
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
             <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
             <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
