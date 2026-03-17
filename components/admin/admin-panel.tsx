@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useRealtimeTable } from "@/hooks/use-realtime";
+import { ImageCropper } from "@/components/admin/image-cropper";
 
 // Round checkbox component
 function RoundCheck({ checked, onChange, accent = "neutral" }: { checked: boolean; onChange: () => void; accent?: "neutral" | "green" | "blue" | "orange" }) {
@@ -215,12 +216,18 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
   const urlsRef = useRef(urls);
   urlsRef.current = urls;
 
+  // Cropper state — queue of files to crop one by one
+  const [cropQueue, setCropQueue] = useState<{ file: File; dataUrl: string }[]>([]);
+  const [currentCropIdx, setCurrentCropIdx] = useState(0);
+  const currentCrop = cropQueue[currentCropIdx] ?? null;
+
   const items: PhotoItem[] = useMemo(
     () => urls.filter(Boolean).map((url, i) => ({ id: `${i}-${url.slice(-20)}`, url })),
     [urls],
   );
 
-  const uploadSingleFile = useCallback(async (file: File): Promise<string> => {
+  const uploadBlob = useCallback(async (blob: Blob, fileName: string): Promise<string> => {
+    const file = new File([blob], fileName, { type: blob.type || "image/jpeg" });
     if (file.size > 4 * 1024 * 1024) {
       const meta = await fetch("/api/admin/upload-url", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -241,22 +248,55 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
     }
   }, []);
 
-  const handleUploadBatch = useCallback(async (files: File[]) => {
+  // When files are picked, read them as data URLs and open cropper queue
+  const handleFilesSelected = useCallback((files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+    Promise.all(
+      imageFiles.map(
+        (file) =>
+          new Promise<{ file: File; dataUrl: string }>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ file, dataUrl: reader.result as string });
+            reader.readAsDataURL(file);
+          }),
+      ),
+    ).then((queue) => {
+      setCropQueue(queue);
+      setCurrentCropIdx(0);
+    });
+  }, []);
+
+  const handleCropDone = useCallback(async (croppedBlob: Blob) => {
+    const fileName = currentCrop?.file.name ?? "photo.jpg";
     setUploading(true);
-    let done = 0;
-    for (const file of files) {
-      try {
-        const url = await uploadSingleFile(file);
-        done++;
-        // urlsRef.current is always fresh after parent re-render from previous onChange
-        onChange([...urlsRef.current.filter(Boolean), url]);
-        toast.success(`Фото загружено (${done}/${files.length})`);
-      } catch (e) {
-        toast.error(`${file.name}: ${e instanceof Error ? e.message : "Ошибка"}`);
-      }
+    try {
+      const url = await uploadBlob(croppedBlob, fileName);
+      onChange([...urlsRef.current.filter(Boolean), url]);
+      toast.success(`Фото загружено (${currentCropIdx + 1}/${cropQueue.length})`);
+    } catch (e) {
+      toast.error(`${fileName}: ${e instanceof Error ? e.message : "Ошибка"}`);
     }
     setUploading(false);
-  }, [onChange, uploadSingleFile]);
+
+    // Move to next in queue or close
+    if (currentCropIdx + 1 < cropQueue.length) {
+      setCurrentCropIdx((i) => i + 1);
+    } else {
+      setCropQueue([]);
+      setCurrentCropIdx(0);
+    }
+  }, [currentCrop, currentCropIdx, cropQueue.length, uploadBlob, onChange]);
+
+  const handleCropCancel = useCallback(() => {
+    // Skip this image, move to next or close
+    if (currentCropIdx + 1 < cropQueue.length) {
+      setCurrentCropIdx((i) => i + 1);
+    } else {
+      setCropQueue([]);
+      setCurrentCropIdx(0);
+    }
+  }, [currentCropIdx, cropQueue.length]);
 
   const handleRemove = (url: string) => {
     onChange(urls.filter((u) => u !== url));
@@ -294,7 +334,7 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
           multiple
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
-            if (files.length > 0) handleUploadBatch(files);
+            if (files.length > 0) handleFilesSelected(files);
             e.target.value = "";
           }}
         />
@@ -308,6 +348,16 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
           <span className="text-[9px] font-medium">Добавить</span>
         </button>
       </div>
+
+      {/* Instagram-style cropper modal */}
+      {currentCrop && (
+        <ImageCropper
+          imageSrc={currentCrop.dataUrl}
+          aspect={3 / 4}
+          onCropDone={handleCropDone}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 }
@@ -356,21 +406,23 @@ function SortableColorVariant({ id, children }: { id: string; children: React.Re
 /*  SingleMediaUpload — one image/video upload with preview            */
 /* ------------------------------------------------------------------ */
 
-function SingleMediaUpload({ value, onChange, label }: { value: string; onChange: (url: string) => void; label: string }) {
+function SingleMediaUpload({ value, onChange, label, aspect }: { value: string; onChange: (url: string) => void; label: string; aspect?: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const cropFileRef = useRef<File | null>(null);
 
-  const handleUpload = useCallback(async (file: File) => {
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB Supabase limit
+  const uploadFile = useCallback(async (fileOrBlob: File | Blob, fileName: string) => {
+    const file = fileOrBlob instanceof File ? fileOrBlob : new File([fileOrBlob], fileName, { type: fileOrBlob.type || "image/jpeg" });
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      toast.error(`Файл слишком большой (${sizeMB} MB). Максимум 50 MB. Сожмите видео перед загрузкой.`);
+      toast.error(`Файл слишком большой (${sizeMB} MB). Максимум 50 MB.`);
       return;
     }
     setUploading(true);
     try {
       if (file.size <= 4 * 1024 * 1024) {
-        // Small files: direct server upload (works for files up to ~4.5MB on Vercel)
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
@@ -381,7 +433,6 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           throw new Error("Upload failed");
         }
       } else {
-        // Large files: signed URL direct upload to Supabase Storage
         const meta = await fetch("/api/admin/upload-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -394,9 +445,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           headers: { "Content-Type": file.type },
           body: file,
         });
-        if (!up.ok) {
-          throw new Error("Ошибка загрузки на сервер. Попробуйте файл поменьше.");
-        }
+        if (!up.ok) throw new Error("Ошибка загрузки на сервер.");
         onChange(metaJson.publicUrl);
       }
       toast.success("Файл загружен");
@@ -407,6 +456,24 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
     }
   }, [onChange]);
 
+  const handleFileSelected = useCallback((file: File) => {
+    if (file.type.startsWith("image/")) {
+      // Open cropper for images
+      cropFileRef.current = file;
+      const reader = new FileReader();
+      reader.onload = () => setCropSrc(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      // Videos — upload directly
+      uploadFile(file, file.name);
+    }
+  }, [uploadFile]);
+
+  const handleCropDone = useCallback(async (blob: Blob) => {
+    setCropSrc(null);
+    await uploadFile(blob, cropFileRef.current?.name ?? "photo.jpg");
+  }, [uploadFile]);
+
   return (
     <div>
       <p className={S.label}>{label}</p>
@@ -415,7 +482,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); e.target.value = ""; }}
       />
       {value ? (
         <div className="mt-2 relative w-[120px] h-[160px] rounded-xl overflow-hidden border border-gray-200 shadow-sm group bg-neutral-50">
@@ -438,6 +505,16 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
           <span className="text-[9px] font-medium">Загрузить</span>
         </button>
+      )}
+
+      {/* Cropper modal for images */}
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={aspect ?? 4 / 3}
+          onCropDone={handleCropDone}
+          onCancel={() => setCropSrc(null)}
+        />
       )}
     </div>
   );
@@ -850,7 +927,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     <div className="space-y-2">
       <ConfirmDialog />
       <Tabs defaultValue="products" className="space-y-4" style={{ minHeight: "70vh" }}>
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-4">
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
             <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
             <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
