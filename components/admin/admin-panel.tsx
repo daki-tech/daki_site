@@ -843,7 +843,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     <div className="space-y-4">
       <ConfirmDialog />
       <Tabs defaultValue="products" className="space-y-6" style={{ minHeight: "70vh" }}>
-        <div className="flex justify-center">
+        <div className="sticky top-16 z-30 flex justify-center bg-background py-2">
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
             <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
             <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
