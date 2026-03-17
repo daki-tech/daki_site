@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { Loader2 } from "lucide-react";
+import { X, RotateCw, Maximize2, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -18,7 +18,6 @@ const ASPECTS = [
   { label: "1:1", value: 1 },
   { label: "4:3", value: 4 / 3 },
   { label: "16:9", value: 16 / 9 },
-  { label: "Авто", value: 0 },
 ];
 
 export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDone, onCancel }: ImageCropperProps) {
@@ -27,9 +26,26 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [aspect, setAspect] = useState(defaultAspect);
+  const [freeAspect, setFreeAspect] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const onCropComplete = useCallback((_: Area, px: Area) => setCroppedAreaPixels(px), []);
+
+  // Lock body scroll
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // Load image to get natural dimensions
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = imageSrc;
+  }, [imageSrc]);
 
   const handleSave = async () => {
     if (!croppedAreaPixels) return;
@@ -45,192 +61,175 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
     }
   };
 
-  // Lock body scroll while cropper is open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const selectAspect = (val: number) => {
+    setAspect(val);
+    setFreeAspect(false);
+  };
+
+  const toggleFree = () => {
+    setFreeAspect(!freeAspect);
+  };
+
+  // Compute crop area dimensions that adapt to image
+  const maxCropW = Math.min(680, typeof window !== "undefined" ? window.innerWidth - 64 : 680);
+  const maxCropH = typeof window !== "undefined" ? window.innerHeight - 260 : 500;
+
+  let cropBoxW = maxCropW;
+  let cropBoxH = maxCropH;
+
+  if (imgSize.w && imgSize.h) {
+    const imgRatio = imgSize.w / imgSize.h;
+    if (imgRatio > maxCropW / maxCropH) {
+      cropBoxW = maxCropW;
+      cropBoxH = Math.round(maxCropW / imgRatio);
+    } else {
+      cropBoxH = maxCropH;
+      cropBoxW = Math.round(maxCropH * imgRatio);
+    }
+    // Ensure minimums
+    cropBoxW = Math.max(cropBoxW, 300);
+    cropBoxH = Math.max(cropBoxH, 250);
+  }
 
   const content = (
-    <>
-      {/* CSS for iOS-native crop styling */}
-      <style>{`
-        .ios-crop .reactEasyCrop_Container { background: #000 !important; }
-        .ios-crop .reactEasyCrop_CropArea {
-          border: none !important;
-          box-shadow: 0 0 0 9999px rgba(0,0,0,0.6) !important;
-          color: transparent !important;
-        }
-        .ios-crop .reactEasyCrop_CropAreaGrid::before,
-        .ios-crop .reactEasyCrop_CropAreaGrid::after {
-          border-color: rgba(255,255,255,0.25) !important;
-        }
-        /* iOS-style corner handles */
-        .crop-corners { pointer-events: none; position: absolute; inset: 0; }
-        .crop-corners::before, .crop-corners::after,
-        .crop-corners span::before, .crop-corners span::after {
-          content: '';
-          position: absolute;
-          background: #fff;
-        }
-        /* Top-left */
-        .crop-corners::before { top: -1px; left: -1px; width: 20px; height: 3px; }
-        .crop-corners::after { top: -1px; left: -1px; width: 3px; height: 20px; }
-        /* Top-right */
-        .crop-corners span:nth-child(1)::before { top: -1px; right: -1px; width: 20px; height: 3px; }
-        .crop-corners span:nth-child(1)::after { top: -1px; right: -1px; width: 3px; height: 20px; }
-        /* Bottom-left */
-        .crop-corners span:nth-child(2)::before { bottom: -1px; left: -1px; width: 20px; height: 3px; }
-        .crop-corners span:nth-child(2)::after { bottom: -1px; left: -1px; width: 3px; height: 20px; }
-        /* Bottom-right */
-        .crop-corners span:nth-child(3)::before { bottom: -1px; right: -1px; width: 20px; height: 3px; }
-        .crop-corners span:nth-child(3)::after { bottom: -1px; right: -1px; width: 3px; height: 20px; }
-
-        /* iOS native slider */
-        .ios-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: pointer; }
-        .ios-slider::-webkit-slider-runnable-track { height: 2px; background: rgba(255,255,255,0.2); border-radius: 1px; }
-        .ios-slider::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          width: 28px; height: 28px; border-radius: 50%;
-          background: #fff;
-          box-shadow: 0 0.5px 4px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(0,0,0,0.08);
-          margin-top: -13px;
-        }
-        .ios-slider::-moz-range-track { height: 2px; background: rgba(255,255,255,0.2); border: none; border-radius: 1px; }
-        .ios-slider::-moz-range-thumb {
-          width: 28px; height: 28px; border-radius: 50%; border: none;
-          background: #fff;
-          box-shadow: 0 0.5px 4px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(0,0,0,0.08);
-        }
-        .ios-slider::-moz-range-progress { height: 2px; background: #fff; border-radius: 1px; }
-      `}</style>
-
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+    >
+      {/* White modal */}
       <div
-        className="fixed inset-0 z-[100] flex flex-col"
-        style={{ background: "#000", fontFamily: "-apple-system, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif" }}
+        ref={containerRef}
+        className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        style={{ width: cropBoxW + 32, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* ─── Top bar ─── */}
-        <div className="flex items-center justify-between px-4 h-[52px] flex-shrink-0" style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 h-14 border-b border-neutral-100 flex-shrink-0">
           <button
             onClick={onCancel}
-            className="text-[17px] active:opacity-40 transition-opacity"
-            style={{ color: "#0a84ff", fontWeight: 400 }}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 transition-all"
           >
-            Отмена
+            <X className="h-5 w-5" strokeWidth={1.5} />
           </button>
+          <span className="text-[15px] font-semibold text-neutral-900">Редактирование фото</span>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="text-[17px] active:opacity-40 transition-opacity disabled:opacity-30 flex items-center gap-1.5"
-            style={{ color: "#0a84ff", fontWeight: 600 }}
+            className="h-8 px-5 rounded-full bg-neutral-900 text-white text-[13px] font-semibold hover:bg-neutral-800 active:bg-neutral-700 transition-all disabled:opacity-40 flex items-center gap-1.5"
           >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? "..." : "Готово"}
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {saving ? "Сохраняю..." : "Сохранить"}
           </button>
         </div>
 
-        {/* ─── Crop area ─── */}
-        <div className="relative flex-1 min-h-0 ios-crop">
+        {/* Crop area */}
+        <div
+          className="relative bg-neutral-100 flex-shrink-0"
+          style={{ width: "100%", height: cropBoxH }}
+        >
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
             rotation={rotation}
-            aspect={aspect || undefined}
+            aspect={freeAspect ? undefined : aspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid
-            objectFit="vertical-cover"
             style={{
-              containerStyle: { background: "#000" },
+              containerStyle: { background: "#f5f5f5", borderRadius: 0 },
               cropAreaStyle: {
-                border: "none",
-                boxShadow: "0 0 0 9999px rgba(0,0,0,0.6)",
+                border: "2px solid rgba(0,0,0,0.15)",
+                borderRadius: "8px",
+                boxShadow: "0 0 0 9999px rgba(245,245,245,0.75)",
               },
             }}
           />
         </div>
 
-        {/* ─── Bottom toolbar ─── */}
-        <div
-          className="flex-shrink-0"
-          style={{
-            background: "rgba(28,28,30,0.92)",
-            backdropFilter: "saturate(180%) blur(20px)",
-            WebkitBackdropFilter: "saturate(180%) blur(20px)",
-            paddingBottom: "env(safe-area-inset-bottom, 8px)",
-          }}
-        >
+        {/* Controls */}
+        <div className="px-5 py-4 flex flex-col gap-3.5 flex-shrink-0 border-t border-neutral-100">
+
           {/* Zoom */}
-          <div className="flex items-center gap-4 px-5 py-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(152,152,159,1)" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
-              <circle cx="10.5" cy="10.5" r="7" /><path d="M21 21l-4.5-4.5" /><path d="M7.5 10.5h6" />
-            </svg>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.005}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="ios-slider flex-1"
-            />
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(152,152,159,1)" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
-              <circle cx="10.5" cy="10.5" r="7" /><path d="M21 21l-4.5-4.5" /><path d="M7.5 10.5h6" /><path d="M10.5 7.5v6" />
-            </svg>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setZoom(Math.max(1, zoom - 0.15))}
+              className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-all"
+            >
+              <ZoomOut className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+            <div className="flex-1 relative h-8 flex items-center">
+              <div className="absolute inset-x-0 h-[3px] bg-neutral-200 rounded-full" />
+              <div
+                className="absolute left-0 h-[3px] bg-neutral-900 rounded-full transition-all duration-100"
+                style={{ width: `${((zoom - 1) / 2) * 100}%` }}
+              />
+              <div
+                className="absolute w-5 h-5 rounded-full bg-white border-2 border-neutral-900 -translate-x-1/2 transition-all duration-100 shadow-sm pointer-events-none"
+                style={{ left: `${((zoom - 1) / 2) * 100}%` }}
+              />
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.01}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            <button
+              onClick={() => setZoom(Math.min(3, zoom + 0.15))}
+              className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-all"
+            >
+              <ZoomIn className="h-4 w-4" strokeWidth={1.5} />
+            </button>
           </div>
 
-          {/* Separator */}
-          <div className="mx-4" style={{ height: "0.33px", background: "rgba(84,84,88,0.65)" }} />
-
-          {/* Aspect + Rotate */}
-          <div className="flex items-center justify-between px-4 py-2.5">
-            {/* iOS Segmented Control */}
-            <div className="flex p-0.5 rounded-[8px]" style={{ background: "rgba(118,118,128,0.24)" }}>
+          {/* Aspect ratio + rotate */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center bg-neutral-100 rounded-xl p-0.5 gap-0.5">
               {ASPECTS.map((a) => {
-                const on = aspect === a.value;
+                const on = !freeAspect && aspect === a.value;
                 return (
                   <button
                     key={a.label}
-                    onClick={() => setAspect(a.value)}
-                    className="relative rounded-[7px] transition-all duration-200"
-                    style={{
-                      padding: "5px 14px",
-                      fontSize: "13px",
-                      fontWeight: on ? 600 : 400,
-                      color: on ? "#fff" : "rgba(152,152,159,1)",
-                      background: on ? "rgba(99,99,102,1)" : "transparent",
-                      boxShadow: on ? "0 1px 4px rgba(0,0,0,0.3), 0 0 0.5px rgba(0,0,0,0.2)" : "none",
-                    }}
+                    onClick={() => selectAspect(a.value)}
+                    className={`px-3 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all ${
+                      on
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-400 hover:text-neutral-700"
+                    }`}
                   >
                     {a.label}
                   </button>
                 );
               })}
+              <button
+                onClick={toggleFree}
+                className={`px-2.5 py-1.5 rounded-[10px] transition-all ${
+                  freeAspect
+                    ? "bg-white text-neutral-900 shadow-sm"
+                    : "text-neutral-400 hover:text-neutral-700"
+                }`}
+              >
+                <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
             </div>
 
-            {/* Rotate */}
             <button
               onClick={() => setRotation((r) => (r + 90) % 360)}
-              className="flex items-center justify-center rounded-full active:opacity-50 transition-opacity"
-              style={{ width: 36, height: 36, background: "rgba(118,118,128,0.24)" }}
+              className="w-9 h-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-all"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(152,152,159,1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2v6h-6" /><path d="M21 8A9 9 0 1 0 6.343 6.343L3 3" style={{ display: "none" }} /><path d="M3 12a9 9 0 0 0 15.364 6.364L21 8" style={{ display: "none" }} />
-                <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 0 0 17.13-4.36" style={{ display: "none" }} />
-                <path d="M23 4l-6 6" style={{ display: "none" }} />
-                <path d="M21 12a9 9 0 1 1-2.636-6.364L21 8" />
-              </svg>
+              <RotateCw className="h-4 w-4" strokeWidth={1.5} />
             </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 
-  // Render via Portal to escape any overflow:hidden/scroll containers
   return createPortal(content, document.body);
 }
 
