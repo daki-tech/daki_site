@@ -25,11 +25,7 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
   };
 
   const links = isAdmin
-    ? [
-        { href: "/admin", label: "Панель" },
-        { href: "/", label: "На сайт" },
-        { href: "/catalog", label: "Каталог" },
-      ]
+    ? []
     : [
         { href: "/profile", label: "Кабінет" },
         { href: "/orders", label: "Замовлення" },
@@ -42,22 +38,24 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
         <Link href="/" className="font-logo text-[28px] tracking-[0.2em] uppercase">
           DAKI
         </Link>
-        <nav className="hidden flex-1 items-center justify-center md:flex">
-          <div className="inline-flex h-9 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
-            {links.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-xl px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all",
-                  pathname === item.href && "bg-white text-foreground shadow-sm",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
+        {links.length > 0 && (
+          <nav className="hidden flex-1 items-center justify-center md:flex">
+            <div className="inline-flex h-9 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
+              {links.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-xl px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all",
+                    pathname === item.href && "bg-white text-foreground shadow-sm",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground hidden md:inline">
             {profile?.full_name ?? profile?.email ?? ""}
