@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { X, ZoomIn, ZoomOut, RotateCw, Check, Crop, Maximize2, Loader2 } from "lucide-react";
+import { RotateCw, Maximize2, Loader2 } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -13,11 +13,11 @@ interface ImageCropperProps {
 }
 
 const ASPECT_OPTIONS = [
-  { label: "3:4", value: 3 / 4, icon: null },
-  { label: "1:1", value: 1, icon: null },
-  { label: "4:3", value: 4 / 3, icon: null },
-  { label: "16:9", value: 16 / 9, icon: null },
-  { label: "Свободно", value: 0, icon: Maximize2 },
+  { label: "3:4", value: 3 / 4 },
+  { label: "1:1", value: 1 },
+  { label: "4:3", value: 4 / 3 },
+  { label: "16:9", value: 16 / 9 },
+  { label: "free", value: 0 },
 ];
 
 export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDone, onCancel }: ImageCropperProps) {
@@ -47,147 +47,138 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
     }
   };
 
-  const zoomPercent = Math.round((zoom - 1) * 50);
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      {/* Modal card */}
-      <div className="relative flex flex-col w-[min(94vw,640px)] max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#1c1c1e]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif" }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-100">
-          <button
-            onClick={onCancel}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-all"
-          >
-            <X className="h-5 w-5" strokeWidth={1.5} />
-          </button>
+      {/* ── iOS-style navigation bar ── */}
+      <div className="relative flex items-center justify-between h-11 px-4 bg-[#1c1c1e]">
+        <button
+          onClick={onCancel}
+          className="text-[#0a84ff] text-[17px] font-normal active:opacity-50 transition-opacity"
+        >
+          Отмена
+        </button>
 
-          <div className="flex items-center gap-2">
-            <Crop className="h-4 w-4 text-neutral-400" strokeWidth={1.5} />
-            <span className="text-sm font-medium tracking-wide text-neutral-800">Кадрирование</span>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="text-[#0a84ff] text-[17px] font-semibold active:opacity-50 transition-opacity disabled:opacity-30 flex items-center gap-1.5"
+        >
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {saving ? "Сохранение..." : "Готово"}
+        </button>
+      </div>
+
+      {/* ── Cropper canvas ── */}
+      <div className="relative flex-1 min-h-0">
+        <Cropper
+          image={imageSrc}
+          crop={crop}
+          zoom={zoom}
+          rotation={rotation}
+          aspect={aspect || undefined}
+          onCropChange={setCrop}
+          onZoomChange={setZoom}
+          onCropComplete={onCropComplete}
+          showGrid
+          classes={{
+            containerClassName: "!bg-[#000000]",
+          }}
+          style={{
+            cropAreaStyle: {
+              border: "none",
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
+            },
+            mediaStyle: {
+              transition: "transform 0.08s ease-out",
+            },
+          }}
+        />
+      </div>
+
+      {/* ── Bottom controls panel ── */}
+      <div className="bg-[#1c1c1e] pb-[env(safe-area-inset-bottom,0px)]">
+
+        {/* Zoom slider — iOS style thin track */}
+        <div className="flex items-center gap-4 px-6 py-3">
+          <svg className="w-4 h-4 text-[#98989f] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /><path d="M8 11h6" />
+          </svg>
+
+          <div className="flex-1 relative h-8 flex items-center">
+            {/* Track */}
+            <div className="absolute inset-x-0 h-[2px] bg-[#38383a] rounded-full" />
+            {/* Active track */}
+            <div
+              className="absolute left-0 h-[2px] bg-white rounded-full transition-all duration-75"
+              style={{ width: `${((zoom - 1) / 2) * 100}%` }}
+            />
+            {/* Thumb */}
+            <div
+              className="absolute w-[28px] h-[28px] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.4)] -translate-x-1/2 transition-all duration-75 pointer-events-none"
+              style={{ left: `${((zoom - 1) / 2) * 100}%` }}
+            />
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.005}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 bg-neutral-900 text-white pl-4 pr-5 py-2 rounded-xl text-xs font-medium uppercase tracking-wider hover:bg-neutral-800 transition-all disabled:opacity-40"
-          >
-            {saving ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Check className="h-3.5 w-3.5" strokeWidth={2} />
-            )}
-            {saving ? "Обработка" : "Готово"}
-          </button>
+          <svg className="w-4 h-4 text-[#98989f] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /><path d="M8 11h6" /><path d="M11 8v6" />
+          </svg>
         </div>
 
-        {/* Cropper area */}
-        <div className="relative w-full" style={{ height: "min(60vh, 460px)" }}>
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={aspect || undefined}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-            showGrid
-            classes={{
-              containerClassName: "!bg-neutral-950",
-              cropAreaClassName: "!border-2 !border-white/40 !rounded-lg",
-            }}
-            style={{
-              mediaStyle: { transition: "transform 0.1s ease-out" },
-            }}
-          />
+        {/* Divider */}
+        <div className="h-px bg-[#38383a] mx-4" />
 
-          {/* Zoom indicator pill */}
-          {zoom > 1.02 && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-3 py-1 rounded-full pointer-events-none">
-              {zoomPercent}%
-            </div>
-          )}
-        </div>
+        {/* Aspect ratio segmented control + rotate */}
+        <div className="flex items-center justify-between px-4 py-3">
 
-        {/* Controls panel */}
-        <div className="px-5 py-4 bg-neutral-50/80 border-t border-neutral-100 space-y-4">
-
-          {/* Zoom slider */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setZoom(Math.max(1, zoom - 0.1))}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-all shadow-sm"
-            >
-              <ZoomOut className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </button>
-
-            <div className="flex-1 relative">
-              <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-neutral-900 rounded-full transition-all duration-100"
-                  style={{ width: `${((zoom - 1) / 2) * 100}%` }}
-                />
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.01}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </div>
-
-            <button
-              onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-all shadow-sm"
-            >
-              <ZoomIn className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </button>
+          {/* iOS segmented control */}
+          <div className="flex bg-[#38383a] rounded-[9px] p-[2px]">
+            {ASPECT_OPTIONS.map((opt) => {
+              const isActive = aspect === opt.value;
+              return (
+                <button
+                  key={opt.label}
+                  onClick={() => setAspect(opt.value)}
+                  className={`relative px-3.5 py-[6px] rounded-[7px] text-[13px] font-medium transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#636366] text-white shadow-[0_1px_3px_rgba(0,0,0,0.3)]"
+                      : "text-[#98989f] active:text-white"
+                  }`}
+                >
+                  {opt.value === 0 ? (
+                    <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+                  ) : (
+                    opt.label
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Aspect ratio + rotation */}
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1.5 bg-white rounded-xl border border-neutral-200 p-1 shadow-sm">
-              {ASPECT_OPTIONS.map((opt) => {
-                const isActive = aspect === opt.value;
-                const Icon = opt.icon;
-                return (
-                  <button
-                    key={opt.label}
-                    onClick={() => setAspect(opt.value)}
-                    className={`relative px-3 py-1.5 rounded-lg text-[11px] font-medium tracking-wide transition-all ${
-                      isActive
-                        ? "bg-neutral-900 text-white shadow-sm"
-                        : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                    }`}
-                  >
-                    {Icon ? <Icon className="h-3.5 w-3.5" strokeWidth={1.5} /> : opt.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => setRotation((r) => (r + 90) % 360)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-all shadow-sm text-[11px] font-medium"
-            >
-              <RotateCw className="h-3.5 w-3.5" strokeWidth={1.5} />
-              <span className="tracking-wide">90°</span>
-            </button>
-          </div>
+          {/* Rotate */}
+          <button
+            onClick={() => setRotation((r) => (r + 90) % 360)}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#38383a] text-[#98989f] active:bg-[#48484a] active:text-white transition-all"
+          >
+            <RotateCw className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-/**
- * Creates a cropped image blob from the source image using canvas.
- */
+/* ── Canvas crop helper ── */
+
 async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<Blob> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
