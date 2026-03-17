@@ -1322,6 +1322,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Нова весняна колекція" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Spring — 2026" className={S.input} /></div>
               <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" />
+              <p className="text-[10px] text-muted-foreground">Рекомендований розмір: 1920×1080 px, формат JPG/PNG/WebP</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl">
@@ -1331,6 +1332,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша історія" className={S.input} /></div>
               <div><Label className={S.label}>Текст</Label><Textarea rows={5} value={aboutText} onChange={(e) => setAboutText(e.target.value)} placeholder="Текст о компании..." className={S.textarea} /></div>
               <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" />
+              <p className="text-[10px] text-muted-foreground">Рекомендований розмір фото: 800×1000 px, відео: MP4 до 50MB</p>
             </CardContent>
           </Card>
           <Button className="rounded-xl" onClick={saveHomepage} disabled={homepageLoading}>
