@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import { PhoneInput } from "@/components/ui/phone-input";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeTable } from "@/hooks/use-realtime";
 import type { Profile, WholesaleOrder } from "@/lib/types";
 
 type Tab = "orders" | "profile";
@@ -102,6 +103,14 @@ export default function ProfilePage() {
 
     load();
   }, [router]);
+
+  // Realtime: auto-refresh orders when status changes in DB
+  useRealtimeTable("orders", async () => {
+    try {
+      const res = await fetch("/api/orders");
+      if (res.ok) setOrders(await res.json());
+    } catch {}
+  }, { enabled: !!profile });
 
   const handleSave = async () => {
     setSaving(true);

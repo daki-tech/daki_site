@@ -51,7 +51,7 @@ export const CONTACTS = {
   phones: [] as string[],
   email: "info@daki.ua",
   telegram: "https://t.me/DaKiWholesale",
-  telegram_support_id: "8476169500",
+  telegram_support: "daki_support",
   viber: "",
   whatsapp: "",
   instagram: "https://instagram.com/daki.ua",

@@ -353,7 +353,7 @@ async function syncCatalog() {
         year: new Date().getFullYear(),
         description: descriptionText,
         base_price: info.price || 0,
-        wholesale_price: info.wholesalePrice || 0,
+
         discount_percent: 0,
         image_urls: mainImageUrls,
         detail_images: [],

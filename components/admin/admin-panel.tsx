@@ -9,6 +9,7 @@ import {
   Ban,
   Eye,
   EyeOff,
+  GripVertical,
   Home,
   ImagePlus,
   Loader2,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useRealtimeTable } from "@/hooks/use-realtime";
 
 // Round checkbox component
 function RoundCheck({ checked, onChange, accent = "neutral" }: { checked: boolean; onChange: () => void; accent?: "neutral" | "green" | "blue" | "orange" }) {
@@ -284,7 +286,7 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           className="hidden"
           multiple
           onChange={(e) => {
@@ -323,6 +325,26 @@ function SortablePhoto({ item, onRemove }: { item: PhotoItem; onRemove: (url: st
       >
         <X className="h-3 w-3" />
       </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  SortableColorVariant — draggable color variant block               */
+/* ------------------------------------------------------------------ */
+
+function SortableColorVariant({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 0 };
+
+  return (
+    <div ref={setNodeRef} style={style} className="rounded-xl border border-gray-200 p-3 space-y-3 relative">
+      <div className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors" {...attributes} {...listeners}>
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="pl-5">
+        {children}
+      </div>
     </div>
   );
 }
@@ -388,7 +410,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }}
       />
@@ -479,6 +501,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [ctTiktok, setCtTiktok] = useState("");
   const [contactsLoading, setContactsLoading] = useState(false);
 
+  // Sensors for drag & drop (color variants)
+  const colorDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   // Load homepage settings
   useEffect(() => {
     (async () => {
@@ -513,6 +538,10 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     const res = await fetch("/api/admin/orders", { cache: "no-store" });
     if (res.ok) setOrders(await res.json());
   };
+
+  // Realtime subscriptions — auto-refresh on DB changes
+  useRealtimeTable("orders", refreshOrders);
+  useRealtimeTable("catalog_models", refreshModels);
 
   // Product helpers
   const getStock = (m: CatalogModel) =>
@@ -908,7 +937,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     <DialogTitle className="text-lg font-semibold tracking-tight">{editingModel.name}</DialogTitle>
                     <DialogDescription className="text-xs text-gray-400">Редактирование товара</DialogDescription>
                   </DialogHeader>
-                  {renderModelForm(editForm, setEditForm)}
+                  {renderModelForm(editForm, setEditForm, colorDndSensors)}
                   <DialogFooter className="pt-2">
                     <Button variant="outline" className="rounded-xl" onClick={() => setEditingModel(null)}>Отмена</Button>
                     <Button className="rounded-xl" onClick={handleUpdateModel}>Сохранить</Button>
@@ -927,7 +956,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     <DialogTitle className="text-lg font-semibold tracking-tight">Новый товар</DialogTitle>
                     <DialogDescription className="text-xs text-gray-400">Заполните данные</DialogDescription>
                   </DialogHeader>
-                  {renderModelForm(createForm, setCreateForm)}
+                  {renderModelForm(createForm, setCreateForm, colorDndSensors)}
                   <DialogFooter className="pt-2">
                     <Button variant="outline" className="rounded-xl" onClick={() => setIsCreating(false)}>Отмена</Button>
                     <Button className="rounded-xl" onClick={handleCreateModel}>Создать</Button>
@@ -1378,7 +1407,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
 /*  Model edit form — iOS inspired                                     */
 /* ================================================================== */
 
-function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetStateAction<ModelFormData>>) {
+function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetStateAction<ModelFormData>>, colorDndSensors?: ReturnType<typeof useSensors>) {
   const update = <K extends keyof ModelFormData>(key: K, value: ModelFormData[K]) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
@@ -1430,24 +1459,41 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
       {/* Color variants (photos + color in one block) */}
       <div>
         <p className={`${S.label} mb-3`}>Варіанти кольорів</p>
-        <div className="space-y-4">
-          {form.color_variants.map((variant, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Назва кольору" className={`flex-1 ${S.input}`} />
-                <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl cursor-pointer appearance-none border-0 p-0" />
-                <Input value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
-                {form.color_variants.length > 1 && (
-                  <button type="button" onClick={() => update("color_variants", form.color_variants.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
-                )}
-              </div>
-              <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
+        <DndContext
+          sensors={colorDndSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(event: DragEndEvent) => {
+            const { active, over } = event;
+            if (over && active.id !== over.id) {
+              const oldIndex = form.color_variants.findIndex((_, i) => `cv-${i}` === active.id);
+              const newIndex = form.color_variants.findIndex((_, i) => `cv-${i}` === over.id);
+              if (oldIndex !== -1 && newIndex !== -1) {
+                update("color_variants", arrayMove(form.color_variants, oldIndex, newIndex));
+              }
+            }
+          }}
+        >
+          <SortableContext items={form.color_variants.map((_, i) => `cv-${i}`)} strategy={rectSortingStrategy}>
+            <div className="space-y-4">
+              {form.color_variants.map((variant, i) => (
+                <SortableColorVariant key={`cv-${i}`} id={`cv-${i}`}>
+                  <div className="flex items-center gap-2">
+                    <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Назва кольору" className={`flex-1 ${S.input}`} />
+                    <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl cursor-pointer appearance-none border-0 p-0" />
+                    <Input value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
+                    {form.color_variants.length > 1 && (
+                      <button type="button" onClick={() => update("color_variants", form.color_variants.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
+                    )}
+                  </div>
+                  <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
+                </SortableColorVariant>
+              ))}
             </div>
-          ))}
-          <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className={`w-full py-2.5 ${S.addBtn} flex items-center justify-center gap-1.5`}>
-            <Plus className="h-3.5 w-3.5" /> Додати варіант кольору
-          </button>
-        </div>
+          </SortableContext>
+        </DndContext>
+        <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className={`w-full py-2.5 mt-4 ${S.addBtn} flex items-center justify-center gap-1.5`}>
+          <Plus className="h-3.5 w-3.5" /> Додати варіант кольору
+        </button>
       </div>
 
       <div className={S.divider} />

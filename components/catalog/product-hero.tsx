@@ -71,26 +71,20 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
     const message = `Мене цікавить модель: ${model.name} (арт. ${model.sku})\n${productUrl}`;
     const encoded = encodeURIComponent(message);
 
-    // Use contacts from admin settings, fallback to CONTACTS constant
-    const tg = contacts?.contact_telegram || CONTACTS.telegram;
-    const supportId = (CONTACTS as unknown as Record<string, string>).telegram_support_id;
+    // Messenger links — always show Telegram (@daki_support), plus WhatsApp/Viber if configured
+    const tgSupport = CONTACTS.telegram_support || "daki_support";
     const wa = contacts?.contact_whatsapp || CONTACTS.whatsapp;
     const vb = contacts?.contact_viber || CONTACTS.viber;
 
     const links = [];
-    if (supportId) {
-      links.push({ name: "Telegram", href: `https://t.me/${supportId}?text=${encoded}`, icon: <TelegramIcon />, color: "#0088cc" });
-    } else if (tg) {
-      const tgUrl = tg.startsWith("http") ? tg : `https://t.me/${tg}`;
-      links.push({ name: "Telegram", href: `${tgUrl}?text=${encoded}`, icon: <TelegramIcon />, color: "#0088cc" });
+    links.push({ name: "Telegram", href: `https://t.me/${tgSupport}?text=${encoded}`, icon: <TelegramIcon />, color: "#0088cc" });
+    if (wa) {
+      const waPhone = wa.replace(/[^+\d]/g, "");
+      links.push({ name: "WhatsApp", href: `https://wa.me/${waPhone}?text=${encoded}`, icon: <WhatsAppIcon />, color: "#25D366" });
     }
     if (vb) {
       const viberNum = vb.replace(/[^+\d]/g, "");
       links.push({ name: "Viber", href: `viber://chat?number=${viberNum}&text=${encoded}`, icon: <ViberIcon />, color: "#7360F2" });
-    }
-    if (wa) {
-      const waPhone = wa.replace(/[^+\d]/g, "");
-      links.push({ name: "WhatsApp", href: `https://wa.me/${waPhone}?text=${encoded}`, icon: <WhatsAppIcon />, color: "#25D366" });
     }
     return links;
   }, [model.id, model.name, model.sku, contacts]);
@@ -170,9 +164,9 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
                 <button
                   key={color.id}
                   onClick={() => handleColorChange(color)}
-                  className={`h-7 w-7 rounded-full border-2 transition-all ${
+                  className={`h-7 w-7 rounded-sm border-2 transition-all ${
                     selectedColor?.id === color.id
-                      ? "border-neutral-900 ring-2 ring-neutral-900 ring-offset-2"
+                      ? "border-neutral-900 scale-110"
                       : "border-neutral-300 hover:border-neutral-500"
                   }`}
                   style={{ backgroundColor: color.hex }}

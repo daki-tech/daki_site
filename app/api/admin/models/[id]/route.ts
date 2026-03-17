@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/server-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { inventoryMovementSchema } from "@/lib/validations";
 
 export async function PATCH(
@@ -14,50 +15,45 @@ export async function PATCH(
   const body = (await request.json()) as Record<string, unknown>;
 
   if (body.action === "update") {
+    const admin = createAdminClient();
     const updatePayload: Record<string, unknown> = {};
     const fields = ["sku", "name", "category", "style", "season", "year", "base_price", "discount_percent", "description", "image_urls", "fabric", "filling", "care_instructions", "is_active", "detail_images", "delivery_info", "return_info", "size_chart"];
     for (const key of fields) {
       if (key in body) updatePayload[key] = body[key];
     }
 
-    const { data, error } = await auth.supabase
-      .from("catalog_models")
-      .update(updatePayload)
-      .eq("id", id)
-      .select("*, model_sizes(*), model_colors(*)")
-      .single();
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    // Update color variants with per-color image_urls
     const colorVariants = (body.color_variants ?? body.colors) as Array<{ name: string; hex: string; image_urls?: string[] }> | undefined;
-    if (colorVariants && colorVariants.length > 0) {
-      await auth.supabase.from("model_colors").delete().eq("model_id", id);
-      const colorRows = colorVariants.map((c, i) => ({
-        model_id: id,
-        name: c.name || c.hex,
-        hex: c.hex,
-        image_urls: c.image_urls ?? [],
-        is_default: i === 0,
-      }));
-      const { data: newColors } = await auth.supabase.from("model_colors").insert(colorRows).select("*");
-      data.model_colors = newColors ?? [];
-    }
-
-    // Update sizes if provided
     const sizes = body.sizes as Array<{ size_label: string; total_stock: number }> | undefined;
-    if (sizes && sizes.length > 0) {
-      await auth.supabase.from("model_sizes").delete().eq("model_id", id);
-      const sizeRows = sizes.map((s) => ({
-        model_id: id,
-        size_label: s.size_label,
-        total_stock: s.total_stock,
-        sold_stock: 0,
-        reserved_stock: 0,
-      }));
-      const { data: newSizes } = await auth.supabase.from("model_sizes").insert(sizeRows).select("*");
-      data.model_sizes = newSizes ?? [];
-    }
+
+    // Run model update, color update, and size update in parallel for speed
+    const [modelResult, colorsResult, sizesResult] = await Promise.all([
+      // 1. Update model fields
+      admin.from("catalog_models").update(updatePayload).eq("id", id).select("*, model_sizes(*), model_colors(*)").single(),
+      // 2. Update colors (delete + insert)
+      colorVariants && colorVariants.length > 0
+        ? admin.from("model_colors").delete().eq("model_id", id).then(() => {
+            const colorRows = colorVariants.map((c, i) => ({
+              model_id: id, name: c.name || c.hex, hex: c.hex, image_urls: c.image_urls ?? [], is_default: i === 0,
+            }));
+            return admin.from("model_colors").insert(colorRows).select("*");
+          })
+        : Promise.resolve(null),
+      // 3. Update sizes (delete + insert)
+      sizes && sizes.length > 0
+        ? admin.from("model_sizes").delete().eq("model_id", id).then(() => {
+            const sizeRows = sizes.map((s) => ({
+              model_id: id, size_label: s.size_label, total_stock: s.total_stock, sold_stock: 0, reserved_stock: 0,
+            }));
+            return admin.from("model_sizes").insert(sizeRows).select("*");
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (modelResult.error) return NextResponse.json({ error: modelResult.error.message }, { status: 500 });
+
+    const data = modelResult.data;
+    if (colorsResult?.data) data.model_colors = colorsResult.data;
+    if (sizesResult?.data) data.model_sizes = sizesResult.data;
 
     return NextResponse.json(data);
   }

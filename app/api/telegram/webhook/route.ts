@@ -12,9 +12,20 @@ const STATUS_LABELS: Record<string, string> = {
 /**
  * Telegram Bot Webhook
  * Handles:
- * 1. /start — registers subscriber
+ * 1. /start — registers subscriber (only whitelisted users)
  * 2. callback_query — inline button presses for order status management
+ *
+ * Access restricted via TELEGRAM_ALLOWED_USERS env var (comma-separated chat IDs).
+ * If not set, falls back to TELEGRAM_CHAT_ID (single admin).
  */
+
+function isAllowedUser(chatId: number): boolean {
+  const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
+  if (!allowedStr.trim()) return false;
+  const allowedIds = allowedStr.split(",").map((id) => id.trim()).filter(Boolean);
+  return allowedIds.includes(String(chatId));
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -22,6 +33,11 @@ export async function POST(req: Request) {
 
     // Handle inline button callback (order status changes)
     if (body.callback_query) {
+      const callbackChatId = body.callback_query.from?.id;
+      if (!isAllowedUser(callbackChatId)) {
+        await answerCallback(botToken, body.callback_query.id, "⛔ У вас немає доступу");
+        return NextResponse.json({ ok: true });
+      }
       return handleCallbackQuery(body.callback_query, botToken);
     }
 
@@ -34,6 +50,21 @@ export async function POST(req: Request) {
     const chatId = message.chat.id;
     const username = message.from?.username || null;
     const firstName = message.from?.first_name || null;
+
+    // Access check: only whitelisted users can use the bot
+    if (!isAllowedUser(chatId)) {
+      if (botToken) {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `⛔ Вибачте, ${firstName || ""}. Цей бот доступний лише для адміністраторів DaKi.\n\nВаш Chat ID: ${chatId}\nЗверніться до власника для отримання доступу.`,
+          }),
+        });
+      }
+      return NextResponse.json({ ok: true });
+    }
 
     const admin = createAdminClient();
 

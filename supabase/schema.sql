@@ -167,6 +167,9 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method text;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_number serial;
 ALTER TABLE public.orders ALTER COLUMN currency SET DEFAULT 'UAH';
 ALTER TABLE public.catalog_models ADD COLUMN IF NOT EXISTS colors jsonb DEFAULT '[]';
+ALTER TABLE public.catalog_models ADD COLUMN IF NOT EXISTS delivery_info text;
+ALTER TABLE public.catalog_models ADD COLUMN IF NOT EXISTS return_info text;
+ALTER TABLE public.catalog_models ADD COLUMN IF NOT EXISTS size_chart text;
 
 CREATE TABLE IF NOT EXISTS public.order_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

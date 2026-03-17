@@ -112,7 +112,7 @@ export function MarketingHeader() {
             {/* Wishlist */}
             <Link
               href="/wishlist"
-              className="group relative hidden h-10 w-10 items-center justify-center sm:inline-flex"
+              className="group relative hidden h-10 w-10 items-center justify-center lg:inline-flex"
               aria-label="Wishlist"
             >
               <Heart className="h-5 w-5 text-black transition-transform duration-200 group-hover:scale-110" strokeWidth={1.5} />
@@ -126,7 +126,7 @@ export function MarketingHeader() {
 
             {/* Account */}
             {userEmail ? (
-              <div className="relative hidden sm:block" ref={dropdownRef}>
+              <div className="relative hidden lg:block" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="group relative inline-flex h-10 w-10 items-center justify-center"
@@ -169,7 +169,7 @@ export function MarketingHeader() {
             ) : (
               <Link
                 href="/login"
-                className="group relative hidden h-10 w-10 items-center justify-center sm:inline-flex"
+                className="group relative hidden h-10 w-10 items-center justify-center lg:inline-flex"
                 aria-label="Account"
               >
                 <User className="h-5 w-5 transition-colors" />

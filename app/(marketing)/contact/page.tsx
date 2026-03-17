@@ -38,75 +38,73 @@ export default async function ContactPage() {
   ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string }[];
 
   return (
-    <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-6 lg:py-20">
+    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
       {/* Header */}
-      <div className="text-center mb-12">
-        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-400">
+      <div className="text-center">
+        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
           Зв&apos;яжіться з нами
         </p>
         <h1 className="mt-3 text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
           Контакти
         </h1>
-        <p className="mx-auto mt-4 max-w-md text-sm text-neutral-500">
+        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
           Ми завжди на зв&apos;язку. Оберіть зручний спосіб комунікації.
         </p>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid gap-8 sm:grid-cols-2">
-        {/* Left: Phone + Messengers */}
-        <div className="rounded-2xl bg-neutral-50/80 p-8 space-y-6">
-          {phones.length > 0 && (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-                <Phone className="h-5 w-5" />
-              </div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-400">
-                Телефон
-              </p>
-              <div className="flex flex-col items-center gap-1.5">
-                {phones.map((phone, idx) => (
-                  <a
-                    key={idx}
-                    href={`tel:${phone.replace(/\s/g, "")}`}
-                    className="text-sm font-medium transition hover:text-neutral-600"
-                  >
-                    {phone}
-                  </a>
-                ))}
-              </div>
+      {/* Two-column: Phone+Messengers | Email+Socials */}
+      <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
+        {/* Phone card */}
+        {phones.length > 0 && (
+          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
+              <Phone className="h-5 w-5" />
             </div>
-          )}
-
-          {messengers.length > 0 && (
-            <div className="border-t border-neutral-200 pt-6">
-              <p className="text-center text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-400 mb-4">
-                Месенджери
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {messengers.map(({ href, icon: Icon, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col items-center gap-2"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400">
-                      {label}
-                    </span>
-                  </a>
-                ))}
-              </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              Телефон
+            </p>
+            <div className="flex flex-col items-center gap-1.5">
+              {phones.map((phone, idx) => (
+                <a
+                  key={idx}
+                  href={`tel:${phone.replace(/\s/g, "")}`}
+                  className="text-sm font-medium transition hover:text-neutral-600"
+                >
+                  {phone}
+                </a>
+              ))}
             </div>
-          )}
-        </div>
+            {/* Messengers under phone */}
+            {messengers.length > 0 && (
+              <div className="mt-4 w-full border-t border-neutral-200 pt-4">
+                <p className="text-center text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground mb-3">
+                  Месенджери
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {messengers.map(({ href, icon: Icon, label }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col items-center gap-1.5"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {label}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Right: Email + Social Networks */}
-        <div className="rounded-2xl bg-neutral-50/80 p-8 space-y-6">
+        {/* Email card */}
+        <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
           {email && (
             <a
               href={`mailto:${email}`}
@@ -115,31 +113,31 @@ export default async function ContactPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
                 <Mail className="h-5 w-5" />
               </div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-400">
+              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
                 Email
               </p>
               <p className="text-sm font-medium">{email}</p>
             </a>
           )}
-
+          {/* Social networks under email */}
           {socialNetworks.length > 0 && (
-            <div className="border-t border-neutral-200 pt-6">
-              <p className="text-center text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-400 mb-4">
+            <div className="mt-4 w-full border-t border-neutral-200 pt-4">
+              <p className="text-center text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground mb-3">
                 Соцмережі
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 {socialNetworks.map(({ href, icon: Icon, label }) => (
                   <a
                     key={label}
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex flex-col items-center gap-2"
+                    className="group flex flex-col items-center gap-1.5"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400">
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
                       {label}
                     </span>
                   </a>

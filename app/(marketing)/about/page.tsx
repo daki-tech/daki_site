@@ -15,9 +15,9 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[900px] px-4 py-8 sm:py-12">
-      {/* Hero */}
-      <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-neutral-100">
+    <>
+      {/* Hero — full-width banner, рекомендований розмір: 1920×700 px */}
+      <section className="relative flex min-h-[50vh] items-center justify-center bg-neutral-100">
         <Image
           src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1400&q=80"
           alt="DaKi Factory"
@@ -25,56 +25,58 @@ export default function AboutPage() {
           unoptimized
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-black/40 rounded-2xl" />
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center text-white">
-          <h1 className="text-2xl font-light uppercase tracking-[0.2em] md:text-4xl">
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 px-4 text-center text-white">
+          <h1 className="text-3xl font-light uppercase tracking-[0.2em] md:text-5xl">
             {t("about.heroTitle")}
           </h1>
-          <p className="mx-auto mt-4 max-w-md text-sm text-white/70">
+          <p className="mx-auto mt-4 max-w-lg text-sm text-white/70 md:text-base">
             {t("about.heroSub")}
           </p>
         </div>
-      </div>
-      {/* Recommended photo: 1400×612 px (16:7) */}
+      </section>
 
-      {/* Story */}
-      <div className="mt-10 rounded-2xl bg-neutral-50/80 p-6 sm:p-8">
-        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-100">
-            <Image
-              src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80"
-              alt="Production"
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          </div>
-          {/* Recommended photo: 800×600 px (4:3) */}
-          <div>
-            <h2 className="text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
-              {t("about.storyTitle")}
-            </h2>
-            <p className="mt-6 text-sm leading-relaxed text-neutral-500 md:text-base">
-              {t("about.story")}
-            </p>
+      {/* Story — рекомендований розмір фото: 800×600 px (4:3) */}
+      <section className="py-16 md:py-24">
+        <div className="mx-auto max-w-[1600px] px-3 lg:px-4">
+          <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
+            <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+              <Image
+                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80"
+                alt="Production"
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+                {t("about.storyTitle")}
+              </h2>
+              <p className="mt-6 text-sm leading-relaxed text-muted-foreground md:text-base">
+                {t("about.story")}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Values */}
-      <div className="mt-10">
-        <h2 className="text-center text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
-          {t("about.valuesTitle")}
-        </h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((v, i) => (
-            <div key={i} className="rounded-2xl bg-neutral-50/80 p-6 text-center">
-              <h3 className="text-sm font-medium uppercase tracking-[0.1em]">{v.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-neutral-500">{v.desc}</p>
-            </div>
-          ))}
+      <section className="border-t border-border py-16 md:py-24">
+        <div className="mx-auto max-w-[1600px] px-3 lg:px-4">
+          <h2 className="text-center text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+            {t("about.valuesTitle")}
+          </h2>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {values.map((v, i) => (
+              <div key={i} className="text-center">
+                <h3 className="text-sm font-medium uppercase tracking-[0.1em]">{v.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{v.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
