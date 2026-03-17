@@ -62,7 +62,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
     delivery_city: "",
     delivery_city_ref: "",
     delivery_branch: "",
-    payment_method: "cash_on_delivery",
+    payment_method: "",
     notes: "",
     contact_me: false,
   });
@@ -260,6 +260,10 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
     }
     if (!form.delivery_city || !form.delivery_branch) {
       toast.error("Оберіть місто та відділення Нової Пошти");
+      return;
+    }
+    if (!form.payment_method) {
+      toast.error("Оберіть спосіб оплати");
       return;
     }
 
@@ -514,13 +518,15 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
           {/* Payment method */}
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Спосіб оплати
+              Спосіб оплати *
             </label>
             <select
+              required
               value={form.payment_method}
               onChange={(e) => handleChange("payment_method", e.target.value)}
               className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
             >
+              <option value="" disabled>Оберіть спосіб оплати...</option>
               {PAYMENT_METHODS.map((pm) => (
                 <option key={pm.value} value={pm.value}>{pm.label}</option>
               ))}
