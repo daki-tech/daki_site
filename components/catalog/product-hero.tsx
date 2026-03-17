@@ -68,7 +68,7 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
 
   const messengerLinks = useMemo(() => {
     const productUrl = `https://dakifashion.com/catalog/${model.id}`;
-    const message = `Мене цікавить модель: ${model.name} (арт. ${model.sku})\n${productUrl}`;
+    const message = `Доброго дня! Мене цікавить модель: ${model.name} (арт. ${model.sku})\n${productUrl}`;
     const encoded = encodeURIComponent(message);
 
     // Messenger links — always show Telegram (@daki_support), plus WhatsApp/Viber if configured

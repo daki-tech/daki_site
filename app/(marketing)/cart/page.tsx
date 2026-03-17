@@ -92,7 +92,7 @@ export default function CartPage() {
     const sizesStr = item.sizes.map((s) => `${s.sizeLabel}×${s.quantity}`).join(", ");
     return `${item.modelName} (${item.sku})${item.color ? ` [${item.color}]` : ""} — ${sizesStr} = ${qty} шт. × ${formatCurrency(price)}`;
   });
-  const orderMessage = `Оптове замовлення:\n${orderLines.join("\n")}\n\nРазом: ${totalItems} од. на ${formatCurrency(totalAmount)}`;
+  const orderMessage = `Доброго дня! Оптове замовлення:\n${orderLines.join("\n")}\n\nРазом: ${totalItems} од. на ${formatCurrency(totalAmount)}`;
 
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-8 lg:px-4 lg:py-12">
