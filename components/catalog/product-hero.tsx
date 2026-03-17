@@ -279,7 +279,7 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
       {/* RIGHT: Gallery */}
       <div className="flex gap-3 h-[calc(100vh-64px-48px-5px)]">
         {/* Main image */}
-        <div className="relative flex-1 overflow-hidden bg-neutral-100 rounded-sm">
+        <div className="relative flex-1 overflow-hidden bg-neutral-100 rounded-xl">
           {currentImages[mainImageIdx] && (
             <SmartImage
               src={currentImages[mainImageIdx]}
@@ -299,7 +299,7 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
               <button
                 key={idx}
                 onClick={() => setMainImageIdx(idx)}
-                className={`relative aspect-[4/5] flex-shrink-0 overflow-hidden rounded-sm border-2 transition-all ${
+                className={`relative aspect-[4/5] flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
                   idx === mainImageIdx
                     ? "border-neutral-900"
                     : "border-transparent hover:border-neutral-400"

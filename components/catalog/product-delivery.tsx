@@ -40,7 +40,7 @@ function renderDeliveryLines(text: string) {
       return (
         <p
           key={idx}
-          className="mt-6 rounded-sm border border-neutral-200 bg-neutral-100 px-4 py-2.5 text-xs tracking-wide text-neutral-700"
+          className="mt-6 rounded-xl border border-neutral-200 bg-neutral-100 px-4 py-2.5 text-xs tracking-wide text-neutral-700"
         >
           {line}
         </p>
@@ -127,7 +127,7 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
       {/* Right: Photo / Video */}
       {rawDeliveryMedia && (
         <div
-          className="relative w-full overflow-hidden rounded-sm bg-neutral-100"
+          className="relative w-full overflow-hidden rounded-xl bg-neutral-100"
           style={{ maxHeight: "80vh", aspectRatio: "3/4", pointerEvents: "none" }}
         >
           <SmartMedia

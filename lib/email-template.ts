@@ -17,7 +17,7 @@ export function dakiEmailWrapper(content: string): string {
           <span style="color:#ccc">|</span>
           <a href="https://instagram.com/daki.ua" style="display:inline-block;margin:0 8px;text-decoration:none;color:#000;font-size:13px">Instagram</a>
         </div>
-        <p style="margin:0 0 8px;color:#999;font-size:12px">Якщо у вас є питання: <a href="mailto:info@daki.ua" style="color:#000;text-decoration:none">info@daki.ua</a></p>
+        <p style="margin:0 0 8px;color:#999;font-size:12px">Якщо у вас є питання: <a href="mailto:daki.fashion.ua@gmail.com" style="color:#000;text-decoration:none">daki.fashion.ua@gmail.com</a></p>
         <p style="margin:0;color:#bbb;font-size:11px">&copy; 2026 DaKi. Усі права захищено.</p>
       </div>
     </div>

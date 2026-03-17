@@ -326,7 +326,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
   if (success) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
-        <div className="relative mx-4 w-full max-w-md bg-background p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative mx-4 w-full max-w-md rounded-2xl bg-background p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
           <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
@@ -350,7 +350,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
             </p>
             <button
               onClick={onClose}
-              className="mt-6 w-full bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800"
+              className="mt-6 w-full rounded-xl bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800"
             >
               Закрити
             </button>
@@ -363,7 +363,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto bg-background p-6 shadow-xl"
+        className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
@@ -386,7 +386,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               required
               value={form.customer_name}
               onChange={(e) => handleChange("customer_name", e.target.value)}
-              className="mt-1 w-full border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+              className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
               placeholder="Іванов Іван Іванович"
             />
           </div>
@@ -414,7 +414,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               required
               value={form.customer_email}
               onChange={(e) => handleChange("customer_email", e.target.value)}
-              className="mt-1 w-full border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+              className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
               placeholder="email@example.com"
             />
           </div>
@@ -431,7 +431,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
                 value={cityQuery}
                 onChange={(e) => handleCityInput(e.target.value)}
                 onFocus={() => cityOptions.length > 0 && setShowCityDropdown(true)}
-                className="w-full border border-neutral-200 pl-9 pr-4 py-3 text-sm outline-none transition focus:border-black"
+                className="w-full rounded-xl border border-neutral-200 pl-9 pr-4 py-3 text-sm outline-none transition focus:border-black"
                 placeholder="Почніть вводити назву міста..."
               />
               {cityLoading && (
@@ -439,7 +439,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               )}
             </div>
             {showCityDropdown && cityOptions.length > 0 && (
-              <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto border border-border bg-background shadow-lg">
+              <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-border bg-background shadow-lg">
                 {cityOptions.map((city) => (
                   <button
                     key={city.ref}
@@ -467,7 +467,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
                 type="text"
                 value={form.delivery_region}
                 readOnly
-                className="mt-1 w-full border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500 outline-none"
+                className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500 outline-none"
               />
             </div>
           )}
@@ -485,7 +485,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
                 onChange={(e) => handleWarehouseInput(e.target.value)}
                 onFocus={() => warehouseOptions.length > 0 && setShowWarehouseDropdown(true)}
                 disabled={!form.delivery_city_ref}
-                className="w-full border border-neutral-200 pl-9 pr-4 py-3 text-sm outline-none transition focus:border-black disabled:bg-neutral-50 disabled:text-neutral-400"
+                className="w-full rounded-xl border border-neutral-200 pl-9 pr-4 py-3 text-sm outline-none transition focus:border-black disabled:bg-neutral-50 disabled:text-neutral-400"
                 placeholder={form.delivery_city_ref ? "Почніть вводити номер або адресу..." : "Спочатку оберіть місто"}
               />
               {warehouseLoading && (
@@ -493,7 +493,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               )}
             </div>
             {showWarehouseDropdown && warehouseOptions.length > 0 && (
-              <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto border border-border bg-background shadow-lg">
+              <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-border bg-background shadow-lg">
                 {warehouseOptions.map((wh) => (
                   <button
                     key={wh.ref}
@@ -516,7 +516,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
             <select
               value={form.payment_method}
               onChange={(e) => handleChange("payment_method", e.target.value)}
-              className="mt-1 w-full border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+              className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
             >
               {PAYMENT_METHODS.map((pm) => (
                 <option key={pm.value} value={pm.value}>{pm.label}</option>
@@ -547,7 +547,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               value={form.notes}
               onChange={(e) => handleChange("notes", e.target.value)}
               rows={2}
-              className="mt-1 w-full border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black resize-none"
+              className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black resize-none"
               placeholder="Додаткові побажання..."
             />
           </div>
@@ -556,7 +556,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800 disabled:opacity-50"
           >
             {loading ? (
               <>

@@ -109,8 +109,8 @@ function useConfirmDialog() {
                 {state.description && <DialogDescription className="text-sm text-gray-500">{state.description}</DialogDescription>}
               </DialogHeader>
               <DialogFooter className="flex gap-3 sm:gap-3">
-                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => handleClose(false)}>Скасувати</Button>
-                <Button variant="destructive" className="flex-1 rounded-xl" onClick={() => handleClose(true)}>Підтвердити</Button>
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => handleClose(false)}>Отмена</Button>
+                <Button variant="destructive" className="flex-1 rounded-xl" onClick={() => handleClose(true)}>Подтвердить</Button>
               </DialogFooter>
             </div>
           </DialogContent>
@@ -273,7 +273,7 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
   return (
     <div>
       <p className={S.label}>Фото товара</p>
-      <p className="text-xs text-neutral-400 mt-0.5">Рекомендовано: 3:4 (наприклад 900×1200 px)</p>
+      <p className="text-xs text-neutral-400 mt-0.5">Рекомендуемое: 3:4 (например 900×1200 px)</p>
       <div className="mt-2 flex flex-wrap gap-3 items-start">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map((it) => it.id)} strategy={rectSortingStrategy}>
@@ -361,7 +361,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB Supabase limit
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      toast.error(`Файл занадто великий (${sizeMB} MB). Максимум 50 MB. Стисніть відео перед завантаженням.`);
+      toast.error(`Файл слишком большой (${sizeMB} MB). Максимум 50 MB. Сожмите видео перед загрузкой.`);
       return;
     }
     setUploading(true);
@@ -392,7 +392,7 @@ function SingleMediaUpload({ value, onChange, label }: { value: string; onChange
           body: file,
         });
         if (!up.ok) {
-          throw new Error("Помилка завантаження на сервер. Спробуйте менший файл.");
+          throw new Error("Ошибка загрузки на сервер. Попробуйте файл поменьше.");
         }
         onChange(metaJson.publicUrl);
       }
@@ -583,7 +583,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleDeleteModel = async (id: string) => {
-    if (!(await confirm("Видалити цей товар назавжди?", "Цю дію неможливо скасувати."))) return;
+    if (!(await confirm("Удалить этот товар навсегда?", "Это действие нельзя отменить."))) return;
     const res = await fetch(`/api/admin/models/${id}`, { method: "DELETE" });
     if (!res.ok) { toast.error("Ошибка удаления"); return; }
     toast.success("Товар удален");
@@ -690,7 +690,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!(await confirm("Видалити це замовлення?", "Цю дію неможливо скасувати."))) return;
+    if (!(await confirm("Удалить этот заказ?", "Это действие нельзя отменить."))) return;
     const res = await fetch("/api/admin/orders", {
       method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId }),
@@ -787,7 +787,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   // Bulk delete orders
   const handleBulkDeleteOrders = async () => {
     if (selectedOrderIds.size === 0) return;
-    if (!(await confirm(`Видалити ${selectedOrderIds.size} замовлень?`, "Цю дію неможливо скасувати."))) return;
+    if (!(await confirm(`Удалить ${selectedOrderIds.size} заказов?`, "Это действие нельзя отменить."))) return;
     for (const id of selectedOrderIds) {
       await fetch("/api/admin/orders", {
         method: "DELETE", headers: { "Content-Type": "application/json" },
@@ -1016,8 +1016,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
                       <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead>
                       <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
-                      <TableHead className="text-center text-blue-500 text-[10px] w-14">Підтв.</TableHead>
-                      <TableHead className="text-center text-amber-500 text-[10px] w-14">Відпр.</TableHead>
+                      <TableHead className="text-center text-blue-500 text-[10px] w-14">Подтв.</TableHead>
+                      <TableHead className="text-center text-amber-500 text-[10px] w-14">Отпр.</TableHead>
                       <TableHead className="text-center text-green-500 text-[10px] w-14">Дост.</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -1291,20 +1291,20 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                   </div>
 
                   <div className="bg-gray-50/50 rounded-2xl p-5 space-y-3">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Розсилка</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Рассылка</p>
                     <div className="flex items-center gap-2">
                       <span className={`h-2.5 w-2.5 rounded-full ${selectedUser.newsletter_subscribed ? "bg-green-500" : "bg-neutral-300"}`} />
-                      <p className="text-sm font-medium">{selectedUser.newsletter_subscribed ? "Підписаний" : "Не підписаний"}</p>
+                      <p className="text-sm font-medium">{selectedUser.newsletter_subscribed ? "Подписан" : "Не подписан"}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50/50 rounded-2xl p-5">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Замовлень</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Заказов</p>
                       <p className="text-3xl font-bold">{userOrderCounts[selectedUser.id] ?? 0}</p>
                     </div>
                     <div className="bg-gray-50/50 rounded-2xl p-5">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Реєстрація</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Регистрация</p>
                       <p className="text-lg font-semibold">{format(new Date(selectedUser.created_at), "dd.MM.yyyy")}</p>
                     </div>
                   </div>
@@ -1319,20 +1319,20 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           <Card className="rounded-2xl">
             <CardHeader><CardTitle className="text-base">Блок 1: Hero (баннер)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Нова весняна колекція" className={S.input} /></div>
+              <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Новая весенняя коллекция" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Spring — 2026" className={S.input} /></div>
               <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" />
-              <p className="text-[10px] text-muted-foreground">Рекомендований розмір: 1920×1080 px, формат JPG/PNG/WebP</p>
+              <p className="text-[10px] text-muted-foreground">Рекомендуемый размер: 1920×1080 px, формат JPG/PNG/WebP</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl">
             <CardHeader><CardTitle className="text-base">Блок 3: Про компанию</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div><Label className={S.label}>Заголовок</Label><Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="Про компанію DaKi" className={S.input} /></div>
-              <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша історія" className={S.input} /></div>
+              <div><Label className={S.label}>Заголовок</Label><Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="О компании DaKi" className={S.input} /></div>
+              <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша история" className={S.input} /></div>
               <div><Label className={S.label}>Текст</Label><Textarea rows={5} value={aboutText} onChange={(e) => setAboutText(e.target.value)} placeholder="Текст о компании..." className={S.textarea} /></div>
               <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" />
-              <p className="text-[10px] text-muted-foreground">Рекомендований розмір фото: 800×1000 px, відео: MP4 до 50MB</p>
+              <p className="text-[10px] text-muted-foreground">Рекомендуемый размер фото: 800×1000 px, видео: MP4 до 50MB</p>
             </CardContent>
           </Card>
           <Button className="rounded-xl" onClick={saveHomepage} disabled={homepageLoading}>
@@ -1343,10 +1343,10 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         {/* ====================== КОНТАКТЫ ====================== */}
         <TabsContent value="contacts" className="space-y-6">
           <Card className="rounded-2xl">
-            <CardHeader><CardTitle className="text-base">Контактна інформація</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Контактная информация</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className={S.label}>Телефони</Label>
+                <Label className={S.label}>Телефоны</Label>
                 {ctPhones.map((ph, idx) => (
                   <div key={idx} className="mt-1.5 flex items-center gap-2">
                     <PhoneInput value={ph} onChange={(v) => { const copy = [...ctPhones]; copy[idx] = v; setCtPhones(copy); }} className="flex-1" />
@@ -1356,14 +1356,14 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                   </div>
                 ))}
                 <button type="button" onClick={() => setCtPhones([...ctPhones, ""])} className="mt-2 flex items-center gap-1 text-xs text-neutral-500 hover:text-black transition">
-                  <Plus className="h-3.5 w-3.5" /> Додати телефон
+                  <Plus className="h-3.5 w-3.5" /> Добавить телефон
                 </button>
               </div>
               <div><Label className={S.label}>Email</Label><Input value={ctEmail} onChange={(e) => setCtEmail(e.target.value)} placeholder="info@daki.ua" className={S.input} /></div>
             </CardContent>
           </Card>
           <Card className="rounded-2xl">
-            <CardHeader><CardTitle className="text-base">Соцмережі та месенджери</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Соцсети и мессенджеры</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div><Label className={S.label}>Telegram</Label><Input value={ctTelegram} onChange={(e) => setCtTelegram(e.target.value)} placeholder="https://t.me/username" className={S.input} /></div>
               <div><Label className={S.label}>Instagram</Label><Input value={ctInstagram} onChange={(e) => setCtInstagram(e.target.value)} placeholder="https://instagram.com/username" className={S.input} /></div>
@@ -1447,11 +1447,11 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
       {/* Row 3: Price + Discount */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className={S.label}>Ціна (UAH)</Label>
+          <Label className={S.label}>Цена (UAH)</Label>
           <Input type="number" value={form.base_price} onChange={(e) => update("base_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("base_price", ""); }} className={S.input} />
         </div>
         <div>
-          <Label className={S.label}>Знижка %</Label>
+          <Label className={S.label}>Скидка %</Label>
           <Input type="number" value={form.discount_percent} onChange={(e) => update("discount_percent", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("discount_percent", ""); }} className={S.input} />
         </div>
       </div>
@@ -1460,7 +1460,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       {/* Color variants (photos + color in one block) */}
       <div>
-        <p className={`${S.label} mb-3`}>Варіанти кольорів</p>
+        <p className={`${S.label} mb-3`}>Варианты цветов</p>
         <DndContext
           sensors={colorDndSensors}
           collisionDetection={closestCenter}
@@ -1480,7 +1480,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
               {form.color_variants.map((variant, i) => (
                 <SortableColorVariant key={`cv-${i}`} id={`cv-${i}`}>
                   <div className="flex items-center gap-2">
-                    <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Назва кольору" className={`flex-1 ${S.input}`} />
+                    <Input value={variant.name} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], name: e.target.value }; update("color_variants", c); }} placeholder="Название цвета" className={`flex-1 ${S.input}`} />
                     <input type="color" value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className="h-9 w-9 rounded-xl cursor-pointer appearance-none border-0 p-0" />
                     <Input value={variant.hex} onChange={(e) => { const c = [...form.color_variants]; c[i] = { ...c[i], hex: e.target.value }; update("color_variants", c); }} className={`w-24 ${S.input} font-mono text-xs`} />
                     {form.color_variants.length > 1 && (
@@ -1494,7 +1494,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           </SortableContext>
         </DndContext>
         <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className={`w-full py-2.5 mt-4 ${S.addBtn} flex items-center justify-center gap-1.5`}>
-          <Plus className="h-3.5 w-3.5" /> Додати варіант кольору
+          <Plus className="h-3.5 w-3.5" /> Добавить вариант цвета
         </button>
       </div>
 
@@ -1528,15 +1528,15 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       {/* Return */}
       <div>
-        <Label className={S.label}>Правила повернення (HTML)</Label>
-        <Textarea rows={2} value={form.return_info} onChange={(e) => update("return_info", e.target.value)} placeholder="Правила повернення..." className={S.textarea} />
+        <Label className={S.label}>Правила возврата (HTML)</Label>
+        <Textarea rows={2} value={form.return_info} onChange={(e) => update("return_info", e.target.value)} placeholder="Правила возврата..." className={S.textarea} />
       </div>
 
       <div className={S.divider} />
 
       {/* Size chart table */}
       <div>
-        <p className={`${S.label} mb-2`}>Таблиця розмірів</p>
+        <p className={`${S.label} mb-2`}>Таблица размеров</p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
             <thead>
@@ -1544,8 +1544,8 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Размер</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Грудь</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талия</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Стегна</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Залишок</th>
+                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Бёдра</th>
+                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Остаток</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
@@ -1568,7 +1568,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           </table>
         </div>
         <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
-          <Plus className="h-3.5 w-3.5" /> Додати рядок
+          <Plus className="h-3.5 w-3.5" /> Добавить строку
         </button>
       </div>
     </div>

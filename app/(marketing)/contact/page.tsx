@@ -56,7 +56,7 @@ export default async function ContactPage() {
       <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
         {/* Phones */}
         {phones.length > 0 && (
-          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <Phone className="h-5 w-5" />
             </div>
@@ -79,7 +79,7 @@ export default async function ContactPage() {
 
         {/* Email */}
         {email && (
-          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <a
               href={`mailto:${email}`}
               className="flex flex-col items-center gap-3 transition hover:opacity-80"
@@ -97,7 +97,7 @@ export default async function ContactPage() {
 
         {/* Messengers */}
         {messengers.length > 0 && (
-          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <MessageCircle className="h-5 w-5" />
             </div>
@@ -127,7 +127,7 @@ export default async function ContactPage() {
 
         {/* Social Networks */}
         {socialNetworks.length > 0 && (
-          <div className="flex flex-col items-center gap-3 border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <Instagram className="h-5 w-5" />
             </div>

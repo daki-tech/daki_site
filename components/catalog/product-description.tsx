@@ -56,7 +56,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
     <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-start">
       {/* LEFT: Photo / Video */}
       {rawDescMedia ? (
-        <div className="relative overflow-hidden rounded-sm bg-neutral-100" style={{ maxHeight: "80vh", aspectRatio: "3/4" }}>
+        <div className="relative overflow-hidden rounded-xl bg-neutral-100" style={{ maxHeight: "80vh", aspectRatio: "3/4" }}>
           <SmartMedia
             src={rawDescMedia}
             alt={`${model.name} — деталь`}
@@ -66,7 +66,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
           />
         </div>
       ) : (
-        <div className="bg-neutral-100 rounded-sm" style={{ maxHeight: "80vh", aspectRatio: "3/4" }} />
+        <div className="bg-neutral-100 rounded-xl" style={{ maxHeight: "80vh", aspectRatio: "3/4" }} />
       )}
 
       {/* RIGHT: Description + Composition & Care */}

@@ -49,7 +49,7 @@ export const NAV_LINKS = {
 
 export const CONTACTS = {
   phones: [] as string[],
-  email: "info@daki.ua",
+  email: "daki.fashion.ua@gmail.com",
   telegram: "https://t.me/DaKiWholesale",
   telegram_support: "daki_support",
   viber: "",
