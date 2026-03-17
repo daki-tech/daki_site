@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
@@ -28,24 +28,14 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
   const [aspect, setAspect] = useState(defaultAspect);
   const [freeAspect, setFreeAspect] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const onCropComplete = useCallback((_: Area, px: Area) => setCroppedAreaPixels(px), []);
 
-  // Lock body scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, []);
-
-  // Load image to get natural dimensions
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
-    img.src = imageSrc;
-  }, [imageSrc]);
 
   const handleSave = async () => {
     if (!croppedAreaPixels) return;
@@ -61,114 +51,68 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
     }
   };
 
-  const selectAspect = (val: number) => {
-    setAspect(val);
-    setFreeAspect(false);
-  };
-
-  const toggleFree = () => {
-    setFreeAspect(!freeAspect);
-  };
-
-  // Compute crop area dimensions that adapt to image
-  const maxCropW = Math.min(680, typeof window !== "undefined" ? window.innerWidth - 64 : 680);
-  const maxCropH = typeof window !== "undefined" ? window.innerHeight - 260 : 500;
-
-  let cropBoxW = maxCropW;
-  let cropBoxH = maxCropH;
-
-  if (imgSize.w && imgSize.h) {
-    const imgRatio = imgSize.w / imgSize.h;
-    if (imgRatio > maxCropW / maxCropH) {
-      cropBoxW = maxCropW;
-      cropBoxH = Math.round(maxCropW / imgRatio);
-    } else {
-      cropBoxH = maxCropH;
-      cropBoxW = Math.round(maxCropH * imgRatio);
-    }
-    // Ensure minimums
-    cropBoxW = Math.max(cropBoxW, 300);
-    cropBoxH = Math.max(cropBoxH, 250);
-  }
-
   const content = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-    >
-      {/* White modal */}
-      <div
-        ref={containerRef}
-        className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ width: cropBoxW + 32, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 h-14 border-b border-neutral-100 flex-shrink-0">
-          <button
-            onClick={onCancel}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 transition-all"
-          >
-            <X className="h-5 w-5" strokeWidth={1.5} />
-          </button>
-          <span className="text-[15px] font-semibold text-neutral-900">Редактирование фото</span>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="h-8 px-5 rounded-full bg-neutral-900 text-white text-[13px] font-semibold hover:bg-neutral-800 active:bg-neutral-700 transition-all disabled:opacity-40 flex items-center gap-1.5"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            {saving ? "Сохраняю..." : "Сохранить"}
-          </button>
-        </div>
-
-        {/* Crop area */}
+    <div className="fixed inset-0 z-[9999]" style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+      {/* Center modal */}
+      <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="relative bg-neutral-100 flex-shrink-0"
-          style={{ width: "100%", height: cropBoxH }}
+          className="bg-white rounded-2xl shadow-2xl flex flex-col pointer-events-auto"
+          style={{ width: 600, maxWidth: "100%", maxHeight: "100%" }}
         >
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={freeAspect ? undefined : aspect}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-            showGrid
-            style={{
-              containerStyle: { background: "#f5f5f5", borderRadius: 0 },
-              cropAreaStyle: {
-                border: "2px solid rgba(0,0,0,0.15)",
-                borderRadius: "8px",
-                boxShadow: "0 0 0 9999px rgba(245,245,245,0.75)",
-              },
-            }}
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="px-5 py-4 flex flex-col gap-3.5 flex-shrink-0 border-t border-neutral-100">
-
-          {/* Zoom */}
-          <div className="flex items-center gap-3">
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 flex-shrink-0">
             <button
-              onClick={() => setZoom(Math.max(1, zoom - 0.15))}
-              className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-all"
+              onClick={onCancel}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 transition-colors"
             >
-              <ZoomOut className="h-4 w-4" strokeWidth={1.5} />
+              <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="flex-1 relative h-8 flex items-center">
-              <div className="absolute inset-x-0 h-[3px] bg-neutral-200 rounded-full" />
-              <div
-                className="absolute left-0 h-[3px] bg-neutral-900 rounded-full transition-all duration-100"
-                style={{ width: `${((zoom - 1) / 2) * 100}%` }}
-              />
-              <div
-                className="absolute w-5 h-5 rounded-full bg-white border-2 border-neutral-900 -translate-x-1/2 transition-all duration-100 shadow-sm pointer-events-none"
-                style={{ left: `${((zoom - 1) / 2) * 100}%` }}
-              />
+            <span className="text-[15px] font-semibold text-neutral-900 select-none">Редактирование</span>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-9 px-5 rounded-full bg-neutral-900 text-white text-[13px] font-semibold hover:bg-neutral-800 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+            >
+              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {saving ? "Сохраняю..." : "Сохранить"}
+            </button>
+          </div>
+
+          {/* ── Crop area ── */}
+          <div className="relative flex-1 min-h-0" style={{ height: 420 }}>
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={freeAspect ? undefined : aspect}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+              showGrid
+              style={{
+                containerStyle: {
+                  background: "#f5f5f5",
+                },
+                cropAreaStyle: {
+                  border: "2px solid rgba(255,255,255,0.8)",
+                  borderRadius: 6,
+                },
+              }}
+            />
+          </div>
+
+          {/* ── Controls ── */}
+          <div className="px-4 py-3.5 border-t border-neutral-100 flex flex-col gap-3 flex-shrink-0">
+
+            {/* Zoom */}
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setZoom((z) => Math.max(1, z - 0.15))}
+                className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:border-neutral-300 transition-colors flex-shrink-0"
+              >
+                <ZoomOut className="h-4 w-4" strokeWidth={1.5} />
+              </button>
               <input
                 type="range"
                 min={1}
@@ -176,54 +120,52 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
                 step={0.01}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="flex-1 h-1 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-neutral-900
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-neutral-900 [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-[18px] [&::-moz-range-thumb]:h-[18px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-neutral-900 [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-solid"
               />
-            </div>
-            <button
-              onClick={() => setZoom(Math.min(3, zoom + 0.15))}
-              className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-all"
-            >
-              <ZoomIn className="h-4 w-4" strokeWidth={1.5} />
-            </button>
-          </div>
-
-          {/* Aspect ratio + rotate */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center bg-neutral-100 rounded-xl p-0.5 gap-0.5">
-              {ASPECTS.map((a) => {
-                const on = !freeAspect && aspect === a.value;
-                return (
-                  <button
-                    key={a.label}
-                    onClick={() => selectAspect(a.value)}
-                    className={`px-3 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all ${
-                      on
-                        ? "bg-white text-neutral-900 shadow-sm"
-                        : "text-neutral-400 hover:text-neutral-700"
-                    }`}
-                  >
-                    {a.label}
-                  </button>
-                );
-              })}
               <button
-                onClick={toggleFree}
-                className={`px-2.5 py-1.5 rounded-[10px] transition-all ${
-                  freeAspect
-                    ? "bg-white text-neutral-900 shadow-sm"
-                    : "text-neutral-400 hover:text-neutral-700"
-                }`}
+                onClick={() => setZoom((z) => Math.min(3, z + 0.15))}
+                className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:border-neutral-300 transition-colors flex-shrink-0"
               >
-                <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+                <ZoomIn className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </div>
 
-            <button
-              onClick={() => setRotation((r) => (r + 90) % 360)}
-              className="w-9 h-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-all"
-            >
-              <RotateCw className="h-4 w-4" strokeWidth={1.5} />
-            </button>
+            {/* Aspect + rotate */}
+            <div className="flex items-center justify-between">
+              <div className="flex bg-neutral-100 rounded-xl p-0.5 gap-0.5">
+                {ASPECTS.map((a) => {
+                  const on = !freeAspect && aspect === a.value;
+                  return (
+                    <button
+                      key={a.label}
+                      onClick={() => { setAspect(a.value); setFreeAspect(false); }}
+                      className={`px-3 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all ${
+                        on ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-400 hover:text-neutral-600"
+                      }`}
+                    >
+                      {a.label}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setFreeAspect((f) => !f)}
+                  className={`px-2.5 py-1.5 rounded-[10px] transition-all ${
+                    freeAspect ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-400 hover:text-neutral-600"
+                  }`}
+                >
+                  <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+                </button>
+              </div>
+
+              <button
+                onClick={() => setRotation((r) => (r + 90) % 360)}
+                className="w-9 h-9 rounded-xl border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+              >
+                <RotateCw className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
