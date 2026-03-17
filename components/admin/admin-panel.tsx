@@ -610,7 +610,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       detail_images: [editForm.care_media_url, editForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(editForm.size_chart.filter((r) => r.size)),
       color_variants: editForm.color_variants.filter((c) => c.hex),
-      sizes: editForm.sizes.filter((s) => s.size_label),
+      sizes: editForm.size_chart.filter((r) => r.size).map((r) => ({ size_label: r.size, total_stock: Number(r.available) || 0 })),
     };
     const res = await fetch(`/api/admin/models/${editingModel.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -635,7 +635,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       detail_images: [createForm.care_media_url, createForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(createForm.size_chart.filter((r) => r.size)),
       color_variants: createForm.color_variants.filter((c) => c.hex),
-      sizes: createForm.sizes.filter((s) => s.size_label),
+      sizes: createForm.size_chart.filter((r) => r.size).map((r) => ({ size_label: r.size, total_stock: Number(r.available) || 0 })),
     };
     const res = await fetch("/api/admin/models", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -1500,27 +1500,6 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       <div className={S.divider} />
 
-      {/* Sizes & stock */}
-      <div>
-        <p className={`${S.label} mb-2`}>Розміри та залишки</p>
-        <div className="space-y-2">
-          {form.sizes.map((size, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input value={size.size_label} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], size_label: e.target.value }; update("sizes", c); }} placeholder="Розмір" className={`w-24 ${S.input}`} />
-              <Input type="number" value={String(size.total_stock)} onChange={(e) => { const c = [...form.sizes]; c[i] = { ...c[i], total_stock: Number(e.target.value) }; update("sizes", c); }} placeholder="К-сть" className={`w-24 ${S.input}`} />
-              {form.sizes.length > 1 && (
-                <button type="button" onClick={() => update("sizes", form.sizes.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
-              )}
-            </div>
-          ))}
-          <button type="button" onClick={() => update("sizes", [...form.sizes, { size_label: "", total_stock: 0 }])} className={`w-full py-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
-            <Plus className="h-3.5 w-3.5" /> Додати розмір
-          </button>
-        </div>
-      </div>
-
-      <div className={S.divider} />
-
       {/* Description */}
       <div>
         <Label className={S.label}>Описание (HTML)</Label>
@@ -1566,7 +1545,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Грудь</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талия</th>
                 <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Стегна</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Наличие</th>
+                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Залишок</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
