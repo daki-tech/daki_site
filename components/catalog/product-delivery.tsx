@@ -94,7 +94,7 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
     null;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-stretch">
+    <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-start">
       {/* Left: Delivery & return text */}
       <div>
         <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-6">
@@ -126,15 +126,11 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
 
       {/* Right: Photo / Video */}
       {rawDeliveryMedia && (
-        <div
-          className="relative w-full overflow-hidden rounded-xl bg-neutral-100 min-h-[300px]"
-          style={{ pointerEvents: "none" }}
-        >
+        <div className="overflow-hidden rounded-xl bg-neutral-100">
           <SmartMedia
             src={rawDeliveryMedia}
             alt={`${model.name} — доставка`}
-            fill
-            className="object-cover object-top"
+            className="w-full h-auto"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>

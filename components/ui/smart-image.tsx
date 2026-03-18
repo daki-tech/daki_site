@@ -93,12 +93,28 @@ export function SmartImage({
         src={resolvedSrc}
         alt={alt}
         className={className}
-        style={{ ...(fill ? FILL_STYLE : {}), ...style }}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
+        style={{ ...(fill ? FILL_STYLE : {}), ...(!fill && !width && !height ? { width: "100%", height: "auto" } : {}), ...style }}
+        width={fill || (!width && !height) ? undefined : width}
+        height={fill || (!width && !height) ? undefined : height}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  // Responsive mode: no fill, no explicit dimensions → use width:100% height:auto
+  if (!fill && !width && !height) {
+    return (
+      <Image
+        src={resolvedSrc}
+        alt={alt}
+        width={0}
+        height={0}
+        className={className}
+        sizes={sizes || "100vw"}
+        priority={priority}
+        style={{ width: "100%", height: "auto", ...style }}
       />
     );
   }
@@ -142,7 +158,7 @@ export function SmartMedia({
 
   // Video files → <video> with autoplay loop
   if (hasVideoExtension(src)) {
-    const mergedStyle = { ...(fill ? FILL_STYLE : {}), ...style };
+    const mergedStyle = { ...(fill ? FILL_STYLE : { width: "100%", height: "auto" }), ...style };
     return (
       <video
         src={src}
