@@ -253,7 +253,7 @@ export async function POST(req: Request) {
     if (state) {
       // Track user's input message ID for cleanup
       const userMsgId = message.message_id;
-      const existingMsgIds: number[] = state.data?.msg_ids || [];
+      const existingMsgIds = (state.data?.msg_ids as number[]) || [];
       if (userMsgId) {
         state.data = { ...state.data, msg_ids: [...existingMsgIds, userMsgId] };
       }
@@ -334,7 +334,7 @@ async function handleFinanceStep(
   admin: ReturnType<typeof createAdminClient>,
   botToken: string,
   chatId: number,
-  state: { action: string; step: string; data: Record<string, string> },
+  state: { action: string; step: string; data: Record<string, unknown> },
   input: string
 ) {
   const actionInfo = FINANCE_ACTIONS[state.action];
@@ -345,7 +345,7 @@ async function handleFinanceStep(
   }
 
   // Helper to get tracked message IDs array from state data
-  const msgIds: number[] = state.data.msg_ids || [];
+  const msgIds = (state.data.msg_ids as number[]) || [];
 
   if (state.step === "date") {
     const parsed = parseDate(input);
@@ -384,10 +384,13 @@ async function handleFinanceStep(
     }
 
     // Save record to DB
+    const dateStr = state.data.date as string;
+    const descStr = state.data.description as string;
+
     const record = {
       type: state.action,
-      date: state.data.date,
-      description: state.data.description,
+      date: dateStr,
+      description: descStr,
       amount,
       recorded_by: chatId,
     };
@@ -403,8 +406,8 @@ async function handleFinanceStep(
     // Append to Google Sheets (fire-and-forget)
     appendToFinanceSheet({
       type: state.action,
-      date: state.data.date,
-      description: state.data.description,
+      date: dateStr,
+      description: descStr,
       amount,
     });
 
@@ -417,14 +420,14 @@ async function handleFinanceStep(
     }
 
     // Final clean summary — no buttons, just the record
-    const dateFormatted = state.data.date.split("-").reverse().join(".");
+    const dateFormatted = dateStr.split("-").reverse().join(".");
     const typeEmoji = state.action === "expense" ? "📉" : state.action === "income_cash" ? "💵" : "💳";
     const typeLabel = state.action === "expense" ? "Расход" : state.action === "income_cash" ? "Наличка" : "Карта";
 
     await sendMessage(
       botToken,
       chatId,
-      `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${state.data.description}\n💰 ${amount.toLocaleString("ru-RU")} грн`
+      `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} грн`
     );
     return NextResponse.json({ ok: true });
   }
