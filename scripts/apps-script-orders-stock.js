@@ -84,18 +84,20 @@ function updateStock(data) {
     sheet = ss.insertSheet("Склад");
   }
 
-  // Clear existing data
-  sheet.clear();
-  sheet.clearFormats();
-
   var models = data.models || [];
   if (models.length === 0) {
+    sheet.clear();
     sheet.getRange(1, 1).setValue("Нет данных о складе");
     return ContentService.createTextOutput(JSON.stringify({ ok: true, message: "No stock data" }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  var currentRow = 1;
+  // Build the complete grid in memory first, then write in one batch
+  // This minimizes Google Sheets UI disruption (no clear + rebuild)
+  var allRows = [];    // 2D array of all values
+  var merges = [];     // [{row, cols}] — model header rows to merge
+  var formulas = [];   // [{row, col, formula}] — ИТОГО formulas
+  var maxCols = 1;
 
   for (var m = 0; m < models.length; m++) {
     var model = models[m];
@@ -104,10 +106,105 @@ function updateStock(data) {
 
     if (colors.length === 0 || sizes.length === 0) continue;
 
-    // Row 1: Model name (merged across all color columns + 1 for size label)
-    var totalCols = colors.length + 1; // 1 for "Размер" column + N color columns
-    sheet.getRange(currentRow, 1, 1, totalCols).merge();
-    sheet.getRange(currentRow, 1).setValue(model.name + " (" + model.sku + ")");
+    var totalCols = colors.length + 1;
+    if (totalCols > maxCols) maxCols = totalCols;
+
+    // Model header row
+    var modelRow = [model.name + " (" + model.sku + ")"];
+    for (var p = 1; p < totalCols; p++) modelRow.push("");
+    merges.push({ row: allRows.length + 1, cols: totalCols });
+    allRows.push(modelRow);
+
+    // Color header row
+    var headerRow = ["Размер"];
+    for (var c = 0; c < colors.length; c++) {
+      headerRow.push(colors[c].colorName);
+    }
+    allRows.push(headerRow);
+
+    var dataStartRow = allRows.length + 1; // 1-indexed in sheet
+
+    // Data rows
+    for (var s = 0; s < sizes.length; s++) {
+      var dataRow = [sizes[s]];
+      for (var c2 = 0; c2 < colors.length; c2++) {
+        var qty = (colors[c2].stockPerSize && colors[c2].stockPerSize[sizes[s]]) || 0;
+        dataRow.push(qty);
+      }
+      allRows.push(dataRow);
+    }
+
+    var dataEndRow = allRows.length; // 1-indexed in sheet
+
+    // ИТОГО row — placeholder values, formulas applied after
+    var itogoRow = ["ИТОГО"];
+    for (var c3 = 0; c3 < colors.length; c3++) {
+      var colLetter = getColumnLetter(c3 + 2);
+      formulas.push({
+        row: allRows.length + 1,
+        col: c3 + 2,
+        formula: "=SUM(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")"
+      });
+      itogoRow.push(0); // placeholder
+    }
+    allRows.push(itogoRow);
+
+    // Empty separator row
+    allRows.push([""]);
+  }
+
+  // Pad all rows to maxCols width
+  for (var i = 0; i < allRows.length; i++) {
+    while (allRows[i].length < maxCols) {
+      allRows[i].push("");
+    }
+  }
+
+  // Determine current sheet dimensions
+  var oldLastRow = sheet.getLastRow();
+  var oldLastCol = sheet.getLastColumn();
+
+  // Unmerge all existing merged cells to avoid conflicts
+  var existingMerges = sheet.getRange(1, 1, Math.max(oldLastRow, 1), Math.max(oldLastCol, maxCols)).getMergedRanges();
+  for (var em = 0; em < existingMerges.length; em++) {
+    existingMerges[em].breakApart();
+  }
+
+  // Write all data in one batch (overwrites without clearing)
+  var newLastRow = allRows.length;
+  sheet.getRange(1, 1, newLastRow, maxCols).setValues(allRows);
+
+  // Clear extra rows below (if old sheet was longer)
+  if (oldLastRow > newLastRow) {
+    sheet.getRange(newLastRow + 1, 1, oldLastRow - newLastRow, Math.max(oldLastCol, maxCols)).clearContent();
+    sheet.getRange(newLastRow + 1, 1, oldLastRow - newLastRow, Math.max(oldLastCol, maxCols)).clearFormat();
+  }
+
+  // Clear extra columns to the right (if old sheet was wider)
+  if (oldLastCol > maxCols) {
+    sheet.getRange(1, maxCols + 1, Math.max(oldLastRow, newLastRow), oldLastCol - maxCols).clearContent();
+    sheet.getRange(1, maxCols + 1, Math.max(oldLastRow, newLastRow), oldLastCol - maxCols).clearFormat();
+  }
+
+  // Reset all formatting in data area
+  sheet.getRange(1, 1, newLastRow, maxCols).setFontWeight("normal");
+  sheet.getRange(1, 1, newLastRow, maxCols).setFontSize(10);
+  sheet.getRange(1, 1, newLastRow, maxCols).setBackground(null);
+  sheet.getRange(1, 1, newLastRow, maxCols).setFontColor(null);
+  sheet.getRange(1, 1, newLastRow, maxCols).setHorizontalAlignment(null);
+
+  // Apply formatting per model block
+  var currentRow = 1;
+  for (var m2 = 0; m2 < models.length; m2++) {
+    var model2 = models[m2];
+    var colors2 = model2.colors || [];
+    var sizes2 = model2.sizes || [];
+    if (colors2.length === 0 || sizes2.length === 0) continue;
+
+    var totalCols2 = colors2.length + 1;
+
+    // Model header: merge, blue bg, bold, size 12
+    sheet.getRange(currentRow, 1, 1, totalCols2).merge();
     sheet.getRange(currentRow, 1).setFontWeight("bold");
     sheet.getRange(currentRow, 1).setFontSize(12);
     sheet.getRange(currentRow, 1).setBackground("#4285f4");
@@ -115,52 +212,35 @@ function updateStock(data) {
     sheet.getRange(currentRow, 1).setHorizontalAlignment("center");
     currentRow++;
 
-    // Row 2: Headers — "Размер" | Color1 | Color2 | ...
-    var headerRow = ["Размер"];
-    for (var c = 0; c < colors.length; c++) {
-      headerRow.push(colors[c].colorName);
-    }
-    sheet.getRange(currentRow, 1, 1, headerRow.length).setValues([headerRow]);
-    sheet.getRange(currentRow, 1, 1, headerRow.length).setFontWeight("bold");
-    sheet.getRange(currentRow, 1, 1, headerRow.length).setBackground("#e8eaf6");
-    sheet.getRange(currentRow, 1, 1, headerRow.length).setHorizontalAlignment("center");
+    // Color headers
+    sheet.getRange(currentRow, 1, 1, totalCols2).setFontWeight("bold");
+    sheet.getRange(currentRow, 1, 1, totalCols2).setBackground("#e8eaf6");
+    sheet.getRange(currentRow, 1, 1, totalCols2).setHorizontalAlignment("center");
     currentRow++;
 
-    var dataStartRow = currentRow; // remember where data rows start
-
-    // Data rows — one per size
-    for (var s = 0; s < sizes.length; s++) {
-      var dataRow = [sizes[s]];
-      for (var c2 = 0; c2 < colors.length; c2++) {
-        var qty = (colors[c2].stockPerSize && colors[c2].stockPerSize[sizes[s]]) || 0;
-        dataRow.push(qty);
-      }
-      sheet.getRange(currentRow, 1, 1, dataRow.length).setValues([dataRow]);
-      sheet.getRange(currentRow, 1).setFontWeight("bold"); // size label bold
-      sheet.getRange(currentRow, 2, 1, colors.length).setHorizontalAlignment("center");
+    // Data rows
+    for (var s2 = 0; s2 < sizes2.length; s2++) {
+      sheet.getRange(currentRow, 1).setFontWeight("bold");
+      sheet.getRange(currentRow, 2, 1, colors2.length).setHorizontalAlignment("center");
       currentRow++;
     }
 
-    var dataEndRow = currentRow - 1; // last data row
-
-    // ИТОГО row — use SUM formulas for auto-calculation
-    sheet.getRange(currentRow, 1).setValue("ИТОГО");
-    for (var c3 = 0; c3 < colors.length; c3++) {
-      var colLetter = getColumnLetter(c3 + 2); // +2 because col 1 is "Размер"
-      var formula = "=SUM(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")";
-      sheet.getRange(currentRow, c3 + 2).setFormula(formula);
-    }
-    sheet.getRange(currentRow, 1, 1, totalCols).setFontWeight("bold");
-    sheet.getRange(currentRow, 1, 1, totalCols).setBackground("#f0f0f0");
-    sheet.getRange(currentRow, 2, 1, colors.length).setHorizontalAlignment("center");
+    // ИТОГО row
+    sheet.getRange(currentRow, 1, 1, totalCols2).setFontWeight("bold");
+    sheet.getRange(currentRow, 1, 1, totalCols2).setBackground("#f0f0f0");
+    sheet.getRange(currentRow, 2, 1, colors2.length).setHorizontalAlignment("center");
     currentRow++;
 
-    // Empty row between models
+    // Empty row
     currentRow++;
   }
 
+  // Apply formulas for ИТОГО
+  for (var f = 0; f < formulas.length; f++) {
+    sheet.getRange(formulas[f].row, formulas[f].col).setFormula(formulas[f].formula);
+  }
+
   // Auto-resize columns
-  var maxCols = sheet.getLastColumn();
   for (var col = 1; col <= maxCols; col++) {
     sheet.autoResizeColumn(col);
   }

@@ -135,7 +135,6 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperPro
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={imgAspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}

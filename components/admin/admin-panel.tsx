@@ -627,6 +627,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   // Realtime subscriptions — auto-refresh on DB changes
   useRealtimeTable("orders", refreshOrders);
   useRealtimeTable("catalog_models", refreshModels);
+  useRealtimeTable("model_colors", refreshModels);
+  useRealtimeTable("model_sizes", refreshModels);
 
   // Product helpers
   const getStock = (m: CatalogModel) =>

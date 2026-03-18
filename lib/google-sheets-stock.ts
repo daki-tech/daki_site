@@ -28,7 +28,6 @@ export async function syncStockToGoogleSheets() {
   const { data: models, error } = await admin
     .from("catalog_models")
     .select("*, model_sizes(*), model_colors(*)")
-    .eq("is_active", true)
     .order("sku", { ascending: true });
 
   if (error || !models) {

@@ -26,22 +26,23 @@ export async function GET(req: Request) {
 
   const json = await res.json();
 
-  // Set bot commands (creates the "/" menu button in Telegram)
-  const commandsRes = await fetch(
-    `https://api.telegram.org/bot${botToken}/setMyCommands`,
+  // Remove bot commands menu — we use reply keyboard instead
+  const deleteCommandsRes = await fetch(
+    `https://api.telegram.org/bot${botToken}/deleteMyCommands`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
+  );
+  const deleteCommandsJson = await deleteCommandsRes.json();
+
+  // Set chat menu button to default (removes "Меню" button)
+  const menuRes = await fetch(
+    `https://api.telegram.org/bot${botToken}/setChatMenuButton`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        commands: [
-          { command: "start", description: "Главное меню" },
-          { command: "finance", description: "💼 Финансовый учет" },
-          { command: "cancel", description: "Отменить текущую операцию" },
-        ],
-      }),
+      body: JSON.stringify({ menu_button: { type: "default" } }),
     }
   );
-  const commandsJson = await commandsRes.json();
+  const menuJson = await menuRes.json();
 
-  return NextResponse.json({ webhookUrl, telegram: json, commands: commandsJson });
+  return NextResponse.json({ webhookUrl, telegram: json, deletedCommands: deleteCommandsJson, menuButton: menuJson });
 }
