@@ -403,10 +403,11 @@ async function handleFinanceStep(
       return NextResponse.json({ ok: true });
     }
 
-    // Append to Google Sheets (fire-and-forget)
+    // Append to Google Sheets (fire-and-forget) — date in dd.mm.yyyy format
+    const sheetDate = dateStr.split("-").reverse().join(".");
     appendToFinanceSheet({
       type: state.action,
-      date: dateStr,
+      date: sheetDate,
       description: descStr,
       amount,
     });

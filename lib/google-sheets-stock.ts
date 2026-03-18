@@ -38,15 +38,34 @@ export async function syncStockToGoogleSheets() {
 
   // Build stock data per model
   const stockData: ModelStock[] = models.map((m) => {
-    const sizes = (m.model_sizes ?? [])
-      .map((s: { size_label: string }) => s.size_label)
+    const sizeRows = (m.model_sizes ?? []) as Array<{ size_label: string; total_stock: number }>;
+    const sizes = sizeRows
+      .map((s) => s.size_label)
       .sort((a: string, b: string) => Number(a) - Number(b));
 
-    const colors: ColorStock[] = (m.model_colors ?? []).map((c: Record<string, unknown>) => ({
+    const rawColors: ColorStock[] = (m.model_colors ?? []).map((c: Record<string, unknown>) => ({
       colorName: (c.name as string) || "",
       hex: (c.hex as string) || "",
       stockPerSize: (c.stock_per_size as Record<string, number>) ?? {},
     }));
+
+    // Check if ANY color has non-empty stock_per_size
+    const hasPerColorStock = rawColors.some((c) =>
+      Object.values(c.stockPerSize).some((v) => v > 0)
+    );
+
+    let colors: ColorStock[];
+    if (hasPerColorStock) {
+      // Use per-color stock data as-is
+      colors = rawColors;
+    } else {
+      // Fallback: use model_sizes total_stock as a single "Всего" column
+      const totalPerSize: Record<string, number> = {};
+      for (const sr of sizeRows) {
+        totalPerSize[sr.size_label] = sr.total_stock ?? 0;
+      }
+      colors = [{ colorName: "Всего", hex: "", stockPerSize: totalPerSize }];
+    }
 
     return { sku: m.sku, name: m.name, sizes, colors };
   });
