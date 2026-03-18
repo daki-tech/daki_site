@@ -124,11 +124,11 @@ export function ProductCard({ model, customerType = "retail" }: ProductCardProps
             </div>
           )}
 
-          {/* Action buttons - top right, outline style without background */}
+          {/* Action buttons - top right, float over image */}
           <div className="absolute right-3 top-3 flex flex-row gap-2">
             {/* Wishlist */}
             <button
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+              className="flex h-8 w-8 items-center justify-center transition"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -136,17 +136,17 @@ export function ProductCard({ model, customerType = "retail" }: ProductCardProps
               }}
               aria-label="Додати в список бажань"
             >
-              <Heart className={`h-4 w-4 transition ${isFav ? "fill-red-500 text-red-500" : "text-black hover:scale-110"}`} strokeWidth={1.5} />
+              <Heart className={`h-5 w-5 drop-shadow-md transition hover:scale-110 ${isFav ? "fill-red-500 text-red-500" : "fill-white text-black"}`} strokeWidth={1.5} />
             </button>
 
             {/* Quick add to cart */}
             {!model.is_out_of_stock && (
               <button
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+                className="flex h-8 w-8 items-center justify-center transition"
                 onClick={handleQuickAdd}
                 aria-label="Додати в кошик"
               >
-                <ShoppingBag className="h-4 w-4 text-black transition hover:scale-110" strokeWidth={1.5} />
+                <ShoppingBag className="h-5 w-5 fill-white text-black drop-shadow-md transition hover:scale-110" strokeWidth={1.5} />
               </button>
             )}
           </div>
