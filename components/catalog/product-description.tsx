@@ -53,10 +53,10 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
     selectedColor?.description_image ?? model.detail_images?.[0] ?? null;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-start">
+    <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-stretch">
       {/* LEFT: Photo / Video */}
       {rawDescMedia ? (
-        <div className="relative overflow-hidden rounded-xl bg-neutral-100" style={{ maxHeight: "80vh", aspectRatio: "3/4" }}>
+        <div className="relative overflow-hidden rounded-xl bg-neutral-100 min-h-[300px]">
           <SmartMedia
             src={rawDescMedia}
             alt={`${model.name} — деталь`}
@@ -66,7 +66,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
           />
         </div>
       ) : (
-        <div className="bg-neutral-100 rounded-xl" style={{ maxHeight: "80vh", aspectRatio: "3/4" }} />
+        <div className="bg-neutral-100 rounded-xl min-h-[300px]" />
       )}
 
       {/* RIGHT: Description + Composition & Care */}

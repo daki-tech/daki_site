@@ -353,7 +353,6 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
       {currentCrop && (
         <ImageCropper
           imageSrc={currentCrop.dataUrl}
-          aspect={3 / 4}
           onCropDone={handleCropDone}
           onCancel={handleCropCancel}
         />
@@ -511,7 +510,6 @@ function SingleMediaUpload({ value, onChange, label, aspect }: { value: string; 
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
-          aspect={aspect ?? 4 / 3}
           onCropDone={handleCropDone}
           onCancel={() => setCropSrc(null)}
         />

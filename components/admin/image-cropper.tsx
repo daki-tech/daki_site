@@ -8,20 +8,27 @@ import { X, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
-  aspect?: number;
   onCropDone: (croppedBlob: Blob) => void;
   onCancel: () => void;
 }
 
-export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }: ImageCropperProps) {
+export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const portalRef = useRef<HTMLDivElement | null>(null);
 
   const onCropComplete = useCallback((_: Area, px: Area) => setCroppedAreaPixels(px), []);
+
+  // Load image dimensions to size the crop area
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = imageSrc;
+  }, [imageSrc]);
 
   // Create portal container on mount, remove on unmount
   useEffect(() => {
@@ -54,12 +61,18 @@ export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }:
     }
   };
 
-  // Compute aspect-label for display
-  const aspectLabel = aspect === 1 ? "1:1"
-    : aspect < 1 ? `${Math.round(aspect * 100) / 100 === 0.75 ? "3:4" : `${Math.round(aspect * 10)}:${Math.round(10)}`}`
-    : `${Math.round(aspect * 3) === 4 ? "4:3" : `${Math.round(aspect * 9) === 16 ? "16:9" : `${aspect}`}`}`;
+  if (!mounted || !portalRef.current || !imgSize) return null;
 
-  if (!mounted || !portalRef.current) return null;
+  // Compute crop area dimensions to match image aspect ratio, fitting within max bounds
+  const maxW = 580;
+  const maxH = Math.min(480, window.innerHeight - 160);
+  const imgAspect = imgSize.w / imgSize.h;
+  let cropW = maxW;
+  let cropH = maxW / imgAspect;
+  if (cropH > maxH) {
+    cropH = maxH;
+    cropW = maxH * imgAspect;
+  }
 
   return createPortal(
     <div
@@ -82,7 +95,7 @@ export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }:
         padding: 16,
       }}
     >
-      {/* White card */}
+      {/* White card — adapts to image */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -90,9 +103,8 @@ export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }:
         style={{
           background: "#fff",
           borderRadius: 16,
-          width: 580,
+          width: cropW,
           maxWidth: "100%",
-          maxHeight: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
           boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
@@ -117,17 +129,18 @@ export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }:
           </button>
         </div>
 
-        {/* Crop area — aspect-matched */}
-        <div style={{ position: "relative", width: "100%", aspectRatio: `${aspect}`, maxHeight: 480, background: "#e5e5e5", flexShrink: 0 }}>
+        {/* Crop area — matches image aspect */}
+        <div style={{ position: "relative", width: "100%", height: cropH, background: "#e5e5e5", flexShrink: 0 }}>
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={aspect}
+            aspect={imgAspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
-            showGrid
+            showGrid={false}
+            objectFit="contain"
             style={{
               containerStyle: { width: "100%", height: "100%", position: "absolute", top: 0, left: 0 },
             }}
