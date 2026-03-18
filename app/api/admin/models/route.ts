@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   // Extract sizes separately (they go into model_sizes table)
   const { sizes, ...modelData } = parsed.data;
-  const colorVariants = (body.color_variants ?? body.colors ?? []) as Array<{ name: string; hex: string; image_urls?: string[] }>;
+  const colorVariants = (body.color_variants ?? body.colors ?? []) as Array<{ name: string; hex: string; image_urls?: string[]; stock_per_size?: Record<string, number> }>;
 
   const { data: model, error: modelError } = await auth.supabase
     .from("catalog_models")
@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       hex: c.hex,
       image_urls: c.image_urls ?? [],
       is_default: i === 0,
+      stock_per_size: c.stock_per_size ?? {},
     }));
     const { data: colorData } = await auth.supabase
       .from("model_colors")

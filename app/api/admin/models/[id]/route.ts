@@ -22,7 +22,7 @@ export async function PATCH(
       if (key in body) updatePayload[key] = body[key];
     }
 
-    const colorVariants = (body.color_variants ?? body.colors) as Array<{ name: string; hex: string; image_urls?: string[] }> | undefined;
+    const colorVariants = (body.color_variants ?? body.colors) as Array<{ name: string; hex: string; image_urls?: string[]; stock_per_size?: Record<string, number> }> | undefined;
     const sizes = body.sizes as Array<{ size_label: string; total_stock: number }> | undefined;
 
     // Run model update, color update, and size update in parallel for speed
@@ -33,7 +33,7 @@ export async function PATCH(
       colorVariants && colorVariants.length > 0
         ? admin.from("model_colors").delete().eq("model_id", id).then(() => {
             const colorRows = colorVariants.map((c, i) => ({
-              model_id: id, name: c.name || c.hex, hex: c.hex, image_urls: c.image_urls ?? [], is_default: i === 0,
+              model_id: id, name: c.name || c.hex, hex: c.hex, image_urls: c.image_urls ?? [], is_default: i === 0, stock_per_size: c.stock_per_size ?? {},
             }));
             return admin.from("model_colors").insert(colorRows).select("*");
           })

@@ -151,7 +151,9 @@ interface AdminPanelProps {
   users: Profile[];
 }
 
-interface ColorVariant { name: string; hex: string; image_urls: string[] }
+const ALL_SIZES = ["42", "44", "46", "48", "50", "52", "54", "56"] as const;
+
+interface ColorVariant { name: string; hex: string; image_urls: string[]; stock_per_size: Record<string, number> }
 
 interface ModelFormData {
   sku: string;
@@ -168,6 +170,7 @@ interface ModelFormData {
   return_info: string;
   care_media_url: string;
   delivery_media_url: string;
+  selected_sizes: string[];
   color_variants: ColorVariant[];
   sizes: { size_label: string; total_stock: number }[];
   size_chart: { size: string; chest: string; waist: string; hips: string; available: string }[];
@@ -178,13 +181,15 @@ const emptyForm: ModelFormData = {
   base_price: "0", discount_percent: "0", wholesale_price: "0", min_wholesale_qty: "1", description: "",
   care_instructions: "", delivery_info: "", return_info: "",
   care_media_url: "", delivery_media_url: "",
-  color_variants: [{ name: "", hex: "#000000", image_urls: [] }],
+  selected_sizes: [],
+  color_variants: [{ name: "", hex: "#000000", image_urls: [], stock_per_size: {} }],
   sizes: [{ size_label: "", total_stock: 0 }],
   size_chart: [{ size: "", chest: "", waist: "", hips: "", available: "" }],
 };
 
 function modelToForm(m: CatalogModel): ModelFormData {
   const sc = (() => { try { return typeof m.size_chart === "string" ? JSON.parse(m.size_chart) : m.size_chart; } catch { return []; } })();
+  const selectedSizes = m.model_sizes?.length ? m.model_sizes.map((s) => s.size_label).filter(Boolean) : [];
   return {
     sku: m.sku, name: m.name, category: m.category, season: m.season,
     base_price: String(m.base_price), discount_percent: String(m.discount_percent),
@@ -193,9 +198,10 @@ function modelToForm(m: CatalogModel): ModelFormData {
     care_instructions: m.care_instructions ?? "", delivery_info: m.delivery_info ?? "",
     return_info: m.return_info ?? "",
     care_media_url: m.detail_images?.[0] ?? "", delivery_media_url: m.detail_images?.[1] ?? "",
+    selected_sizes: selectedSizes,
     color_variants: m.model_colors?.length
-      ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex, image_urls: c.image_urls ?? [] }))
-      : [{ name: "", hex: "#000000", image_urls: m.image_urls?.length ? m.image_urls : [] }],
+      ? m.model_colors.map((c) => ({ name: c.name, hex: c.hex, image_urls: c.image_urls ?? [], stock_per_size: ((c as unknown as Record<string, unknown>).stock_per_size as Record<string, number>) ?? {} }))
+      : [{ name: "", hex: "#000000", image_urls: m.image_urls?.length ? m.image_urls : [], stock_per_size: {} }],
     sizes: m.model_sizes?.length ? m.model_sizes.map((s) => ({ size_label: s.size_label, total_stock: s.total_stock })) : [{ size_label: "", total_stock: 0 }],
     size_chart: Array.isArray(sc) && sc.length > 0 ? sc : [{ size: "", chest: "", waist: "", hips: "", available: "" }],
   };
@@ -674,8 +680,21 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     setEditForm(modelToForm(model));
   };
 
+  // Compute total stock per size by summing across all color variants
+  const computeSizesFromColors = (f: ModelFormData) => {
+    const totals: Record<string, number> = {};
+    for (const sz of f.selected_sizes) totals[sz] = 0;
+    for (const cv of f.color_variants) {
+      for (const sz of f.selected_sizes) {
+        totals[sz] = (totals[sz] || 0) + (cv.stock_per_size[sz] || 0);
+      }
+    }
+    return f.selected_sizes.map((sz) => ({ size_label: sz, total_stock: totals[sz] || 0 }));
+  };
+
   const handleUpdateModel = async () => {
     if (!editingModel) return;
+    const sizes = computeSizesFromColors(editForm);
     const payload = {
       action: "update",
       sku: editForm.sku, name: editForm.name, category: editForm.category,
@@ -689,8 +708,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       return_info: editForm.return_info || null,
       detail_images: [editForm.care_media_url, editForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(editForm.size_chart.filter((r) => r.size)),
-      color_variants: editForm.color_variants.filter((c) => c.hex),
-      sizes: editForm.size_chart.filter((r) => r.size).map((r) => ({ size_label: r.size, total_stock: Number(r.available) || 0 })),
+      color_variants: editForm.color_variants.filter((c) => c.hex).map((c) => ({ ...c, stock_per_size: c.stock_per_size })),
+      sizes,
     };
     const res = await fetch(`/api/admin/models/${editingModel.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -703,6 +722,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleCreateModel = async () => {
+    const sizes = computeSizesFromColors(createForm);
     const payload = {
       sku: createForm.sku, name: createForm.name, category: createForm.category,
       season: createForm.season,
@@ -715,8 +735,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       return_info: createForm.return_info || null,
       detail_images: [createForm.care_media_url, createForm.delivery_media_url].filter(Boolean),
       size_chart: JSON.stringify(createForm.size_chart.filter((r) => r.size)),
-      color_variants: createForm.color_variants.filter((c) => c.hex),
-      sizes: createForm.size_chart.filter((r) => r.size).map((r) => ({ size_label: r.size, total_stock: Number(r.available) || 0 })),
+      color_variants: createForm.color_variants.filter((c) => c.hex).map((c) => ({ ...c, stock_per_size: c.stock_per_size })),
+      sizes,
     };
     const res = await fetch("/api/admin/models", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -980,7 +1000,25 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                         <TableCell className="font-medium">{model.name}</TableCell>
                         <TableCell>{formatCurrency(model.base_price)}</TableCell>
                         <TableCell>{model.discount_percent > 0 ? <Badge variant="secondary">-{model.discount_percent}%</Badge> : "-"}</TableCell>
-                        <TableCell>{stock} шт.</TableCell>
+                        <TableCell>
+                          <div className="text-xs">
+                            <span className="font-medium">{stock} шт.</span>
+                            {model.model_colors && model.model_colors.length > 1 && (
+                              <div className="mt-1 space-y-0.5">
+                                {model.model_colors.map((c) => {
+                                  const sps = (c as unknown as Record<string, unknown>).stock_per_size as Record<string, number> | undefined;
+                                  const colorStock = sps ? Object.values(sps).reduce((a, b) => a + (b || 0), 0) : 0;
+                                  return colorStock > 0 ? (
+                                    <div key={c.id} className="flex items-center gap-1">
+                                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-200" style={{ background: c.hex }} />
+                                      <span className="text-[10px] text-gray-500">{colorStock}</span>
+                                    </div>
+                                  ) : null;
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{sold} шт.</TableCell>
                         <TableCell>
                           {!model.is_active ? (
@@ -1561,7 +1599,38 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       <div className={S.divider} />
 
-      {/* Color variants (photos + color in one block) */}
+      {/* Size selector */}
+      <div>
+        <p className={`${S.label} mb-2`}>Розміри моделі</p>
+        <div className="flex flex-wrap gap-2">
+          {ALL_SIZES.map((sz) => {
+            const on = form.selected_sizes.includes(sz);
+            return (
+              <button
+                key={sz}
+                type="button"
+                onClick={() => {
+                  const next = on ? form.selected_sizes.filter((s) => s !== sz) : [...form.selected_sizes, sz].sort((a, b) => Number(a) - Number(b));
+                  update("selected_sizes", next);
+                  // Auto-update size_chart
+                  const newChart = next.map((s) => {
+                    const existing = form.size_chart.find((r) => r.size === s);
+                    return existing ?? { size: s, chest: "", waist: "", hips: "", available: "" };
+                  });
+                  update("size_chart", newChart.length ? newChart : [{ size: "", chest: "", waist: "", hips: "", available: "" }]);
+                }}
+                className={`h-10 w-12 rounded-lg border-2 text-sm font-semibold transition-all ${on ? "border-black bg-black text-white" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
+              >
+                {sz}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={S.divider} />
+
+      {/* Color variants (photos + color + stock per size) */}
       <div>
         <p className={`${S.label} mb-3`}>Варианты цветов</p>
         <DndContext
@@ -1591,12 +1660,38 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                     )}
                   </div>
                   <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
+                  {/* Stock per size for this color */}
+                  {form.selected_sizes.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] text-gray-400 mb-1">Кількість по розмірах</p>
+                      <div className="flex flex-wrap gap-2">
+                        {form.selected_sizes.map((sz) => (
+                          <div key={sz} className="flex flex-col items-center gap-0.5">
+                            <span className="text-[10px] font-medium text-gray-500">{sz}</span>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={variant.stock_per_size[sz] ?? ""}
+                              onChange={(e) => {
+                                const c = [...form.color_variants];
+                                c[i] = { ...c[i], stock_per_size: { ...c[i].stock_per_size, [sz]: Number(e.target.value) || 0 } };
+                                update("color_variants", c);
+                              }}
+                              onFocus={(e) => { if (e.target.value === "0") e.target.value = ""; }}
+                              className={`w-14 h-8 text-xs text-center ${S.input}`}
+                              placeholder="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </SortableColorVariant>
               ))}
             </div>
           </SortableContext>
         </DndContext>
-        <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [] }])} className={`w-full py-2.5 mt-4 ${S.addBtn} flex items-center justify-center gap-1.5`}>
+        <button type="button" onClick={() => update("color_variants", [...form.color_variants, { name: "", hex: "#000000", image_urls: [], stock_per_size: {} }])} className={`w-full py-2.5 mt-4 ${S.addBtn} flex items-center justify-center gap-1.5`}>
           <Plus className="h-3.5 w-3.5" /> Добавить вариант цвета
         </button>
       </div>
@@ -1637,43 +1732,45 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       <div className={S.divider} />
 
-      {/* Size chart table */}
-      <div>
-        <p className={`${S.label} mb-2`}>Таблица размеров</p>
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50/80">
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Размер</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Грудь</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талия</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Бёдра</th>
-                <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Остаток</th>
-                <th className="px-2 py-2 w-8"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {form.size_chart.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100">
-                  {(["size","chest","waist","hips","available"] as const).map((f) => (
-                    <td key={f} className="px-1 py-1">
-                      <Input value={row[f]} onChange={(e) => { const c = [...form.size_chart]; c[i] = { ...c[i], [f]: e.target.value }; update("size_chart", c); }} className={`h-8 text-xs ${S.input}`} />
-                    </td>
-                  ))}
-                  <td className="px-1 py-1 text-center">
-                    {form.size_chart.length > 1 && (
-                      <button type="button" onClick={() => update("size_chart", form.size_chart.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3 w-3" /></button>
-                    )}
-                  </td>
+      {/* Size chart table — auto-generated from selected sizes */}
+      {form.selected_sizes.length > 0 && (
+        <div>
+          <p className={`${S.label} mb-2`}>Таблиця розмірів</p>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50/80">
+                  <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Розмір</th>
+                  <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Груди</th>
+                  <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Талія</th>
+                  <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Стегна</th>
+                  <th className="px-2 py-2 text-left text-[10px] text-gray-400 uppercase font-semibold">Залишок</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {form.size_chart.filter((r) => form.selected_sizes.includes(r.size)).map((row, i) => {
+                  const totalForSize = form.color_variants.reduce((sum, cv) => sum + (cv.stock_per_size[row.size] || 0), 0);
+                  return (
+                    <tr key={row.size} className="border-t border-gray-100">
+                      <td className="px-2 py-1.5 font-medium text-xs">{row.size}</td>
+                      {(["chest", "waist", "hips"] as const).map((f) => (
+                        <td key={f} className="px-1 py-1">
+                          <Input value={row[f]} onChange={(e) => {
+                            const chartIdx = form.size_chart.findIndex((r2) => r2.size === row.size);
+                            if (chartIdx === -1) return;
+                            const c = [...form.size_chart]; c[chartIdx] = { ...c[chartIdx], [f]: e.target.value }; update("size_chart", c);
+                          }} className={`h-8 text-xs ${S.input}`} />
+                        </td>
+                      ))}
+                      <td className="px-2 py-1.5 text-xs font-semibold text-center">{totalForSize}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <button type="button" onClick={() => update("size_chart", [...form.size_chart, { size: "", chest: "", waist: "", hips: "", available: "" }])} className={`w-full py-2 mt-2 ${S.addBtn} flex items-center justify-center gap-1.5 text-xs`}>
-          <Plus className="h-3.5 w-3.5" /> Добавить строку
-        </button>
-      </div>
+      )}
     </div>
   );
 }
