@@ -1003,17 +1003,18 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                         <TableCell>
                           <div className="text-xs">
                             <span className="font-medium">{stock} шт.</span>
-                            {model.model_colors && model.model_colors.length > 1 && (
+                            {model.model_colors && model.model_colors.length >= 1 && (
                               <div className="mt-1 space-y-0.5">
                                 {model.model_colors.map((c) => {
                                   const sps = (c as unknown as Record<string, unknown>).stock_per_size as Record<string, number> | undefined;
                                   const colorStock = sps ? Object.values(sps).reduce((a, b) => a + (b || 0), 0) : 0;
-                                  return colorStock > 0 ? (
+                                  return (
                                     <div key={c.id} className="flex items-center gap-1">
-                                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-200" style={{ background: c.hex }} />
-                                      <span className="text-[10px] text-gray-500">{colorStock}</span>
+                                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-200 flex-shrink-0" style={{ background: c.hex }} />
+                                      <span className="text-[10px] text-gray-500 truncate max-w-[80px]">{c.name}</span>
+                                      <span className="text-[10px] text-gray-400">— {colorStock}</span>
                                     </div>
-                                  ) : null;
+                                  );
                                 })}
                               </div>
                             )}

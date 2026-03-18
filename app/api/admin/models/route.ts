@@ -1,8 +1,9 @@
-﻿import { NextResponse } from "next/server";
+﻿import { NextResponse, after } from "next/server";
 
 import { mockModels } from "@/lib/mock-data";
 import { requireApiAdmin } from "@/lib/server-auth";
 import { modelSchema } from "@/lib/validations";
+import { syncStockToGoogleSheets } from "@/lib/google-sheets-stock";
 
 export async function GET() {
   const auth = await requireApiAdmin();
@@ -80,6 +81,8 @@ export async function POST(request: Request) {
       .select("*");
     createdColors = colorData ?? [];
   }
+
+  after(() => syncStockToGoogleSheets());
 
   return NextResponse.json({ ...model, model_sizes: createdSizes ?? [], model_colors: createdColors });
 }

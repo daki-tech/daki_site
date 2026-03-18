@@ -1,8 +1,10 @@
 ﻿import { NextResponse } from "next/server";
+import { after } from "next/server";
 
 import { requireApiAdmin } from "@/lib/server-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inventoryMovementSchema } from "@/lib/validations";
+import { syncStockToGoogleSheets } from "@/lib/google-sheets-stock";
 
 export async function PATCH(
   request: Request,
@@ -54,6 +56,9 @@ export async function PATCH(
     const data = modelResult.data;
     if (colorsResult?.data) data.model_colors = colorsResult.data;
     if (sizesResult?.data) data.model_sizes = sizesResult.data;
+
+    // Sync stock to Google Sheets in background
+    after(() => syncStockToGoogleSheets());
 
     return NextResponse.json(data);
   }
@@ -157,6 +162,9 @@ export async function PATCH(
     if (modelError) {
       return NextResponse.json({ error: modelError.message }, { status: 500 });
     }
+
+    // Sync stock to Google Sheets in background
+    after(() => syncStockToGoogleSheets());
 
     return NextResponse.json(model);
   }

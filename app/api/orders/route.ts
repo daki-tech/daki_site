@@ -458,10 +458,12 @@ export async function POST(req: Request) {
 
     // Send notifications AFTER response — user doesn't wait for Telegram/Sheets/Email
     after(async () => {
+      const { syncStockToGoogleSheets } = await import("@/lib/google-sheets-stock");
       await Promise.allSettled([
         sendTelegramNotification(orderData),
         appendToGoogleSheets(orderData),
         sendOrderConfirmationEmail(orderData),
+        syncStockToGoogleSheets(),
       ]);
 
       // Auto-subscribe customer email to newsletter
