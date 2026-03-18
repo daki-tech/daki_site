@@ -16,14 +16,6 @@ const headerLabels: Record<string, string> = {
   available: "В наявності",
 };
 
-// Columns that should never appear on the public product page (stock/availability data)
-const HIDDEN_COLUMNS = ["available", "в наявності", "залишок", "залишки", "остаток", "stock"];
-
-function isHiddenColumn(header: string): boolean {
-  const lower = header.toLowerCase().trim();
-  return HIDDEN_COLUMNS.some((h) => lower === h || lower.includes(h));
-}
-
 function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
   return (
     <div>
@@ -53,6 +45,7 @@ function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
                     className={`py-4 ${cIdx === 0 ? "text-left pl-1 font-semibold text-neutral-900" : "text-center text-neutral-500"}`}
                   >
                     {cell ?? ""}
+                    {cIdx === row.length - 1 && cell && !String(cell).includes("шт") ? " шт." : ""}
                   </td>
                 ))}
               </tr>
@@ -77,10 +70,7 @@ export function ProductSizeChart({ sizeChart }: ProductSizeChartProps) {
   }
 
   if (jsonRows && jsonRows.length > 0) {
-    // Filter out stock/availability columns — internal data only
-    const keys = Object.keys(jsonRows[0]).filter(
-      (k) => jsonRows![0][k] !== undefined && !isHiddenColumn(k) && !isHiddenColumn(headerLabels[k.toLowerCase()] ?? k)
-    );
+    const keys = Object.keys(jsonRows[0]).filter((k) => jsonRows![0][k] !== undefined);
     if (keys.length === 0) return null;
 
     const headers = keys.map((k) => headerLabels[k.toLowerCase()] ?? k);
@@ -103,22 +93,11 @@ export function ProductSizeChart({ sizeChart }: ProductSizeChartProps) {
         ? /\s{2,}/
         : ",";
 
-  const rawRows = lines.map((line) =>
+  const rows = lines.map((line) =>
     (typeof separator === "string" ? line.split(separator) : line.split(separator))
       .map((cell) => cell.trim())
       .filter(Boolean)
   );
 
-  if (rawRows.length === 0) return null;
-
-  // Filter out stock/availability columns from text-based tables
-  const headerRow = rawRows[0];
-  const visibleIndices = headerRow
-    .map((h, i) => (isHiddenColumn(h) ? -1 : i))
-    .filter((i) => i >= 0);
-
-  const filteredHeaders = visibleIndices.map((i) => headerRow[i]);
-  const filteredData = rawRows.slice(1).map((row) => visibleIndices.map((i) => row[i]));
-
-  return renderTable(filteredHeaders, filteredData);
+  return renderTable(rows[0], rows.slice(1));
 }
