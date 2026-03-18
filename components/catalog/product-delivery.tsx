@@ -134,7 +134,7 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
             src={rawDeliveryMedia}
             alt={`${model.name} — доставка`}
             fill
-            className="object-contain object-top"
+            className="object-cover object-top"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>

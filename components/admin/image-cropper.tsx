@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
-import { X, RotateCw, Maximize2, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { X, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -13,20 +13,10 @@ interface ImageCropperProps {
   onCancel: () => void;
 }
 
-const ASPECTS = [
-  { label: "3:4", value: 3 / 4 },
-  { label: "1:1", value: 1 },
-  { label: "4:3", value: 4 / 3 },
-  { label: "16:9", value: 16 / 9 },
-];
-
-export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDone, onCancel }: ImageCropperProps) {
+export function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [aspect, setAspect] = useState(defaultAspect);
-  const [freeAspect, setFreeAspect] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const portalRef = useRef<HTMLDivElement | null>(null);
@@ -36,13 +26,11 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
   // Create portal container on mount, remove on unmount
   useEffect(() => {
     const el = document.createElement("div");
-    // Style the portal container itself to cover viewport and block all events below
     el.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;pointer-events:auto;";
     document.body.appendChild(el);
     portalRef.current = el;
     setMounted(true);
 
-    // Prevent body scroll
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -56,7 +44,7 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
     if (!croppedAreaPixels) return;
     setSaving(true);
     try {
-      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+      const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onCropDone(blob);
     } catch {
       const res = await fetch(imageSrc);
@@ -65,6 +53,11 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
       setSaving(false);
     }
   };
+
+  // Compute aspect-label for display
+  const aspectLabel = aspect === 1 ? "1:1"
+    : aspect < 1 ? `${Math.round(aspect * 100) / 100 === 0.75 ? "3:4" : `${Math.round(aspect * 10)}:${Math.round(10)}`}`
+    : `${Math.round(aspect * 3) === 4 ? "4:3" : `${Math.round(aspect * 9) === 16 ? "16:9" : `${aspect}`}`}`;
 
   if (!mounted || !portalRef.current) return null;
 
@@ -124,14 +117,13 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
           </button>
         </div>
 
-        {/* Crop area */}
-        <div style={{ position: "relative", width: "100%", height: 400, background: "#e5e5e5", flexShrink: 0 }}>
+        {/* Crop area — aspect-matched */}
+        <div style={{ position: "relative", width: "100%", aspectRatio: `${aspect}`, maxHeight: 480, background: "#e5e5e5", flexShrink: 0 }}>
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            rotation={rotation}
-            aspect={freeAspect ? undefined : aspect}
+            aspect={aspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
@@ -142,9 +134,8 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
           />
         </div>
 
-        {/* Controls */}
-        <div style={{ padding: "14px 16px", borderTop: "1px solid #f0f0f0", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
-          {/* Zoom */}
+        {/* Controls — only zoom */}
+        <div style={{ padding: "14px 16px", borderTop: "1px solid #f0f0f0", display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.15))} style={circBtnStyle}>
               <ZoomOut size={16} strokeWidth={1.5} />
@@ -158,29 +149,8 @@ export function ImageCropper({ imageSrc, aspect: defaultAspect = 3 / 4, onCropDo
               <ZoomIn size={16} strokeWidth={1.5} />
             </button>
           </div>
-
-          {/* Aspect + rotate */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", background: "#f5f5f5", borderRadius: 12, padding: 2, gap: 2 }}>
-              {ASPECTS.map((a) => {
-                const on = !freeAspect && aspect === a.value;
-                return (
-                  <button type="button" key={a.label}
-                    onClick={() => { setAspect(a.value); setFreeAspect(false); }}
-                    style={{ ...segStyle, ...(on ? segOn : {}) }}>
-                    {a.label}
-                  </button>
-                );
-              })}
-              <button type="button" onClick={() => setFreeAspect((f) => !f)}
-                style={{ ...segStyle, padding: "6px 10px", ...(freeAspect ? segOn : {}) }}>
-                <Maximize2 size={14} strokeWidth={2} />
-              </button>
-            </div>
-            <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)}
-              style={{ ...circBtnStyle, borderRadius: 10 }}>
-              <RotateCw size={16} strokeWidth={1.5} />
-            </button>
+          <div style={{ textAlign: "center", fontSize: 11, color: "#aaa", userSelect: "none" }}>
+            Перетягуйте фото для позиціонування
           </div>
         </div>
       </div>
@@ -209,35 +179,15 @@ const circBtnStyle: React.CSSProperties = {
   justifyContent: "center", color: "#999", flexShrink: 0,
 };
 
-const segStyle: React.CSSProperties = {
-  padding: "6px 12px", borderRadius: 10, fontSize: 12, fontWeight: 600,
-  border: "none", background: "transparent", color: "#999", cursor: "pointer",
-  display: "flex", alignItems: "center",
-};
-
-const segOn: React.CSSProperties = {
-  background: "#fff", color: "#111", boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-};
-
 /* ── Canvas crop ── */
 
-async function getCroppedImg(src: string, crop: Area, rotation = 0): Promise<Blob> {
+async function getCroppedImg(src: string, crop: Area): Promise<Blob> {
   const img = await loadImage(src);
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d")!;
-  const rad = (rotation * Math.PI) / 180;
-  const sin = Math.abs(Math.sin(rad));
-  const cos = Math.abs(Math.cos(rad));
-  const bW = img.width * cos + img.height * sin;
-  const bH = img.width * sin + img.height * cos;
-  c.width = bW; c.height = bH;
-  ctx.translate(bW / 2, bH / 2);
-  ctx.rotate(rad);
-  ctx.translate(-img.width / 2, -img.height / 2);
-  ctx.drawImage(img, 0, 0);
-  const d = ctx.getImageData(crop.x, crop.y, crop.width, crop.height);
-  c.width = crop.width; c.height = crop.height;
-  ctx.putImageData(d, 0, 0);
+  c.width = crop.width;
+  c.height = crop.height;
+  ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej()), "image/jpeg", 0.92));
 }
 
