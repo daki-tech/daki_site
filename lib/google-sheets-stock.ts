@@ -14,7 +14,8 @@ interface ModelStock {
 }
 
 /**
- * Fetch all models with stock data and push to Google Sheets "Залишки" tab
+ * Fetch all models with stock data and push to Google Sheets "Склад" tab
+ * Format: matrix per model — sizes vertically, colors horizontally
  */
 export async function syncStockToGoogleSheets() {
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
@@ -50,52 +51,25 @@ export async function syncStockToGoogleSheets() {
     return { sku: m.sku, name: m.name, sizes, colors };
   });
 
-  // Build rows for the sheet: one row per model+color, columns = sizes
-  // Header: Артикул | Модель | Колір | 42 | 44 | 46 | 48 | 50 | 52 | 54 | 56 | Всього
-  const allSizes = ["42", "44", "46", "48", "50", "52", "54", "56"];
-  const rows: Record<string, string | number>[] = [];
-
-  for (const model of stockData) {
-    if (model.colors.length === 0) continue;
-
-    for (const color of model.colors) {
-      const row: Record<string, string | number> = {
-        sku: model.sku,
-        model: model.name,
-        color: color.colorName,
-      };
-
-      let total = 0;
-      for (const sz of allSizes) {
-        const qty = color.stockPerSize[sz] || 0;
-        row[`size_${sz}`] = qty;
-        if (model.sizes.includes(sz)) total += qty;
-      }
-      row.total = total;
-      rows.push(row);
-    }
-
-    // Add subtotal row per model
-    const subtotalRow: Record<string, string | number> = {
-      sku: model.sku,
-      model: model.name,
-      color: "ВСЬОГО",
-    };
-    let modelTotal = 0;
-    for (const sz of allSizes) {
-      const szTotal = model.colors.reduce((sum, c) => sum + (c.stockPerSize[sz] || 0), 0);
-      subtotalRow[`size_${sz}`] = szTotal || "";
-      if (model.sizes.includes(sz)) modelTotal += szTotal;
-    }
-    subtotalRow.total = modelTotal;
-    rows.push(subtotalRow);
-  }
+  // Send models array with full structure for matrix rendering
+  const payload = {
+    action: "updateStock",
+    models: stockData.map((m) => ({
+      sku: m.sku,
+      name: m.name,
+      sizes: m.sizes,
+      colors: m.colors.map((c) => ({
+        colorName: c.colorName,
+        stockPerSize: c.stockPerSize,
+      })),
+    })),
+  };
 
   try {
     const resp = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "updateStock", rows }),
+      body: JSON.stringify(payload),
     });
     const text = await resp.text();
     console.log(`[Stock Sync] Response: ${resp.status} ${text.slice(0, 200)}`);

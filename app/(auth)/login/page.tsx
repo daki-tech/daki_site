@@ -59,6 +59,15 @@ function LoginForm() {
       // Check if user is admin and redirect accordingly
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Link guest orders to this user by email
+        if (user.email) {
+          fetch("/api/auth/link-orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: user.email }),
+          }).catch(() => {});
+        }
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("is_admin")

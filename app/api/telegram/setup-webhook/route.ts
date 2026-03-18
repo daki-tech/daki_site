@@ -25,5 +25,23 @@ export async function GET(req: Request) {
   );
 
   const json = await res.json();
-  return NextResponse.json({ webhookUrl, telegram: json });
+
+  // Set bot commands (creates the "/" menu button in Telegram)
+  const commandsRes = await fetch(
+    `https://api.telegram.org/bot${botToken}/setMyCommands`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        commands: [
+          { command: "start", description: "Главное меню" },
+          { command: "finance", description: "💼 Финансовый учет" },
+          { command: "cancel", description: "Отменить текущую операцию" },
+        ],
+      }),
+    }
+  );
+  const commandsJson = await commandsRes.json();
+
+  return NextResponse.json({ webhookUrl, telegram: json, commands: commandsJson });
 }

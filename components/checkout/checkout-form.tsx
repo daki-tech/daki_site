@@ -386,7 +386,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
           {/* Name */}
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              ПІБ *
+              Прізвище та ім&apos;я *
             </label>
             <input
               type="text"
@@ -394,7 +394,7 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
               value={form.customer_name}
               onChange={(e) => handleChange("customer_name", e.target.value)}
               className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
-              placeholder="Іванов Іван Іванович"
+              placeholder="Іванов Іван"
             />
           </div>
 
