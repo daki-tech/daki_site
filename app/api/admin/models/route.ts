@@ -16,6 +16,9 @@ export async function GET() {
 
   if (error) return NextResponse.json(mockModels);
 
+  // Auto-sync stock to Google Sheets whenever admin loads models
+  after(() => syncStockToGoogleSheets());
+
   return NextResponse.json(data ?? []);
 }
 

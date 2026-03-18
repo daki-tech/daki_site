@@ -62,6 +62,31 @@ async function editMessage(botToken: string, chatId: number, messageId: number, 
   });
 }
 
+async function deleteMessage(botToken: string, chatId: number, messageId: number) {
+  if (!botToken) return;
+  await fetch(`https://api.telegram.org/bot${botToken}/deleteMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, message_id: messageId }),
+  }).catch(() => {});
+}
+
+async function sendMessageAndTrack(botToken: string, chatId: number, text: string, replyMarkup?: object): Promise<number | null> {
+  if (!botToken) return null;
+  const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
+  });
+  const data = await resp.json();
+  return data.result?.message_id || null;
+}
+
 function getFinanceMenuKeyboard() {
   return {
     inline_keyboard: [
@@ -204,8 +229,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // /finance command — show finance menu
+    // /finance command — show finance menu (delete the command message itself to keep chat clean)
     if (text === "/finance" || text === "📒 Финансы") {
+      await deleteMessage(botToken, chatId, message.message_id);
       await sendMessage(botToken, chatId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
       return NextResponse.json({ ok: true });
     }
@@ -225,6 +251,12 @@ export async function POST(req: Request) {
       .single();
 
     if (state) {
+      // Track user's input message ID for cleanup
+      const userMsgId = message.message_id;
+      const existingMsgIds: number[] = state.data?.msg_ids || [];
+      if (userMsgId) {
+        state.data = { ...state.data, msg_ids: [...existingMsgIds, userMsgId] };
+      }
       return handleFinanceStep(admin, botToken, chatId, state, text);
     }
 
@@ -280,15 +312,15 @@ async function handleFinanceCallback(
 
   // Start finance input flow (income_cash, income_card, expense)
   if (FINANCE_ACTIONS[action]) {
-    // Save state to DB
+    const actionInfo = FINANCE_ACTIONS[action];
+    // Edit menu message to show what was selected
+    await editMessage(botToken, chatId, messageId, `${actionInfo.label}\n\n<i>Заполните данные ниже. /cancel для отмены.</i>`);
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[0]);
+    // Save state to DB with message IDs to delete later
     await admin.from("telegram_bot_state").upsert(
-      { chat_id: chatId, action, step: "date", data: {}, updated_at: new Date().toISOString() },
+      { chat_id: chatId, action, step: "date", data: { msg_ids: [messageId, ...(promptMsgId ? [promptMsgId] : [])] }, updated_at: new Date().toISOString() },
       { onConflict: "chat_id" }
     );
-    const actionInfo = FINANCE_ACTIONS[action];
-    // Edit menu message to show what was selected, then send input prompt
-    await editMessage(botToken, chatId, messageId, `${actionInfo.label}\n\n<i>Заполните данные ниже. /cancel для отмены.</i>`);
-    await sendMessage(botToken, chatId, actionInfo.stepLabels[0]);
     await answerCallback(botToken, callbackQuery.id, "");
     return NextResponse.json({ ok: true });
   }
@@ -312,18 +344,21 @@ async function handleFinanceStep(
     return NextResponse.json({ ok: true });
   }
 
+  // Helper to get tracked message IDs array from state data
+  const msgIds: number[] = state.data.msg_ids || [];
+
   if (state.step === "date") {
     const parsed = parseDate(input);
     if (!parsed) {
       await sendMessage(botToken, chatId, "⚠️ Неверный формат. Введите дд.мм.гггг или \"сегодня\":");
       return NextResponse.json({ ok: true });
     }
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[1]);
     await admin.from("telegram_bot_state").update({
       step: "description",
-      data: { ...state.data, date: parsed },
+      data: { ...state.data, date: parsed, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
       updated_at: new Date().toISOString(),
     }).eq("chat_id", chatId);
-    await sendMessage(botToken, chatId, actionInfo.stepLabels[1]);
     return NextResponse.json({ ok: true });
   }
 
@@ -332,12 +367,12 @@ async function handleFinanceStep(
       await sendMessage(botToken, chatId, "⚠️ Введите описание:");
       return NextResponse.json({ ok: true });
     }
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[2]);
     await admin.from("telegram_bot_state").update({
       step: "amount",
-      data: { ...state.data, description: input },
+      data: { ...state.data, description: input, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
       updated_at: new Date().toISOString(),
     }).eq("chat_id", chatId);
-    await sendMessage(botToken, chatId, actionInfo.stepLabels[2]);
     return NextResponse.json({ ok: true });
   }
 
@@ -376,17 +411,20 @@ async function handleFinanceStep(
     // Clear state
     await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
 
-    // Final confirmation message with all info + menu
+    // Delete all intermediate bot messages (prompts, menu edits)
+    for (const mid of msgIds) {
+      await deleteMessage(botToken, chatId, mid);
+    }
+
+    // Final clean summary — no buttons, just the record
     const dateFormatted = state.data.date.split("-").reverse().join(".");
     const typeEmoji = state.action === "expense" ? "📉" : state.action === "income_cash" ? "💵" : "💳";
     const typeLabel = state.action === "expense" ? "Расход" : state.action === "income_cash" ? "Наличка" : "Карта";
-    const descLabel = state.action === "expense" ? "На что" : "От кого";
 
     await sendMessage(
       botToken,
       chatId,
-      `✅ <b>${typeLabel} записано!</b>\n\n${typeEmoji} Тип: ${typeLabel}\n📅 Дата: ${dateFormatted}\n${state.action === "expense" ? "📝" : "👤"} ${descLabel}: ${state.data.description}\n💰 Сумма: ${amount.toLocaleString("ru-RU")} грн\n\n💼 <b>Финансовый учет:</b>`,
-      getFinanceMenuKeyboard()
+      `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${state.data.description}\n💰 ${amount.toLocaleString("ru-RU")} грн`
     );
     return NextResponse.json({ ok: true });
   }
