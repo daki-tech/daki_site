@@ -216,15 +216,13 @@ export async function POST(req: Request) {
       { onConflict: "chat_id" }
     );
 
-    // /start command — show welcome + finance menu
+    // /start command — show welcome + persistent "Финансы" button
     if (text.startsWith("/start")) {
-      // Remove any reply keyboard first
-      await sendMessage(botToken, chatId, "👋", { remove_keyboard: true });
       await sendMessage(
         botToken,
         chatId,
-        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.\n\n💼 <b>Финансовый учет:</b>`,
-        getFinanceMenuKeyboard()
+        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.`,
+        { keyboard: [[{ text: "📒 Финансы" }]], resize_keyboard: true }
       );
       return NextResponse.json({ ok: true });
     }
@@ -239,7 +237,7 @@ export async function POST(req: Request) {
     // /cancel command
     if (text === "/cancel" || text.toLowerCase() === "отмена") {
       await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-      await sendMessage(botToken, chatId, "❌ Отменено.\n\n💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+      await sendMessage(botToken, chatId, "❌ Отменено.");
       return NextResponse.json({ ok: true });
     }
 
@@ -260,8 +258,7 @@ export async function POST(req: Request) {
       return handleFinanceStep(admin, botToken, chatId, state, text);
     }
 
-    // Default: unknown text — show finance menu
-    await sendMessage(botToken, chatId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+    // Default: unknown text — just acknowledge
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[Telegram Webhook] Error:", err);
@@ -340,7 +337,7 @@ async function handleFinanceStep(
   const actionInfo = FINANCE_ACTIONS[state.action];
   if (!actionInfo) {
     await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-    await sendMessage(botToken, chatId, "❌ Ошибка. Попробуйте снова.\n\n💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+    await sendMessage(botToken, chatId, "❌ Ошибка. Попробуйте снова. Нажмите 📒 Финансы.");
     return NextResponse.json({ ok: true });
   }
 
@@ -398,7 +395,7 @@ async function handleFinanceStep(
     const { error: insertErr } = await admin.from("finance_records").insert(record);
     if (insertErr) {
       console.error("[Finance] Insert error:", insertErr);
-      await sendMessage(botToken, chatId, "❌ Ошибка сохранения. Попробуйте снова.\n\n💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+      await sendMessage(botToken, chatId, "❌ Ошибка сохранения. Попробуйте снова. Нажмите 📒 Финансы.");
       await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
       return NextResponse.json({ ok: true });
     }
@@ -435,7 +432,7 @@ async function handleFinanceStep(
 
   // Unknown step — reset
   await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-  await sendMessage(botToken, chatId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+  await sendMessage(botToken, chatId, "❌ Ошибка. Нажмите 📒 Финансы.");
   return NextResponse.json({ ok: true });
 }
 
@@ -450,7 +447,7 @@ async function handleReport(
     .order("date", { ascending: false });
 
   if (error || !records || records.length === 0) {
-    await sendMessage(botToken, chatId, "📊 Пока нет записей.\n\n💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+    await sendMessage(botToken, chatId, "📊 Пока нет записей.");
     return NextResponse.json({ ok: true });
   }
 
@@ -510,7 +507,7 @@ async function handleReport(
 
   report += `\n📋 Всего записей: ${records.length}`;
 
-  await sendMessage(botToken, chatId, report, getFinanceMenuKeyboard());
+  await sendMessage(botToken, chatId, report);
   return NextResponse.json({ ok: true });
 }
 

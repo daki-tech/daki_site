@@ -3,6 +3,10 @@
 // Handles two actions:
 //   1. appendOrder — add order rows to "Заказы" tab
 //   2. updateStock — overwrite "Склад" tab with matrix format per model
+//
+// onEdit trigger sends stock changes back to Supabase via API
+// Set script property STOCK_API_URL = https://www.dakifashion.com/api/stock/update-from-sheet
+// Set script property STOCK_API_SECRET = (same as STOCK_SYNC_SECRET env var on Vercel)
 
 function doPost(e) {
   try {
@@ -122,6 +126,8 @@ function updateStock(data) {
     sheet.getRange(currentRow, 1, 1, headerRow.length).setHorizontalAlignment("center");
     currentRow++;
 
+    var dataStartRow = currentRow; // remember where data rows start
+
     // Data rows — one per size
     for (var s = 0; s < sizes.length; s++) {
       var dataRow = [sizes[s]];
@@ -135,18 +141,17 @@ function updateStock(data) {
       currentRow++;
     }
 
-    // ИТОГО row
-    var totalRow = ["ИТОГО"];
+    var dataEndRow = currentRow - 1; // last data row
+
+    // ИТОГО row — use SUM formulas for auto-calculation
+    sheet.getRange(currentRow, 1).setValue("ИТОГО");
     for (var c3 = 0; c3 < colors.length; c3++) {
-      var colorTotal = 0;
-      for (var s2 = 0; s2 < sizes.length; s2++) {
-        colorTotal += (colors[c3].stockPerSize && colors[c3].stockPerSize[sizes[s2]]) || 0;
-      }
-      totalRow.push(colorTotal);
+      var colLetter = getColumnLetter(c3 + 2); // +2 because col 1 is "Размер"
+      var formula = "=SUM(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")";
+      sheet.getRange(currentRow, c3 + 2).setFormula(formula);
     }
-    sheet.getRange(currentRow, 1, 1, totalRow.length).setValues([totalRow]);
-    sheet.getRange(currentRow, 1, 1, totalRow.length).setFontWeight("bold");
-    sheet.getRange(currentRow, 1, 1, totalRow.length).setBackground("#f0f0f0");
+    sheet.getRange(currentRow, 1, 1, totalCols).setFontWeight("bold");
+    sheet.getRange(currentRow, 1, 1, totalCols).setBackground("#f0f0f0");
     sheet.getRange(currentRow, 2, 1, colors.length).setHorizontalAlignment("center");
     currentRow++;
 
@@ -162,4 +167,92 @@ function updateStock(data) {
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, models: models.length }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Helper: column number to letter (1=A, 2=B, ... 27=AA)
+function getColumnLetter(colNum) {
+  var letter = "";
+  while (colNum > 0) {
+    colNum--;
+    letter = String.fromCharCode(65 + (colNum % 26)) + letter;
+    colNum = Math.floor(colNum / 26);
+  }
+  return letter;
+}
+
+// ========== BIDIRECTIONAL SYNC: Sheets → Supabase ==========
+// Install this as an onEdit trigger:
+//   1. In Apps Script editor, go to Triggers (clock icon)
+//   2. Add trigger: onStockEdit → From spreadsheet → On edit
+
+function onStockEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== "Склад") return; // only track Склад edits
+
+  var range = e.range;
+  var row = range.getRow();
+  var col = range.getColumn();
+
+  // Ignore column A (size labels) and row 1
+  if (col < 2 || row < 2) return;
+
+  // Find the model header row (search upward for blue merged row with SKU)
+  var modelName = "";
+  var sku = "";
+  var headerRow = -1;
+  for (var r = row; r >= 1; r--) {
+    var cellValue = String(sheet.getRange(r, 1).getValue());
+    if (cellValue === "Размер") {
+      headerRow = r;
+      continue;
+    }
+    // Model header contains "(SKU)" pattern
+    var skuMatch = cellValue.match(/\((\d+)\)$/);
+    if (skuMatch) {
+      sku = skuMatch[1];
+      modelName = cellValue;
+      break;
+    }
+    if (cellValue === "ИТОГО") return; // editing ИТОГО row — ignore (it's a formula)
+  }
+
+  if (!sku || headerRow === -1) return; // couldn't find context
+
+  // Get the size label from column A of the edited row
+  var sizeLabel = String(sheet.getRange(row, 1).getValue());
+  if (!sizeLabel || sizeLabel === "Размер" || sizeLabel === "ИТОГО") return;
+
+  // Get the color name from the header row
+  var colorName = String(sheet.getRange(headerRow, col).getValue());
+  if (!colorName || colorName === "Размер") return;
+
+  // Get the new quantity
+  var newQty = Number(e.value) || 0;
+
+  // Send to API
+  var apiUrl = PropertiesService.getScriptProperties().getProperty("STOCK_API_URL");
+  var apiSecret = PropertiesService.getScriptProperties().getProperty("STOCK_API_SECRET");
+
+  if (!apiUrl || !apiSecret) {
+    Logger.log("Missing STOCK_API_URL or STOCK_API_SECRET in script properties");
+    return;
+  }
+
+  try {
+    var response = UrlFetchApp.fetch(apiUrl, {
+      method: "POST",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: apiSecret,
+        sku: sku,
+        color: colorName,
+        size: sizeLabel,
+        quantity: newQty
+      }),
+      muteHttpExceptions: true
+    });
+    Logger.log("Stock sync response: " + response.getContentText());
+  } catch (err) {
+    Logger.log("Stock sync error: " + err.message);
+  }
 }

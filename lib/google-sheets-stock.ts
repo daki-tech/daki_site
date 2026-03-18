@@ -49,25 +49,8 @@ export async function syncStockToGoogleSheets() {
       stockPerSize: (c.stock_per_size as Record<string, number>) ?? {},
     }));
 
-    // Check if ANY color has non-empty stock_per_size
-    const hasPerColorStock = rawColors.some((c) =>
-      Object.values(c.stockPerSize).some((v) => v > 0)
-    );
-
-    let colors: ColorStock[];
-    if (hasPerColorStock) {
-      // Use per-color stock data as-is
-      colors = rawColors;
-    } else {
-      // Fallback: use model_sizes total_stock as a single "Всего" column
-      const totalPerSize: Record<string, number> = {};
-      for (const sr of sizeRows) {
-        totalPerSize[sr.size_label] = sr.total_stock ?? 0;
-      }
-      colors = [{ colorName: "Всего", hex: "", stockPerSize: totalPerSize }];
-    }
-
-    return { sku: m.sku, name: m.name, sizes, colors };
+    // Always use real color names — never fallback to "Всего"
+    return { sku: m.sku, name: m.name, sizes, colors: rawColors };
   });
 
   // Send models array with full structure for matrix rendering
