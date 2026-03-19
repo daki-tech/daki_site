@@ -23,7 +23,7 @@ export default async function OrdersPage() {
     <div className="space-y-4">
       <div className="space-y-1">
         <h1 className="font-serif text-4xl font-semibold tracking-tight">История заказов</h1>
-        <p className="text-muted-foreground">Все оптовые заказы вашей компании.</p>
+        <p className="text-muted-foreground">Всі ваші замовлення.</p>
       </div>
 
       <Card>

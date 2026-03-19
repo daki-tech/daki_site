@@ -86,6 +86,7 @@ export interface WholesaleOrder {
   created_at: string;
   notes: string | null;
   order_type: "retail" | "wholesale";
+  source?: string;
   order_items?: OrderItem[];
 }
 

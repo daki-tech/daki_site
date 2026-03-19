@@ -19,7 +19,6 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
-  const [customerType, setCustomerType] = useState<"retail" | "wholesale">("retail");
   const [newsletter, setNewsletter] = useState(true);
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +51,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
             newsletter_subscribed: newsletter,
-            customer_type: customerType,
+            customer_type: "retail",
           },
         },
       });
@@ -115,40 +114,6 @@ export default function SignupPage() {
             </button>
           </div>
           {capsLock ? <p className="text-xs text-amber-600">{t("auth.capsLock")}</p> : null}
-        </div>
-
-        {/* Customer type selector - iOS style */}
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Тип покупця</label>
-          <div className="inline-flex h-10 items-center gap-0.5 rounded-xl bg-neutral-100 p-1 w-full">
-            <button
-              type="button"
-              onClick={() => setCustomerType("retail")}
-              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                customerType === "retail"
-                  ? "bg-white text-black shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
-              }`}
-            >
-              Роздріб
-            </button>
-            <button
-              type="button"
-              onClick={() => setCustomerType("wholesale")}
-              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                customerType === "wholesale"
-                  ? "bg-white text-black shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
-              }`}
-            >
-              Опт
-            </button>
-          </div>
-          {customerType === "wholesale" && (
-            <p className="text-xs text-neutral-500">
-              Оптовим покупцям доступні спеціальні ціни та замовлення ростовками
-            </p>
-          )}
         </div>
 
         <label className="flex items-center gap-2.5 cursor-pointer">

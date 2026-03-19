@@ -83,6 +83,8 @@ import { CATALOG_CATEGORIES, MODEL_SEASONS } from "@/lib/constants";
 import type { CatalogModel, DashboardStats, Profile, WholesaleOrder } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
+import { RetailOrdersTab } from "@/components/admin/retail-orders-tab";
+import { WholesaleOrdersTab } from "@/components/admin/wholesale-orders-tab";
 
 /* ------------------------------------------------------------------ */
 /*  Custom confirm dialog (replaces browser native confirm())          */
@@ -953,6 +955,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
             <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
             <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
+            <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Розница</TabsTrigger>
+            <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
             <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> Выручка</TabsTrigger>
             <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> Пользователи</TabsTrigger>
             <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> Главная</TabsTrigger>
@@ -1147,7 +1151,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
-                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead><TableHead>Тип</TableHead>
+                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead><TableHead>Тип</TableHead><TableHead>Источник</TableHead>
                       <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
                       <TableHead className="text-center text-blue-500 text-[10px] w-14">Подтв.</TableHead>
                       <TableHead className="text-center text-amber-500 text-[10px] w-14">Отпр.</TableHead>
@@ -1172,6 +1176,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                               {order.order_type === "wholesale" ? "Опт" : "Розн."}
                             </span>
                           </TableCell>
+                          <TableCell className="text-xs text-gray-500">{order.source ?? "Сайт"}</TableCell>
                           <TableCell className="text-sm">{order.customer_phone ?? "-"}</TableCell>
                           <TableCell className="font-medium">{formatCurrency(order.total_amount)}</TableCell>
                           <TableCell>
@@ -1282,6 +1287,16 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               </DialogContent>
             </Dialog>
           )}
+        </TabsContent>
+
+        {/* ====================== РОЗНИЦА ====================== */}
+        <TabsContent value="retail" className="space-y-4">
+          <RetailOrdersTab models={models} />
+        </TabsContent>
+
+        {/* ====================== ОПТ ====================== */}
+        <TabsContent value="wholesale" className="space-y-4">
+          <WholesaleOrdersTab models={models} />
         </TabsContent>
 
         {/* ====================== ВЫРУЧКА ====================== */}

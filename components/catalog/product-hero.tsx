@@ -9,12 +9,9 @@ import { SmartImage } from "@/components/ui/smart-image";
 import { addToCart } from "@/lib/cart-store";
 import { useWishlist, toggleWishlist } from "@/lib/wishlist-store";
 import { CONTACTS } from "@/lib/constants";
-import type { CustomerType } from "@/hooks/use-customer-type";
-
 interface ProductHeroProps {
   model: CatalogModel;
   onColorChange?: (color: ModelColor | null) => void;
-  customerType?: CustomerType;
   contacts?: Record<string, string>;
 }
 
@@ -36,8 +33,7 @@ const ViberIcon = () => (
   </svg>
 );
 
-export function ProductHero({ model, onColorChange, customerType = "retail", contacts }: ProductHeroProps) {
-  const isWholesale = customerType === "wholesale";
+export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps) {
   const colors = model.model_colors ?? [];
   const defaultColor = colors.find((c) => c.is_default) ?? colors[0] ?? null;
 
@@ -50,9 +46,7 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
     : model.image_urls
   );
 
-  const retailPrice = model.base_price * (1 - model.discount_percent / 100);
-  const wholesalePrice = model.wholesale_price || 0;
-  const finalPrice = isWholesale && wholesalePrice > 0 ? wholesalePrice : retailPrice;
+  const finalPrice = model.base_price * (1 - model.discount_percent / 100);
 
   const sizes = useMemo(() => {
     return (model.model_sizes ?? []).map((s) => ({
@@ -109,14 +103,13 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
 
   function handleAddToCart() {
     if (totalUnits === 0) return;
-    const usePrice = isWholesale && wholesalePrice > 0 ? wholesalePrice : model.base_price;
     addToCart({
       modelId: model.id,
       modelName: model.name,
       sku: model.sku,
       imageUrl: currentImages[0] ?? "",
-      basePrice: usePrice,
-      discountPercent: isWholesale && wholesalePrice > 0 ? 0 : model.discount_percent,
+      basePrice: model.base_price,
+      discountPercent: model.discount_percent,
       color: selectedColor?.name,
       sizes: Object.entries(selectedSizes)
         .filter(([, q]) => q > 0)
@@ -138,20 +131,12 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
         {/* Price */}
         <div className="mt-3 flex items-baseline gap-3">
           <span className="text-xl font-normal">{formatCurrency(finalPrice)}</span>
-          {isWholesale && wholesalePrice > 0 && (
-            <span className="text-xs bg-neutral-900 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Опт</span>
-          )}
           {model.discount_percent > 0 && (
             <span className="text-sm text-neutral-400 line-through">
               {formatCurrency(model.base_price)}
             </span>
           )}
         </div>
-        {isWholesale && wholesalePrice > 0 && (
-          <p className="mt-1 text-xs text-neutral-400">
-            Роздрібна ціна: {formatCurrency(retailPrice)}
-          </p>
-        )}
 
         {/* Color selector */}
         {colors.length > 0 && (
@@ -203,22 +188,6 @@ export function ProductHero({ model, onColorChange, customerType = "retail", con
             })}
           </div>
         </div>
-
-        {/* Wholesale: Add full ростовка button */}
-        {isWholesale && sizes.length > 0 && (
-          <button
-            onClick={() => {
-              const allSizes: Record<string, number> = {};
-              sizes.forEach((s) => {
-                if (s.available > 0) allSizes[s.size_label] = 1;
-              });
-              setSelectedSizes(allSizes);
-            }}
-            className="mt-4 w-full border border-neutral-900 py-2.5 text-xs font-medium uppercase tracking-wider text-neutral-900 transition hover:bg-neutral-900 hover:text-white"
-          >
-            Обрати ростовку (всі розміри)
-          </button>
-        )}
 
         {/* Add to cart + Wishlist — full width, aligned with sizes */}
         <div className="mt-8 flex items-center gap-3">

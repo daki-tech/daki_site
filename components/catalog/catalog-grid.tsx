@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import type { CatalogModel } from "@/lib/types";
 import { ProductCard } from "@/components/catalog/product-card";
 import { useLanguage } from "@/components/providers/language-provider";
-import { useCustomerType } from "@/hooks/use-customer-type";
 
 interface CatalogGridProps {
   models: CatalogModel[];
@@ -14,7 +13,6 @@ interface CatalogGridProps {
 
 export function CatalogGrid({ models }: CatalogGridProps) {
   const { t } = useLanguage();
-  const { customerType } = useCustomerType();
   const [search, setSearch] = useState("");
 
   const filtered = search.trim()
@@ -51,7 +49,7 @@ export function CatalogGrid({ models }: CatalogGridProps) {
       ) : (
         <div className="grid gap-x-3 gap-y-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((model) => (
-            <ProductCard key={model.id} model={model} customerType={customerType} />
+            <ProductCard key={model.id} model={model} />
           ))}
         </div>
       )}

@@ -47,6 +47,53 @@ async function sendMessage(botToken: string, chatId: number, text: string, reply
   });
 }
 
+async function sendToAllSubscribers(botToken: string, text: string, parse_mode?: string) {
+  if (!botToken) return [];
+
+  const chatIds: number[] = [];
+
+  // Try DB table first
+  try {
+    const admin = createAdminClient();
+    const { data: subscribers, error } = await admin
+      .from("telegram_subscribers")
+      .select("chat_id")
+      .eq("is_active", true);
+
+    if (!error && subscribers && subscribers.length > 0) {
+      chatIds.push(...subscribers.map((s: { chat_id: number }) => s.chat_id));
+    }
+  } catch {
+    // Table may not exist yet
+  }
+
+  // Fallback to env var
+  if (chatIds.length === 0) {
+    const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
+    const ids = allowedStr.split(",").map((id) => id.trim()).filter(Boolean).map(Number).filter((n) => !isNaN(n));
+    chatIds.push(...ids);
+  }
+
+  if (chatIds.length === 0) return [];
+
+  const results = await Promise.allSettled(
+    chatIds.map(async (cid) => {
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: cid,
+          text,
+          parse_mode: parse_mode || "HTML",
+        }),
+      });
+      return res.json();
+    })
+  );
+
+  return results;
+}
+
 async function editMessage(botToken: string, chatId: number, messageId: number, text: string, replyMarkup?: object) {
   if (!botToken) return;
   await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
@@ -417,16 +464,14 @@ async function handleFinanceStep(
       await deleteMessage(botToken, chatId, mid);
     }
 
-    // Final clean summary — no buttons, just the record
+    // Final clean summary — send to ALL subscribers so everyone sees finance records
     const dateFormatted = dateStr.split("-").reverse().join(".");
     const typeEmoji = state.action === "expense" ? "📉" : state.action === "income_cash" ? "💵" : "💳";
     const typeLabel = state.action === "expense" ? "Расход" : state.action === "income_cash" ? "Наличка" : "Карта";
 
-    await sendMessage(
-      botToken,
-      chatId,
-      `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} грн`
-    );
+    const summaryText = `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} грн`;
+
+    await sendToAllSubscribers(botToken, summaryText);
     return NextResponse.json({ ok: true });
   }
 

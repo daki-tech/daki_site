@@ -1,31 +1,33 @@
-// Apps Script for "Заказы" spreadsheet (orders only)
-// Spreadsheet ID: 1WOadxglA7O1NqHFtCVrCKB65tB2Lawl39X7JqNc2bo0
-// Handles appendOrder action — add order rows to "Заказы" tab
+// Apps Script for "Заказы ОПТ" spreadsheet
+// Spreadsheet ID: 15juRzlxEtHdZmtg4NbEAMn0MhNZ4cjburpPgZQVAElE
+// Handles appendWholesaleOrder action — add wholesale order rows
 
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    return appendOrder(data);
+    if (data.action === "appendWholesaleOrder") {
+      return appendWholesaleOrder(data);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Unknown action" }))
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-function appendOrder(data) {
+function appendWholesaleOrder(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Заказы");
+  var sheet = ss.getSheetByName("Опт");
   if (!sheet) {
-    sheet = ss.insertSheet("Заказы");
+    sheet = ss.insertSheet("Опт");
     var headers = [
-      "№ заказа", "Дата", "Фамилия", "Имя",
-      "Телефон", "Почта", "Модель", "Размер", "Цвет",
-      "Количество", "Сумма", "Область", "Город", "Отделение",
-      "Оплата", "Связаться", "Заметки", "Тип заказа", "Источник"
+      "Дата", "Покупатель", "Модель", "Название", "Цвет",
+      "Ростовок", "Размеров", "Цена за ед.", "Сумма за цвет", "Итого заказ"
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
-    sheet.getRange(1, 1, 1, headers.length).setBackground("#4285f4");
+    sheet.getRange(1, 1, 1, headers.length).setBackground("#7c3aed");
     sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
   }
 
@@ -37,25 +39,16 @@ function appendOrder(data) {
 
   var values = rows.map(function(r) {
     return [
-      r.orderId || "",
       r.date || "",
-      r.lastName || "",
-      r.firstName || "",
-      r.phone || "",
-      r.email || "",
+      r.buyer || "",
       r.model || "",
-      r.size || "",
+      r.modelName || "",
       r.color || "",
-      r.quantity || "",
-      r.amount || "",
-      r.oblast || "",
-      r.city || "",
-      r.branch || "",
-      r.payment || "",
-      r.contactMe || "",
-      r.notes || "",
-      r.orderType || "",
-      r.source || ""
+      r.rostovokCount || 0,
+      r.sizesCount || 0,
+      r.pricePerUnit || 0,
+      r.colorTotal || 0,
+      r.totalAmount || 0
     ];
   });
 

@@ -2,7 +2,8 @@
 // Spreadsheet ID: 1dOMtjAnxGwH-9CPDgFPG2lOzpR2eDrU5wiZFUVax410
 // Writes finance records to the LAST sheet (newest season)
 // Columns: A=Дата, B=Тип, C=Описание, D=Доход, E=Расход
-// Row 1 headers, F1="Итого доход", G1=SUM(D:D), H1="Итого расход", I1=SUM(E:E)
+// Row 1 headers, G1="Итого доход", H1="Итого расход", I1="Разница"
+// Row 2 formulas: G2=SUM(D2:D), H2=SUM(E2:E), I2=G2-H2
 
 function doPost(e) {
   try {
@@ -71,11 +72,19 @@ function migrateAndSetupHeaders(sheet) {
       var oldData = dataRange.getValues();
       var newData = oldData.map(function(row) {
         // row[0]=Дата, row[1]=Тип, row[2]=Описание, row[3]=Сумма(skip), row[4]=Доход, row[5]=Расход
-        var dateVal = String(row[0]);
-        // Fix date format: convert yyyy-mm-dd to dd.mm.yyyy
-        var dateMatch = dateVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (dateMatch) {
-          dateVal = dateMatch[3] + "." + dateMatch[2] + "." + dateMatch[1];
+        var dateVal = row[0];
+        // Fix date format: convert Date objects or yyyy-mm-dd strings to dd.mm.yyyy
+        if (dateVal instanceof Date) {
+          var d = dateVal.getDate();
+          var m = dateVal.getMonth() + 1;
+          var y = dateVal.getFullYear();
+          dateVal = (d < 10 ? "0" + d : d) + "." + (m < 10 ? "0" + m : m) + "." + y;
+        } else {
+          dateVal = String(dateVal);
+          var dateMatch = dateVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (dateMatch) {
+            dateVal = dateMatch[3] + "." + dateMatch[2] + "." + dateMatch[1];
+          }
         }
         // If the old data has amount in Сумма but not in Доход/Расход, migrate it
         var income = row[4] || "";
@@ -113,23 +122,33 @@ function migrateAndSetupHeaders(sheet) {
   sheet.getRange(1, 1, 1, headers.length).setBackground("#4285f4");
   sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
 
-  // F1 = "Итого доход" label, G1 = SUM formula
-  sheet.getRange(1, 6).setValue("Итого доход");
-  sheet.getRange(1, 6).setFontWeight("bold");
-  sheet.getRange(1, 6).setBackground("#34a853");
-  sheet.getRange(1, 6).setFontColor("#ffffff");
-  sheet.getRange(1, 7).setFormula('=SUM(D2:D)');
+  // G1 = "Итого доход" label, G2 = SUM formula
+  sheet.getRange(1, 7).setValue("Итого доход");
   sheet.getRange(1, 7).setFontWeight("bold");
   sheet.getRange(1, 7).setBackground("#34a853");
   sheet.getRange(1, 7).setFontColor("#ffffff");
+  sheet.getRange(2, 7).setFormula('=SUM(D2:D)');
+  sheet.getRange(2, 7).setFontWeight("bold");
+  sheet.getRange(2, 7).setBackground("#34a853");
+  sheet.getRange(2, 7).setFontColor("#ffffff");
 
-  // H1 = "Итого расход" label, I1 = SUM formula
+  // H1 = "Итого расход" label, H2 = SUM formula
   sheet.getRange(1, 8).setValue("Итого расход");
   sheet.getRange(1, 8).setFontWeight("bold");
   sheet.getRange(1, 8).setBackground("#ea4335");
   sheet.getRange(1, 8).setFontColor("#ffffff");
-  sheet.getRange(1, 9).setFormula('=SUM(E2:E)');
+  sheet.getRange(2, 8).setFormula('=SUM(E2:E)');
+  sheet.getRange(2, 8).setFontWeight("bold");
+  sheet.getRange(2, 8).setBackground("#ea4335");
+  sheet.getRange(2, 8).setFontColor("#ffffff");
+
+  // I1 = "Разница" label, I2 = G2-H2 formula
+  sheet.getRange(1, 9).setValue("Разница");
   sheet.getRange(1, 9).setFontWeight("bold");
-  sheet.getRange(1, 9).setBackground("#ea4335");
+  sheet.getRange(1, 9).setBackground("#fbbc04");
   sheet.getRange(1, 9).setFontColor("#ffffff");
+  sheet.getRange(2, 9).setFormula('=G2-H2');
+  sheet.getRange(2, 9).setFontWeight("bold");
+  sheet.getRange(2, 9).setBackground("#fbbc04");
+  sheet.getRange(2, 9).setFontColor("#ffffff");
 }

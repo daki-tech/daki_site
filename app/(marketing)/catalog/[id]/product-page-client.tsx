@@ -7,7 +7,6 @@ import { ProductHero } from "@/components/catalog/product-hero";
 import { ProductDescription } from "@/components/catalog/product-description";
 import { ProductDelivery } from "@/components/catalog/product-delivery";
 import { ProductSizeChart } from "@/components/catalog/product-size-chart";
-import { useCustomerType } from "@/hooks/use-customer-type";
 
 interface ProductPageClientProps {
   model: CatalogModel;
@@ -18,14 +17,13 @@ export function ProductPageClient({ model, contacts }: ProductPageClientProps) {
   const colors = model.model_colors ?? [];
   const defaultColor = colors.find((c) => c.is_default) ?? colors[0] ?? null;
   const [selectedColor, setSelectedColor] = useState<ModelColor | null>(defaultColor);
-  const { customerType } = useCustomerType();
 
   return (
     <>
       {/* BLOCK 1: Hero — Info left + Gallery right */}
       <section>
         <div className="mx-auto max-w-[1400px] px-4 py-4 lg:px-8 lg:py-6">
-          <ProductHero model={model} onColorChange={setSelectedColor} customerType={customerType} contacts={contacts} />
+          <ProductHero model={model} onColorChange={setSelectedColor} contacts={contacts} />
         </div>
       </section>
 

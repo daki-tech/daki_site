@@ -225,6 +225,7 @@ async function appendToGoogleSheets(order: {
         contactMe: order.contactMe ? "Да" : "",
         notes: order.notes || "",
         orderType: order.orderType === "wholesale" ? "Опт" : "Розница",
+        source: "Сайт",
       });
     }
   }
@@ -414,6 +415,7 @@ export async function POST(req: Request) {
           payment_method: paymentMethod || null,
           notes: notes || null,
           order_type: orderType || "retail",
+          source: "Сайт",
         })
         .select("id, order_number")
         .single();
