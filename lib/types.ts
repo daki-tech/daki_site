@@ -98,6 +98,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   discount_percent: number;
+  color?: string | null;
   catalog_models?: Pick<CatalogModel, "name" | "sku" | "image_urls">;
 }
 

@@ -56,6 +56,7 @@ export async function POST(req: Request) {
       quantity,
       unit_price: unitPrice,
       discount_percent: 0,
+      color: color || null,
     });
 
     // 3. Decrement stock in model_colors.stock_per_size

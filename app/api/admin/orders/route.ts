@@ -20,7 +20,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("orders")
-    .select("*, order_items(*, catalog_models(name, sku, image_urls))")
+    .select("*, order_items(*, color, catalog_models(name, sku, image_urls))")
     .order("created_at", { ascending: false })
     .limit(100);
 

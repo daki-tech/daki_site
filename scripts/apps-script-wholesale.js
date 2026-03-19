@@ -22,7 +22,7 @@ function appendWholesaleOrder(data) {
   if (!sheet) {
     sheet = ss.insertSheet("Опт");
     var headers = [
-      "Дата", "Покупатель", "Модель", "Название", "Цвет",
+      "№ заказа", "Дата", "Покупатель", "Модель", "Название", "Цвет",
       "Ростовок", "Размеров", "Цена за ед.", "Сумма за цвет", "Итого заказ"
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -39,6 +39,7 @@ function appendWholesaleOrder(data) {
 
   var values = rows.map(function(r) {
     return [
+      r.orderNumber || "",
       r.date || "",
       r.buyer || "",
       r.model || "",
@@ -48,7 +49,7 @@ function appendWholesaleOrder(data) {
       r.sizesCount || 0,
       r.pricePerUnit || 0,
       r.colorTotal || 0,
-      r.totalAmount || 0
+      r.totalAmount || ""
     ];
   });
 

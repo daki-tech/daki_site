@@ -67,6 +67,7 @@ export async function POST(req: Request) {
           quantity: colorEntry.rostovokCount,
           unit_price: colorEntry.pricePerUnit,
           discount_percent: 0,
+          color: colorEntry.colorName || null,
         });
       }
 
@@ -103,7 +104,8 @@ export async function POST(req: Request) {
     // 4. Append to wholesale Google Sheet
     const wholesaleWebhookUrl = process.env.GOOGLE_WHOLESALE_WEBHOOK_URL;
     if (wholesaleWebhookUrl) {
-      const rows = colors.map(c => ({
+      const rows = colors.map((c, i) => ({
+        orderNumber: order.order_number || order.id.slice(0, 8),
         date: date || new Date().toLocaleString("uk-UA", { timeZone: "Europe/Kyiv" }),
         buyer: buyerName,
         model: modelSku,
@@ -113,7 +115,7 @@ export async function POST(req: Request) {
         sizesCount: c.sizesCount,
         pricePerUnit: c.pricePerUnit,
         colorTotal: c.colorTotal,
-        totalAmount,
+        totalAmount: i === 0 ? totalAmount : "", // Only show total on first row of group
       }));
 
       try {

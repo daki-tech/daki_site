@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ interface Order {
     size_label: string;
     quantity: number;
     unit_price: number;
+    color: string | null;
     catalog_models: { name: string; sku: string };
   }[];
 }
@@ -64,6 +65,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const fetchRef = useRef(0);
 
   // Form state
@@ -126,6 +128,31 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
     setColorEntries(prev => prev.map((entry, i) => i === idx ? { ...entry, [field]: value } : entry));
   };
 
+  const handleCancel = async (orderId: string) => {
+    if (!confirm("Отменить заказ? Остатки будут возвращены на склад.")) return;
+
+    setCancellingId(orderId);
+    try {
+      const res = await fetch("/api/admin/cancel-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (res.ok) {
+        toast.success("Заказ отменён, остатки возвращены");
+        fetchOrders();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка отмены");
+      }
+    } catch {
+      toast.error("Ошибка сервера");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!buyerName || !selectedModelId || colorEntries.some(c => !c.colorName)) {
       toast.error("Заполните все обязательные поля");
@@ -167,6 +194,21 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Group order items by color for display
+  const getOrderColors = (order: Order) => {
+    const colorMap = new Map<string, { color: string; quantity: number; unitPrice: number }>();
+    for (const item of order.order_items) {
+      const key = item.color || "—";
+      const existing = colorMap.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        colorMap.set(key, { color: key, quantity: item.quantity, unitPrice: item.unit_price });
+      }
+    }
+    return Array.from(colorMap.values());
   };
 
   return (
@@ -338,21 +380,62 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left">
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">№</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Дата</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Покупатель</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Модель</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Цвета</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Сумма</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Статус</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase"></th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order, i) => {
                 const item = order.order_items[0];
+                const colors = getOrderColors(order);
+                const isCancelled = order.status === "cancelled";
                 return (
-                  <tr key={order.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                  <tr key={order.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} ${isCancelled ? "opacity-50" : ""}`}>
+                    <td className="px-3 py-2 text-gray-400 text-xs">{order.order_number}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
                     <td className="px-3 py-2">{order.customer_name}</td>
                     <td className="px-3 py-2">{item?.catalog_models?.sku ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <div className="space-y-0.5">
+                        {colors.map((c, ci) => (
+                          <div key={ci} className="text-xs">
+                            <span className="font-medium">{c.color}</span>
+                            <span className="text-gray-400 ml-1">×{c.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
                     <td className="px-3 py-2 font-semibold">{order.total_amount?.toLocaleString()} UAH</td>
+                    <td className="px-3 py-2">
+                      {isCancelled ? (
+                        <span className="text-xs text-red-500 font-medium">Отменён</span>
+                      ) : (
+                        <span className="text-xs text-green-600 font-medium">Оформлен</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {!isCancelled && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-400 hover:text-red-600"
+                          onClick={() => handleCancel(order.id)}
+                          disabled={cancellingId === order.id}
+                        >
+                          {cancellingId === order.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

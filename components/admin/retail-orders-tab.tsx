@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
   const [showAddSource, setShowAddSource] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const fetchRef = useRef(0);
 
   // Form state
@@ -131,6 +132,31 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
     setCity("");
     setSource("Instagram");
   }, []);
+
+  const handleCancel = async (orderId: string) => {
+    if (!confirm("Отменить заказ? Остатки будут возвращены на склад.")) return;
+
+    setCancellingId(orderId);
+    try {
+      const res = await fetch("/api/admin/cancel-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (res.ok) {
+        toast.success("Заказ отменён, остатки возвращены");
+        fetchOrders();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка отмены");
+      }
+    } catch {
+      toast.error("Ошибка сервера");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const handleAddSource = async () => {
     if (!newSourceName.trim()) return;
@@ -379,21 +405,48 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Кол-во</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Сумма</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Источник</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Статус</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase"></th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order, i) => {
                 const item = order.order_items[0];
+                const isCancelled = order.status === "cancelled";
                 return (
-                  <tr key={order.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                  <tr key={order.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} ${isCancelled ? "opacity-50" : ""}`}>
                     <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
                     <td className="px-3 py-2">{order.customer_name}</td>
                     <td className="px-3 py-2">{item?.catalog_models?.sku ?? "—"}</td>
                     <td className="px-3 py-2">{item?.size_label ?? "—"}</td>
-                    <td className="px-3 py-2">{item ? `—` : "—"}</td>
+                    <td className="px-3 py-2">{(item as unknown as { color?: string })?.color ?? "—"}</td>
                     <td className="px-3 py-2">{item?.quantity ?? "—"}</td>
                     <td className="px-3 py-2 font-semibold">{order.total_amount?.toLocaleString()} UAH</td>
                     <td className="px-3 py-2">{order.source}</td>
+                    <td className="px-3 py-2">
+                      {isCancelled ? (
+                        <span className="text-xs text-red-500 font-medium">Отменён</span>
+                      ) : (
+                        <span className="text-xs text-green-600 font-medium">Оформлен</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {!isCancelled && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-400 hover:text-red-600"
+                          onClick={() => handleCancel(order.id)}
+                          disabled={cancellingId === order.id}
+                        >
+                          {cancellingId === order.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

@@ -350,6 +350,7 @@ export async function POST(req: Request) {
       quantity: number;
       unit_price: number;
       discount_percent: number;
+      color: string | null;
     }[] = [];
 
     const notificationItems: {
@@ -377,6 +378,7 @@ export async function POST(req: Request) {
           quantity: size.quantity,
           unit_price: finalPrice,
           discount_percent: item.discountPercent,
+          color: item.color || null,
         });
       }
     }
