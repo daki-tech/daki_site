@@ -18,10 +18,10 @@ function appendOrder(data) {
   if (!sheet) {
     sheet = ss.insertSheet("Заказы");
     var headers = [
-      "№ заказа", "Дата", "Фамилия", "Имя",
+      "№ заказа", "Дата", "Источник", "Фамилия", "Имя",
       "Телефон", "Почта", "Модель", "Размер", "Цвет",
       "Количество", "Сумма", "Область", "Город", "Отделение",
-      "Оплата", "Связаться", "Заметки", "Тип заказа", "Источник"
+      "Оплата", "Связаться", "Заметки"
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -39,6 +39,7 @@ function appendOrder(data) {
     return [
       r.orderId || "",
       r.date || "",
+      r.source || "",
       r.lastName || "",
       r.firstName || "",
       r.phone || "",
@@ -53,9 +54,7 @@ function appendOrder(data) {
       r.branch || "",
       r.payment || "",
       r.contactMe || "",
-      r.notes || "",
-      r.orderType || "",
-      r.source || ""
+      r.notes || ""
     ];
   });
 

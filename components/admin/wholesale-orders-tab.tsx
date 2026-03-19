@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,9 +40,31 @@ interface ColorEntry {
   pricePerUnit: number;
 }
 
+interface Order {
+  id: string;
+  order_number: number;
+  status: string;
+  total_amount: number;
+  customer_name: string;
+  delivery_city: string;
+  order_type: "retail" | "wholesale";
+  source: string;
+  created_at: string;
+  order_items: {
+    model_id: string;
+    size_label: string;
+    quantity: number;
+    unit_price: number;
+    catalog_models: { name: string; sku: string };
+  }[];
+}
+
 export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const fetchRef = useRef(0);
 
   // Form state
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -72,6 +94,25 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
     setSelectedModelId("");
     setColorEntries([{ colorName: "", rostovokCount: 1, pricePerUnit: 0 }]);
   }, []);
+
+  // Load orders
+  const fetchOrders = useCallback(async () => {
+    const id = ++fetchRef.current;
+    setLoadingOrders(true);
+    try {
+      const res = await fetch("/api/admin/orders");
+      if (res.ok) {
+        const data: Order[] = await res.json();
+        if (id === fetchRef.current) {
+          setOrders(data.filter(o => o.order_type === "wholesale"));
+        }
+      }
+    } catch { /* ignore */ } finally {
+      if (id === fetchRef.current) setLoadingOrders(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const addColorEntry = () => {
     setColorEntries(prev => [...prev, { colorName: "", rostovokCount: 1, pricePerUnit: prev[0]?.pricePerUnit || 0 }]);
@@ -116,6 +157,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
         toast.success("Оптовый заказ добавлен");
         resetForm();
         setShowForm(false);
+        fetchOrders();
       } else {
         const err = await res.json();
         toast.error(err.error || "Ошибка создания заказа");
@@ -228,8 +270,9 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
                             <Input
                               type="number"
                               min={1}
-                              value={entry.rostovokCount}
-                              onChange={e => updateColorEntry(idx, "rostovokCount", Number(e.target.value))}
+                              value={entry.rostovokCount || ""}
+                              onChange={e => updateColorEntry(idx, "rostovokCount", Number(e.target.value) || 0)}
+                              placeholder="0"
                               className={S.input}
                             />
                           </div>
@@ -239,8 +282,9 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
                             <Input
                               type="number"
                               min={0}
-                              value={entry.pricePerUnit}
-                              onChange={e => updateColorEntry(idx, "pricePerUnit", Number(e.target.value))}
+                              value={entry.pricePerUnit || ""}
+                              onChange={e => updateColorEntry(idx, "pricePerUnit", Number(e.target.value) || 0)}
+                              placeholder="0"
                               className={S.input}
                             />
                           </div>
@@ -281,6 +325,41 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Order history */}
+      {loadingOrders ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </div>
+      ) : orders.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Нет оптовых заказов</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left">
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Дата</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Покупатель</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Модель</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Сумма</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order, i) => {
+                const item = order.order_items[0];
+                return (
+                  <tr key={order.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                    <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
+                    <td className="px-3 py-2">{order.customer_name}</td>
+                    <td className="px-3 py-2">{item?.catalog_models?.sku ?? "—"}</td>
+                    <td className="px-3 py-2 font-semibold">{order.total_amount?.toLocaleString()} UAH</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -224,7 +224,6 @@ async function appendToGoogleSheets(order: {
         payment: paymentLabel,
         contactMe: order.contactMe ? "Да" : "",
         notes: order.notes || "",
-        orderType: order.orderType === "wholesale" ? "Опт" : "Розница",
         source: "Сайт",
       });
     }

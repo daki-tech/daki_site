@@ -112,7 +112,6 @@ export async function POST(req: Request) {
         payment: "",
         contactMe: "",
         notes: "",
-        orderType: "Розница",
         source,
       }];
 

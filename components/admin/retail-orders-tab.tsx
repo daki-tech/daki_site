@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
 import { Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -39,12 +39,34 @@ interface OrderSource {
   name: string;
 }
 
+interface Order {
+  id: string;
+  order_number: number;
+  status: string;
+  total_amount: number;
+  customer_name: string;
+  delivery_city: string;
+  order_type: "retail" | "wholesale";
+  source: string;
+  created_at: string;
+  order_items: {
+    model_id: string;
+    size_label: string;
+    quantity: number;
+    unit_price: number;
+    catalog_models: { name: string; sku: string };
+  }[];
+}
+
 export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [sources, setSources] = useState<OrderSource[]>([]);
   const [saving, setSaving] = useState(false);
   const [newSourceName, setNewSourceName] = useState("");
   const [showAddSource, setShowAddSource] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const fetchRef = useRef(0);
 
   // Form state
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -79,6 +101,25 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
       })
       .catch(() => {});
   }, []);
+
+  // Load orders
+  const fetchOrders = useCallback(async () => {
+    const id = ++fetchRef.current;
+    setLoadingOrders(true);
+    try {
+      const res = await fetch("/api/admin/orders");
+      if (res.ok) {
+        const data: Order[] = await res.json();
+        if (id === fetchRef.current) {
+          setOrders(data.filter(o => o.order_type === "retail"));
+        }
+      }
+    } catch { /* ignore */ } finally {
+      if (id === fetchRef.current) setLoadingOrders(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const resetForm = useCallback(() => {
     setDate(format(new Date(), "yyyy-MM-dd"));
@@ -145,6 +186,7 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
         toast.success("Розничный заказ добавлен");
         resetForm();
         setShowForm(false);
+        fetchOrders();
       } else {
         const err = await res.json();
         toast.error(err.error || "Ошибка создания заказа");
@@ -246,7 +288,7 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
               {/* Quantity */}
               <div>
                 <Label className={S.label}>Количество</Label>
-                <Input type="number" min={1} max={availableStock || 999} value={quantity} onChange={e => setQuantity(Number(e.target.value))} className={S.input} />
+                <Input type="number" min={1} max={availableStock || 999} value={quantity || ""} onChange={e => setQuantity(Number(e.target.value) || 0)} placeholder="0" className={S.input} />
               </div>
 
               {/* City */}
@@ -316,6 +358,49 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Order history */}
+      {loadingOrders ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </div>
+      ) : orders.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Нет розничных заказов</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left">
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Дата</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Покупатель</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Модель</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Размер</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Цвет</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Кол-во</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Сумма</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Источник</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order, i) => {
+                const item = order.order_items[0];
+                return (
+                  <tr key={order.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                    <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
+                    <td className="px-3 py-2">{order.customer_name}</td>
+                    <td className="px-3 py-2">{item?.catalog_models?.sku ?? "—"}</td>
+                    <td className="px-3 py-2">{item?.size_label ?? "—"}</td>
+                    <td className="px-3 py-2">{item ? `—` : "—"}</td>
+                    <td className="px-3 py-2">{item?.quantity ?? "—"}</td>
+                    <td className="px-3 py-2 font-semibold">{order.total_amount?.toLocaleString()} UAH</td>
+                    <td className="px-3 py-2">{order.source}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
