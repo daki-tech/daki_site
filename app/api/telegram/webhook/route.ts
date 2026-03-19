@@ -222,13 +222,13 @@ export async function POST(req: Request) {
         botToken,
         chatId,
         `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.`,
-        { keyboard: [[{ text: "📒 Финансы" }]], resize_keyboard: true }
+        { keyboard: [[{ text: "Финансы" }]], resize_keyboard: true, is_persistent: true }
       );
       return NextResponse.json({ ok: true });
     }
 
     // /finance command — show finance menu (delete the command message itself to keep chat clean)
-    if (text === "/finance" || text === "📒 Финансы") {
+    if (text === "/finance" || text === "Финансы" || text === "📒 Финансы") {
       await deleteMessage(botToken, chatId, message.message_id);
       await sendMessage(botToken, chatId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
       return NextResponse.json({ ok: true });

@@ -10,9 +10,11 @@ interface ImageCropperProps {
   imageSrc: string;
   onCropDone: (croppedBlob: Blob) => void;
   onCancel: () => void;
+  /** Target aspect ratio width/height (e.g. {w:1920, h:1080} for 16:9) */
+  targetSize?: { w: number; h: number };
 }
 
-export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperProps) {
+export function ImageCropper({ imageSrc, onCropDone, onCancel, targetSize }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -63,15 +65,17 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperPro
 
   if (!mounted || !portalRef.current || !imgSize) return null;
 
-  // Compute crop area dimensions to match image aspect ratio, fitting within max bounds
+  // Use target aspect ratio if provided, otherwise use image's natural aspect
+  const cropAspect = targetSize ? targetSize.w / targetSize.h : imgSize.w / imgSize.h;
+
+  // Compute crop area dimensions fitting within max bounds
   const maxW = 580;
   const maxH = Math.min(480, window.innerHeight - 160);
-  const imgAspect = imgSize.w / imgSize.h;
   let cropW = maxW;
-  let cropH = maxW / imgAspect;
+  let cropH = maxW / cropAspect;
   if (cropH > maxH) {
     cropH = maxH;
-    cropW = maxH * imgAspect;
+    cropW = maxH * cropAspect;
   }
 
   return createPortal(
@@ -95,7 +99,7 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperPro
         padding: 16,
       }}
     >
-      {/* White card — adapts to image */}
+      {/* White card — adapts to target aspect */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -129,12 +133,13 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel }: ImageCropperPro
           </button>
         </div>
 
-        {/* Crop area — matches image aspect */}
+        {/* Crop area — uses target aspect ratio */}
         <div style={{ position: "relative", width: "100%", height: cropH, background: "#e5e5e5", flexShrink: 0 }}>
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
+            aspect={cropAspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}

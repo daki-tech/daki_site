@@ -18,7 +18,7 @@ interface ModelStock {
  * Format: matrix per model — sizes vertically, colors horizontally
  */
 export async function syncStockToGoogleSheets() {
-  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const webhookUrl = process.env.GOOGLE_SHEETS_STOCK_WEBHOOK_URL;
   if (!webhookUrl) {
     console.warn("[Stock Sync] GOOGLE_SHEETS_WEBHOOK_URL not configured");
     return;

@@ -216,7 +216,7 @@ const statusColors: Record<string, "default" | "secondary" | "outline" | "destru
 
 interface PhotoItem { id: string; url: string }
 
-function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: string[]) => void }) {
+function PhotoUploadGrid({ urls, onChange, targetSize }: { urls: string[]; onChange: (urls: string[]) => void; targetSize?: { w: number; h: number } }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const urlsRef = useRef(urls);
@@ -361,6 +361,7 @@ function PhotoUploadGrid({ urls, onChange }: { urls: string[]; onChange: (urls: 
           imageSrc={currentCrop.dataUrl}
           onCropDone={handleCropDone}
           onCancel={handleCropCancel}
+          targetSize={targetSize}
         />
       )}
     </div>
@@ -411,7 +412,7 @@ function SortableColorVariant({ id, children }: { id: string; children: React.Re
 /*  SingleMediaUpload — one image/video upload with preview            */
 /* ------------------------------------------------------------------ */
 
-function SingleMediaUpload({ value, onChange, label, aspect }: { value: string; onChange: (url: string) => void; label: string; aspect?: number }) {
+function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { value: string; onChange: (url: string) => void; label: string; aspect?: number; targetSize?: { w: number; h: number } }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -518,6 +519,7 @@ function SingleMediaUpload({ value, onChange, label, aspect }: { value: string; 
           imageSrc={cropSrc}
           onCropDone={handleCropDone}
           onCancel={() => setCropSrc(null)}
+          targetSize={targetSize}
         />
       )}
     </div>
@@ -1457,7 +1459,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
             <CardContent className="space-y-4">
               <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Новая весенняя коллекция" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Spring — 2026" className={S.input} /></div>
-              <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" />
+              <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" targetSize={{ w: 1920, h: 1080 }} />
               <p className="text-[10px] text-muted-foreground">Рекомендуемый размер: 1920×1080 px, формат JPG/PNG/WebP</p>
             </CardContent>
           </Card>
@@ -1467,7 +1469,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <div><Label className={S.label}>Заголовок</Label><Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="О компании DaKi" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша история" className={S.input} /></div>
               <div><Label className={S.label}>Текст</Label><Textarea rows={5} value={aboutText} onChange={(e) => setAboutText(e.target.value)} placeholder="Текст о компании..." className={S.textarea} /></div>
-              <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" />
+              <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" targetSize={{ w: 800, h: 1000 }} />
               <p className="text-[10px] text-muted-foreground">Рекомендуемый размер фото: 800×1000 px, видео: MP4 до 50MB</p>
             </CardContent>
           </Card>
@@ -1662,7 +1664,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                       <button type="button" onClick={() => update("color_variants", form.color_variants.filter((_, j) => j !== i))} className={S.deleteBtn}><X className="h-3.5 w-3.5" /></button>
                     )}
                   </div>
-                  <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} />
+                  <PhotoUploadGrid urls={variant.image_urls} onChange={(urls) => { const c = [...form.color_variants]; c[i] = { ...c[i], image_urls: urls }; update("color_variants", c); }} targetSize={{ w: 900, h: 1200 }} />
                   {/* Stock per size for this color */}
                   {form.selected_sizes.length > 0 && (
                     <div className="mt-2">
@@ -1713,7 +1715,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           <Label className={S.label}>Склад и уход (HTML)</Label>
           <Textarea rows={2} value={form.care_instructions} onChange={(e) => update("care_instructions", e.target.value)} placeholder="Состав и уход..." className={S.textarea} />
         </div>
-        <SingleMediaUpload value={form.care_media_url} onChange={(v) => update("care_media_url", v)} label="Медиа — склад и уход" />
+        <SingleMediaUpload value={form.care_media_url} onChange={(v) => update("care_media_url", v)} label="Медиа — склад и уход" targetSize={{ w: 800, h: 600 }} />
         <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
       </div>
 
@@ -1723,7 +1725,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
           <Label className={S.label}>Правила доставки (HTML)</Label>
           <Textarea rows={2} value={form.delivery_info} onChange={(e) => update("delivery_info", e.target.value)} placeholder="Правила доставки..." className={S.textarea} />
         </div>
-        <SingleMediaUpload value={form.delivery_media_url} onChange={(v) => update("delivery_media_url", v)} label="Медиа — доставка" />
+        <SingleMediaUpload value={form.delivery_media_url} onChange={(v) => update("delivery_media_url", v)} label="Медиа — доставка" targetSize={{ w: 800, h: 600 }} />
         <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
       </div>
 
