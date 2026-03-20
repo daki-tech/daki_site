@@ -30,7 +30,7 @@ export function AboutPreview({ title, subtitle, text, mediaUrl }: AboutPreviewPr
       <div className="mx-auto max-w-[1600px] px-4 lg:px-6">
         <div className="grid items-center gap-12 md:grid-cols-2 md:gap-20">
           {/* Media */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          <div className="relative aspect-[4/5] overflow-hidden bg-muted">
             {showVideo ? (
               <video
                 src={mediaSrc}
