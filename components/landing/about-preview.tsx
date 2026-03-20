@@ -14,23 +14,28 @@ interface AboutPreviewProps {
   subtitle?: string;
   text?: string;
   mediaUrl?: string;
+  /** Aspect ratio string like "4:5", "1:1", "16:9" */
+  aspect?: string;
 }
 
 function isVideo(url: string) {
   return /\.(mp4|webm|mov)(\?|$)/i.test(url);
 }
 
-export function AboutPreview({ title, subtitle, text, mediaUrl }: AboutPreviewProps) {
+export function AboutPreview({ title, subtitle, text, mediaUrl, aspect }: AboutPreviewProps) {
   const { t } = useLanguage();
   const mediaSrc = mediaUrl || DEFAULT_IMAGE;
   const showVideo = isVideo(mediaSrc);
+
+  // Parse aspect ratio string ("4:5") to CSS value ("4/5")
+  const cssAspect = aspect?.includes(":") ? aspect.replace(":", "/") : "4/5";
 
   return (
     <section className="py-12 md:py-16">
       <div className="mx-auto max-w-[1600px] px-4 lg:px-6">
         <div className="grid items-center gap-12 md:grid-cols-2 md:gap-20">
           {/* Media */}
-          <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+          <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: cssAspect }}>
             {showVideo ? (
               <video
                 src={mediaSrc}

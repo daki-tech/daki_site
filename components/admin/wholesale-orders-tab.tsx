@@ -472,23 +472,9 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
 
               <div className="bg-gray-50/50 rounded-2xl p-5 space-y-4">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Покупатель</p>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Имя</p>
-                    <p className="text-sm font-semibold">{selectedOrder.customer_name || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Телефон</p>
-                    <p className="text-sm font-semibold">{selectedOrder.customer_phone || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Email</p>
-                    <p className="text-sm font-semibold">{selectedOrder.customer_email || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Оплата</p>
-                    <p className="text-sm font-semibold">{selectedOrder.payment_method || "—"}</p>
-                  </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Имя</p>
+                  <p className="text-sm font-semibold">{selectedOrder.customer_name || "—"}</p>
                 </div>
               </div>
 

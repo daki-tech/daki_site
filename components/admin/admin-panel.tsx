@@ -572,6 +572,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [aboutSubtitle, setAboutSubtitle] = useState("");
   const [aboutText, setAboutText] = useState("");
   const [aboutMediaUrl, setAboutMediaUrl] = useState("");
+  // Aspect ratios for media (w:h) — editable in settings
+  const [heroAspect, setHeroAspect] = useState("16:9");
+  const [aboutAspect, setAboutAspect] = useState("4:5");
   const [homepageLoading, setHomepageLoading] = useState(false);
 
   // Newsletter state
@@ -605,6 +608,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         setHeroBgUrl(m.hero_bg_url ?? ""); setAboutTitle(m.about_title ?? "");
         setAboutSubtitle(m.about_subtitle ?? ""); setAboutText(m.about_text ?? "");
         setAboutMediaUrl(m.about_media_url ?? "");
+        setHeroAspect(m.hero_aspect ?? "16:9");
+        setAboutAspect(m.about_aspect ?? "4:5");
         // Parse phones: try JSON array first, fallback to single phone
         try {
           const phones = JSON.parse(m.contact_phones || "[]");
@@ -765,7 +770,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    let list = orders;
+    // Only show website orders on this tab
+    let list = orders.filter((o) => (o.source ?? "Сайт") === "Сайт");
     if (orderYearFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getFullYear()) === orderYearFilter);
     if (orderMonthFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getMonth() + 1) === orderMonthFilter);
     if (orderTypeFilter !== "all") list = list.filter((o) => o.order_type === orderTypeFilter);
@@ -845,6 +851,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         { key: "hero_bg_url", value: heroBgUrl }, { key: "about_title", value: aboutTitle },
         { key: "about_subtitle", value: aboutSubtitle }, { key: "about_text", value: aboutText },
         { key: "about_media_url", value: aboutMediaUrl },
+        { key: "hero_aspect", value: heroAspect },
+        { key: "about_aspect", value: aboutAspect },
       ];
       for (const s of entries) {
         const res = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
@@ -947,22 +955,36 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   /*  RENDER                                                           */
   /* ================================================================ */
   const tabTriggerCls = "gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all whitespace-nowrap";
+
+  // Helper: parse aspect ratio string like "16:9" to {w, h} for cropper
+  const parseAspect = (s: string, fallbackW: number, fallbackH: number) => {
+    const parts = s.split(":").map(Number);
+    if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
+      const scale = Math.max(1, Math.round(fallbackW / parts[0]));
+      return { w: parts[0] * scale, h: parts[1] * scale };
+    }
+    return { w: fallbackW, h: fallbackH };
+  };
   return (
     <div className="space-y-2">
       <ConfirmDialog />
       <Tabs defaultValue="products" className="space-y-4" style={{ minHeight: "70vh" }}>
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 scrollbar-none">
-          <div className="flex justify-center mb-4 min-w-fit">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-4 min-w-fit">
+            {/* Сайт — основные вкладки */}
             <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
               <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Товары</span><span className="sm:hidden">Тов.</span></TabsTrigger>
               <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Заказы</span><span className="sm:hidden">Зак.</span></TabsTrigger>
-              <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Розница</span><span className="sm:hidden">Розн.</span></TabsTrigger>
-              <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
               <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Выручка</span><span className="sm:hidden">Выр.</span></TabsTrigger>
               <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> <span className="hidden md:inline">Пользователи</span><span className="md:hidden">Польз.</span></TabsTrigger>
               <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Главная</span></TabsTrigger>
               <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Контакты</span></TabsTrigger>
               <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Рассылка</span></TabsTrigger>
+            </TabsList>
+            {/* Вне сайта — розница и опт */}
+            <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-orange-50 border border-orange-200/60 p-1">
+              <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Розница</span><span className="sm:hidden">Розн.</span></TabsTrigger>
+              <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -1479,8 +1501,26 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
             <CardContent className="space-y-4">
               <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Новая весенняя коллекция" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Spring — 2026" className={S.input} /></div>
-              <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" targetSize={{ w: 1920, h: 1080 }} />
-              <p className="text-[10px] text-muted-foreground">Рекомендуемый размер: 1920×1080 px, формат JPG/PNG/WebP</p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" targetSize={parseAspect(heroAspect, 1920, 1080)} />
+                </div>
+                <div className="w-[130px]">
+                  <Label className={S.label}>Соотношение сторон</Label>
+                  <Select value={heroAspect} onValueChange={setHeroAspect}>
+                    <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="16:9">16:9 (широкий)</SelectItem>
+                      <SelectItem value="21:9">21:9 (ультрашир.)</SelectItem>
+                      <SelectItem value="4:3">4:3</SelectItem>
+                      <SelectItem value="3:2">3:2</SelectItem>
+                      <SelectItem value="1:1">1:1 (квадрат)</SelectItem>
+                      <SelectItem value="4:5">4:5 (портрет)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Формат JPG/PNG/WebP</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl">
@@ -1489,8 +1529,26 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <div><Label className={S.label}>Заголовок</Label><Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="О компании DaKi" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша история" className={S.input} /></div>
               <div><Label className={S.label}>Текст</Label><Textarea rows={5} value={aboutText} onChange={(e) => setAboutText(e.target.value)} placeholder="Текст о компании..." className={S.textarea} /></div>
-              <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" targetSize={{ w: 800, h: 1000 }} />
-              <p className="text-[10px] text-muted-foreground">Рекомендуемый размер фото: 800×1000 px, видео: MP4 до 50MB</p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" targetSize={parseAspect(aboutAspect, 800, 1000)} />
+                </div>
+                <div className="w-[130px]">
+                  <Label className={S.label}>Соотношение сторон</Label>
+                  <Select value={aboutAspect} onValueChange={setAboutAspect}>
+                    <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="4:5">4:5 (портрет)</SelectItem>
+                      <SelectItem value="3:4">3:4</SelectItem>
+                      <SelectItem value="1:1">1:1 (квадрат)</SelectItem>
+                      <SelectItem value="4:3">4:3 (альбом)</SelectItem>
+                      <SelectItem value="3:2">3:2</SelectItem>
+                      <SelectItem value="16:9">16:9 (широкий)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Видео: MP4 до 50MB</p>
             </CardContent>
           </Card>
           <Button className="rounded-xl" onClick={saveHomepage} disabled={homepageLoading}>
