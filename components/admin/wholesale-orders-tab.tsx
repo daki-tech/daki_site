@@ -19,9 +19,11 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import type { CatalogModel } from "@/lib/types";
 
 const S = {
@@ -46,11 +48,18 @@ interface Order {
   status: string;
   total_amount: number;
   customer_name: string;
+  customer_phone: string | null;
+  customer_email: string | null;
   delivery_city: string;
+  delivery_oblast: string | null;
+  delivery_branch: string | null;
+  payment_method: string | null;
+  notes: string | null;
   order_type: "retail" | "wholesale";
   source: string;
   created_at: string;
   order_items: {
+    id: string;
     model_id: string;
     size_label: string;
     quantity: number;
@@ -66,6 +75,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const fetchRef = useRef(0);
 
   // Form state
@@ -213,12 +223,10 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">Оптовые продажи ростовками</p>
-        </div>
-        <Button className="rounded-xl" onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Добавить продажу
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs sm:text-sm text-muted-foreground">Оптовые продажи ростовками</p>
+        <Button className="rounded-xl" size="sm" onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Добавить продажу</span><span className="sm:hidden">Добавить</span>
         </Button>
       </div>
 
@@ -395,7 +403,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
                 const colors = getOrderColors(order);
                 const isCancelled = order.status === "cancelled";
                 return (
-                  <tr key={order.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} ${isCancelled ? "opacity-50" : ""}`}>
+                  <tr key={order.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} ${isCancelled ? "opacity-50" : ""} cursor-pointer hover:bg-purple-50/50 transition-colors`} onClick={() => setSelectedOrder(order)}>
                     <td className="px-3 py-2 text-gray-400 text-xs">{order.order_number}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
                     <td className="px-3 py-2">{order.customer_name}</td>
@@ -424,7 +432,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-red-400 hover:text-red-600"
-                          onClick={() => handleCancel(order.id)}
+                          onClick={(e) => { e.stopPropagation(); handleCancel(order.id); }}
                           disabled={cancellingId === order.id}
                         >
                           {cancellingId === order.id ? (
@@ -441,6 +449,88 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Order detail popup */}
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-0 shadow-2xl p-0 max-w-xl sm:max-w-2xl">
+            <div className="px-6 sm:px-8 pb-8 pt-6 space-y-5">
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <DialogTitle className="text-xl font-bold">
+                    Заказ {selectedOrder.order_number ? `#${selectedOrder.order_number}` : selectedOrder.id.slice(0, 8)}
+                  </DialogTitle>
+                  <Badge variant={selectedOrder.status === "cancelled" ? "destructive" : "default"} className="text-xs">
+                    {selectedOrder.status === "cancelled" ? "Отменён" : "Оформлен"}
+                  </Badge>
+                </div>
+                <DialogDescription className="text-sm text-gray-400">
+                  {format(new Date(selectedOrder.created_at), "dd.MM.yyyy HH:mm")}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="bg-gray-50/50 rounded-2xl p-5 space-y-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Покупатель</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Имя</p>
+                    <p className="text-sm font-semibold">{selectedOrder.customer_name || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Телефон</p>
+                    <p className="text-sm font-semibold">{selectedOrder.customer_phone || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Email</p>
+                    <p className="text-sm font-semibold">{selectedOrder.customer_email || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Оплата</p>
+                    <p className="text-sm font-semibold">{selectedOrder.payment_method || "—"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div className="bg-gray-50/50 rounded-2xl p-5 space-y-2">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Заметки</p>
+                  <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                </div>
+              )}
+
+              <div className="bg-gray-50/50 rounded-2xl p-5 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Товары</p>
+                <div className="space-y-2">
+                  {(() => {
+                    const colorGroups = new Map<string, { color: string; sizes: { size: string; qty: number; price: number }[] }>();
+                    for (const item of selectedOrder.order_items ?? []) {
+                      const key = item.color || "—";
+                      if (!colorGroups.has(key)) colorGroups.set(key, { color: key, sizes: [] });
+                      colorGroups.get(key)!.sizes.push({ size: item.size_label, qty: item.quantity, price: item.unit_price });
+                    }
+                    return Array.from(colorGroups.values()).map((group) => (
+                      <div key={group.color} className="border-b border-gray-100 last:border-b-0 pb-3 last:pb-0">
+                        <p className="text-sm font-semibold mb-1">{group.color}</p>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 text-xs text-gray-500">
+                          {group.sizes.map((s) => (
+                            <span key={s.size}>{s.size}: {s.qty} шт.</span>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {group.sizes.reduce((s, x) => s + x.qty, 0)} шт. × {group.sizes[0]?.price?.toLocaleString()} UAH = <strong className="text-gray-700">{group.sizes.reduce((s, x) => s + x.qty * x.price, 0).toLocaleString()} UAH</strong>
+                        </p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="pt-3 border-t-2 border-gray-200 text-right">
+                  <span className="text-xl font-bold">{selectedOrder.total_amount?.toLocaleString()} UAH</span>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

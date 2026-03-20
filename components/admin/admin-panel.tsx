@@ -798,7 +798,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!(await confirm("Удалить этот заказ?", "Это действие нельзя отменить."))) return;
+    if (!(await confirm("Удалить этот заказ?", "Остатки будут возвращены на склад."))) return;
     const res = await fetch("/api/admin/orders", {
       method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId }),
@@ -895,7 +895,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   // Bulk delete orders
   const handleBulkDeleteOrders = async () => {
     if (selectedOrderIds.size === 0) return;
-    if (!(await confirm(`Удалить ${selectedOrderIds.size} заказов?`, "Это действие нельзя отменить."))) return;
+    if (!(await confirm(`Удалить ${selectedOrderIds.size} заказов?`, "Остатки будут возвращены на склад."))) return;
     for (const id of selectedOrderIds) {
       await fetch("/api/admin/orders", {
         method: "DELETE", headers: { "Content-Type": "application/json" },
@@ -946,34 +946,36 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   /* ================================================================ */
   /*  RENDER                                                           */
   /* ================================================================ */
-  const tabTriggerCls = "gap-1.5 rounded-xl px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all";
+  const tabTriggerCls = "gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all whitespace-nowrap";
   return (
     <div className="space-y-2">
       <ConfirmDialog />
       <Tabs defaultValue="products" className="space-y-4" style={{ minHeight: "70vh" }}>
-        <div className="flex justify-center mb-4">
-          <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1 mx-auto">
-            <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Товары</TabsTrigger>
-            <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Заказы</TabsTrigger>
-            <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> Розница</TabsTrigger>
-            <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
-            <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> Выручка</TabsTrigger>
-            <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> Пользователи</TabsTrigger>
-            <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> Главная</TabsTrigger>
-            <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> Контакты</TabsTrigger>
-            <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> Рассылка</TabsTrigger>
-          </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 scrollbar-none">
+          <div className="flex justify-center mb-4 min-w-fit">
+            <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
+              <TabsTrigger value="products" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Товары</span><span className="sm:hidden">Тов.</span></TabsTrigger>
+              <TabsTrigger value="orders" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Заказы</span><span className="sm:hidden">Зак.</span></TabsTrigger>
+              <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Розница</span><span className="sm:hidden">Розн.</span></TabsTrigger>
+              <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
+              <TabsTrigger value="revenue" className={tabTriggerCls}><TrendingUp className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Выручка</span><span className="sm:hidden">Выр.</span></TabsTrigger>
+              <TabsTrigger value="users" className={tabTriggerCls}><Users className="h-3.5 w-3.5" /> <span className="hidden md:inline">Пользователи</span><span className="md:hidden">Польз.</span></TabsTrigger>
+              <TabsTrigger value="homepage" className={tabTriggerCls}><Home className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Главная</span></TabsTrigger>
+              <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Контакты</span></TabsTrigger>
+              <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Рассылка</span></TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         {/* ====================== ТОВАРЫ ====================== */}
         <TabsContent value="products" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">Всего товаров: {models.length}</p>
-              <Button size="sm" className="rounded-xl" onClick={() => { setCreateForm(emptyForm); setIsCreating(true); }}><Plus className="h-4 w-4 mr-1" /> Добавить товар</Button>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <p className="text-sm text-muted-foreground">Всего: {models.length}</p>
+              <Button size="sm" className="rounded-xl" onClick={() => { setCreateForm(emptyForm); setIsCreating(true); }}><Plus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Добавить товар</span><span className="sm:hidden">Добавить</span></Button>
             </div>
             <Select value={productSort} onValueChange={(v) => setProductSort(v as typeof productSort)}>
-              <SelectTrigger className={`w-[200px] ${S.select}`}><SelectValue placeholder="Сортировка" /></SelectTrigger>
+              <SelectTrigger className={`w-[160px] sm:w-[200px] ${S.select}`}><SelectValue placeholder="Сортировка" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">По умолчанию</SelectItem>
                 <SelectItem value="stock_desc">Остаток (убыв.)</SelectItem>
@@ -983,7 +985,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               </SelectContent>
             </Select>
           </div>
-          <div className="relative max-w-md">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по названию или артикулу..." className={`pl-10 ${S.input}`} />
           </div>
@@ -1098,47 +1100,50 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
 
         {/* ====================== ЗАКАЗЫ ====================== */}
         <TabsContent value="orders" className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-muted-foreground">Всего: {orders.length}</p>
-            {selectedOrderIds.size > 0 && (
-              <Button size="sm" variant="destructive" className="rounded-xl" onClick={handleBulkDeleteOrders}>
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Удалить ({selectedOrderIds.size})
-              </Button>
-            )}
-            <div className="flex-1" />
-            <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
-              <SelectTrigger className={`w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Все типы</SelectItem>
-                <SelectItem value="retail">Розница</SelectItem>
-                <SelectItem value="wholesale">Опт</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={orderYearFilter} onValueChange={setOrderYearFilter}>
-              <SelectTrigger className={`w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">За все время</SelectItem>
-                {orderYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={orderMonthFilter} onValueChange={setOrderMonthFilter}>
-              <SelectTrigger className={`w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Все месяцы</SelectItem>
-                {monthNames.map((name, i) => <SelectItem key={i+1} value={String(i+1)}>{name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={orderSort} onValueChange={(v) => setOrderSort(v as typeof orderSort)}>
-              <SelectTrigger className={`w-[170px] ${S.select}`}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date_desc">Дата (новые)</SelectItem>
-                <SelectItem value="date_asc">Дата (старые)</SelectItem>
-                <SelectItem value="amount_desc">Сумма (убыв.)</SelectItem>
-                <SelectItem value="amount_asc">Сумма (возр.)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">Всего: {orders.length}</p>
+              {selectedOrderIds.size > 0 && (
+                <Button size="sm" variant="destructive" className="rounded-xl" onClick={handleBulkDeleteOrders}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Удалить ({selectedOrderIds.size})
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
+                <SelectTrigger className={`w-[110px] sm:w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все типы</SelectItem>
+                  <SelectItem value="retail">Розница</SelectItem>
+                  <SelectItem value="wholesale">Опт</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={orderYearFilter} onValueChange={setOrderYearFilter}>
+                <SelectTrigger className={`w-[90px] sm:w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все</SelectItem>
+                  {orderYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={orderMonthFilter} onValueChange={setOrderMonthFilter}>
+                <SelectTrigger className={`w-[110px] sm:w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все месяцы</SelectItem>
+                  {monthNames.map((name, i) => <SelectItem key={i+1} value={String(i+1)}>{name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={orderSort} onValueChange={(v) => setOrderSort(v as typeof orderSort)}>
+                <SelectTrigger className={`w-[140px] sm:w-[170px] ${S.select}`}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Дата (новые)</SelectItem>
+                  <SelectItem value="date_asc">Дата (старые)</SelectItem>
+                  <SelectItem value="amount_desc">Сумма (убыв.)</SelectItem>
+                  <SelectItem value="amount_asc">Сумма (возр.)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="relative max-w-md">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} placeholder="Поиск по имени или номеру..." className={`pl-10 ${S.input}`} />
           </div>
@@ -1211,8 +1216,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           {/* Order detail popup — iOS styled */}
           {selectedOrder && (
             <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-0 shadow-2xl p-0 max-w-xl sm:max-w-2xl">
-                <div className="px-8 pb-8 pt-6 space-y-6">
+              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-0 shadow-2xl p-0 max-w-[95vw] sm:max-w-xl md:max-w-2xl">
+                <div className="px-4 sm:px-8 pb-6 sm:pb-8 pt-5 sm:pt-6 space-y-4 sm:space-y-6">
                   <DialogHeader>
                     <div className="flex items-center gap-3">
                       <DialogTitle className="text-xl font-bold">
@@ -1230,9 +1235,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="bg-gray-50/50 rounded-2xl p-5 space-y-4">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 space-y-4">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Клиент</p>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4">
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Имя</p>
                         <p className="text-sm font-semibold cursor-pointer hover:text-blue-600 transition-colors" onClick={() => copyToClipboard(selectedOrder.customer_name ?? "")} title="Нажмите чтобы скопировать">{selectedOrder.customer_name ?? "-"}</p>
@@ -1351,17 +1356,17 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
 
         {/* ====================== ПОЛЬЗОВАТЕЛИ ====================== */}
         <TabsContent value="users" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">Всего: {filteredUsers.length}</p>
             <Select value={userSort} onValueChange={(v) => setUserSort(v as typeof userSort)}>
-              <SelectTrigger className={`w-[200px] ${S.select}`}><SelectValue /></SelectTrigger>
+              <SelectTrigger className={`w-[160px] sm:w-[200px] ${S.select}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="alpha">По алфавиту</SelectItem>
                 <SelectItem value="orders_desc">По заказам (убыв.)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="relative max-w-md">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Поиск по имени или email..." className={`pl-10 ${S.input}`} />
           </div>
@@ -1394,11 +1399,11 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           {/* User detail popup — iOS styled */}
           {selectedUser && (
             <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-0 shadow-2xl p-0 max-w-xl sm:max-w-2xl">
-                <div className="px-8 pb-8 pt-6 space-y-6">
+              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-0 shadow-2xl p-0 max-w-[95vw] sm:max-w-xl md:max-w-2xl">
+                <div className="px-4 sm:px-8 pb-6 sm:pb-8 pt-5 sm:pt-6 space-y-4 sm:space-y-6">
                   <DialogHeader>
                     <div className="flex items-center gap-3">
-                      <DialogTitle className="text-xl font-bold">
+                      <DialogTitle className="text-lg sm:text-xl font-bold">
                         {selectedUser.full_name ?? "Пользователь"}
                       </DialogTitle>
                       <Badge variant={selectedUser.customer_type === "wholesale" ? "default" : "secondary"} className="text-xs">
@@ -1408,9 +1413,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     <DialogDescription className="text-sm text-gray-400">Карточка пользователя</DialogDescription>
                   </DialogHeader>
 
-                  <div className="bg-gray-50/50 rounded-2xl p-5 space-y-4">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 space-y-4">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Контакты</p>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4">
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Телефон</p>
                         <p className="text-sm font-semibold cursor-pointer hover:text-blue-600 transition-colors" onClick={() => copyToClipboard(selectedUser.phone ?? "")} title="Нажмите чтобы скопировать">{selectedUser.phone ?? "-"}</p>
@@ -1429,9 +1434,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     </div>
                   )}
 
-                  <div className="bg-gray-50/50 rounded-2xl p-5 space-y-4">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 space-y-4">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Доставка</p>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4">
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Город</p>
                         <p className="text-sm font-semibold cursor-pointer hover:text-blue-600 transition-colors" onClick={() => copyToClipboard(selectedUser.delivery_city ?? "")} title="Нажмите чтобы скопировать">{selectedUser.delivery_city ?? "-"}</p>

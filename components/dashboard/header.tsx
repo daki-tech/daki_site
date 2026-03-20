@@ -34,35 +34,55 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between gap-3">
-        <Link href="/" className="font-logo text-[28px] tracking-[0.2em] uppercase">
+      <div className="container flex h-14 sm:h-16 items-center justify-between gap-3">
+        <Link href="/" className="font-logo text-[24px] sm:text-[28px] tracking-[0.2em] uppercase">
           DAKI
         </Link>
         {links.length > 0 && (
-          <nav className="hidden flex-1 items-center justify-center md:flex">
-            <div className="inline-flex h-9 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
-              {links.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "rounded-xl px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all",
-                    pathname === item.href && "bg-white text-foreground shadow-sm",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
+          <>
+            {/* Desktop nav */}
+            <nav className="hidden flex-1 items-center justify-center md:flex">
+              <div className="inline-flex h-9 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
+                {links.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "rounded-xl px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all",
+                      pathname === item.href && "bg-white text-foreground shadow-sm",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+            {/* Mobile nav */}
+            <nav className="flex flex-1 items-center justify-center md:hidden">
+              <div className="inline-flex h-8 items-center gap-0.5 rounded-xl bg-neutral-100 p-0.5">
+                {links.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "rounded-lg px-3 py-1 text-[11px] font-medium text-muted-foreground transition-all",
+                      pathname === item.href && "bg-white text-foreground shadow-sm",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          </>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-sm text-muted-foreground hidden md:inline">
             {profile?.full_name ?? profile?.email ?? ""}
           </span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-neutral-100 hover:text-foreground"
+            className="flex items-center gap-2 rounded-xl px-2 sm:px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-neutral-100 hover:text-foreground"
             title="Вийти"
           >
             <LogOut className="h-4 w-4" />

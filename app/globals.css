@@ -77,3 +77,12 @@ body {
 .bg-sale {
   background-color: hsl(var(--sale));
 }
+
+/* Hide scrollbar but keep scrolling */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

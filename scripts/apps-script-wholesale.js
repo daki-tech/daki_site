@@ -29,6 +29,8 @@ function appendWholesaleOrder(data) {
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     sheet.getRange(1, 1, 1, headers.length).setBackground("#7c3aed");
     sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
+    // Format order number column as plain text to prevent date auto-formatting
+    sheet.getRange(2, 1, sheet.getMaxRows() - 1, 1).setNumberFormat("@");
   }
 
   var rows = data.rows || [];
@@ -54,7 +56,10 @@ function appendWholesaleOrder(data) {
   });
 
   var lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow + 1, 1, values.length, values[0].length).setValues(values);
+  var dataRange = sheet.getRange(lastRow + 1, 1, values.length, values[0].length);
+  // Format order number column as text to prevent date auto-formatting
+  sheet.getRange(lastRow + 1, 1, values.length, 1).setNumberFormat("@");
+  dataRange.setValues(values);
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, added: values.length }))
     .setMimeType(ContentService.MimeType.JSON);

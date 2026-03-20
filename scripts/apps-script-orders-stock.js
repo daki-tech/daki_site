@@ -27,6 +27,7 @@ function appendOrder(data) {
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     sheet.getRange(1, 1, 1, headers.length).setBackground("#4285f4");
     sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
+    sheet.getRange(2, 1, sheet.getMaxRows() - 1, 1).setNumberFormat("@");
   }
 
   var rows = data.rows || [];
@@ -59,7 +60,9 @@ function appendOrder(data) {
   });
 
   var lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow + 1, 1, values.length, values[0].length).setValues(values);
+  var dataRange = sheet.getRange(lastRow + 1, 1, values.length, values[0].length);
+  sheet.getRange(lastRow + 1, 1, values.length, 1).setNumberFormat("@");
+  dataRange.setValues(values);
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, added: values.length }))
     .setMimeType(ContentService.MimeType.JSON);

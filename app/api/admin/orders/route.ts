@@ -3,6 +3,7 @@ import { after } from "next/server";
 
 import { requireApiAdmin } from "@/lib/server-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncStockToGoogleSheets } from "@/lib/google-sheets-stock";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "🆕 Новий",
@@ -65,10 +66,72 @@ export async function DELETE(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // 1. Check order status — return stock if not already cancelled
+  const { data: order } = await admin
+    .from("orders")
+    .select("id, status")
+    .eq("id", body.orderId)
+    .single();
+
+  if (order && order.status !== "cancelled") {
+    // 2. Get order items before deletion
+    const { data: items } = await admin
+      .from("order_items")
+      .select("id, model_id, size_label, quantity, color")
+      .eq("order_id", body.orderId);
+
+    // 3. Return stock for each item
+    if (items && items.length > 0) {
+      for (const item of items) {
+        // Return to model_sizes.total_stock
+        const { data: sizeRows } = await admin
+          .from("model_sizes")
+          .select("id, total_stock")
+          .eq("model_id", item.model_id)
+          .eq("size_label", item.size_label);
+
+        if (sizeRows && sizeRows.length > 0) {
+          const sizeRow = sizeRows[0];
+          await admin.from("model_sizes").update({
+            total_stock: sizeRow.total_stock + item.quantity,
+          }).eq("id", sizeRow.id);
+        }
+
+        // Return to model_colors.stock_per_size (if color is known)
+        if (item.color) {
+          const { data: colorRows } = await admin
+            .from("model_colors")
+            .select("id, stock_per_size")
+            .eq("model_id", item.model_id)
+            .eq("name", item.color);
+
+          if (colorRows && colorRows.length > 0) {
+            const colorRow = colorRows[0];
+            const stockPerSize = (colorRow.stock_per_size as Record<string, number>) || {};
+            stockPerSize[item.size_label] = (stockPerSize[item.size_label] || 0) + item.quantity;
+            await admin.from("model_colors").update({ stock_per_size: stockPerSize }).eq("id", colorRow.id);
+          }
+        }
+      }
+    }
+  }
+
+  // 4. Delete order items and order
   await admin.from("order_items").delete().eq("order_id", body.orderId);
   const { error } = await admin.from("orders").delete().eq("id", body.orderId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // 5. Sync stock to Google Sheets in background
+  if (order && order.status !== "cancelled") {
+    after(async () => {
+      try { await syncStockToGoogleSheets(); } catch (err) {
+        console.error("[Stock Sync] Failed after order delete:", err);
+      }
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }
 
