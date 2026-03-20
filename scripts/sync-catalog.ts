@@ -228,18 +228,22 @@ async function uploadFile(
   localPath: string,
   storagePath: string,
 ): Promise<string> {
-  const fileBuffer = fs.readFileSync(localPath);
-  const ext = path.extname(localPath).toLowerCase();
-  const contentType =
-    ext === ".png" ? "image/png" :
-    ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" :
-    ext === ".webp" ? "image/webp" :
-    "application/octet-stream";
+  const sharp = (await import("sharp")).default;
+  const rawBuffer = fs.readFileSync(localPath);
+
+  // Compress image: resize to max 1920px wide, convert to WebP quality 80
+  const compressed = await sharp(rawBuffer)
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Use .webp extension in storage path
+  const webpStoragePath = storagePath.replace(/\.(jpe?g|png)$/i, ".webp");
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(storagePath, fileBuffer, {
-      contentType,
+    .upload(webpStoragePath, compressed, {
+      contentType: "image/webp",
       upsert: true,
     });
 
@@ -248,7 +252,7 @@ async function uploadFile(
     throw error;
   }
 
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(webpStoragePath);
   return urlData.publicUrl;
 }
 

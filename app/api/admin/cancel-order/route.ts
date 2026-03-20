@@ -38,8 +38,9 @@ export async function POST(req: Request) {
       await returnStockBatched(admin, items);
     }
 
-    // 4. Mark order as cancelled
-    await admin.from("orders").update({ status: "cancelled" }).eq("id", orderId);
+    // 4. Delete order items and order from DB
+    await admin.from("order_items").delete().eq("order_id", orderId);
+    await admin.from("orders").delete().eq("id", orderId);
 
     // 5. Delete from Google Sheets
     const orderNumber = order.order_number || orderId.slice(0, 8);

@@ -37,19 +37,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const rawBuffer = Buffer.from(await file.arrayBuffer());
   const timestamp = Date.now();
   const safeName = file.name
     .replace(/\.[^.]+$/, "")
     .replace(/[^a-zA-Z0-9_-]/g, "_")
     .slice(0, 60);
-  const storagePath = `admin/${timestamp}_${safeName}${ext}`;
+
+  const isImage = file.type.startsWith("image/");
+  let uploadBuffer: Buffer;
+  let uploadContentType: string;
+  let uploadPath: string;
+
+  if (isImage) {
+    const sharp = (await import("sharp")).default;
+    uploadBuffer = await sharp(rawBuffer)
+      .resize({ width: 1920, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    uploadContentType = "image/webp";
+    uploadPath = `admin/${timestamp}_${safeName}.webp`;
+  } else {
+    uploadBuffer = rawBuffer;
+    uploadContentType = file.type;
+    uploadPath = `admin/${timestamp}_${safeName}${ext}`;
+  }
 
   const admin = createAdminClient();
   const { error: uploadError } = await admin.storage
     .from(BUCKET)
-    .upload(storagePath, buffer, {
-      contentType: file.type,
+    .upload(uploadPath, uploadBuffer, {
+      contentType: uploadContentType,
       upsert: false,
     });
 
@@ -57,7 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
-  const { data: urlData } = admin.storage.from(BUCKET).getPublicUrl(storagePath);
+  const { data: urlData } = admin.storage.from(BUCKET).getPublicUrl(uploadPath);
 
   return NextResponse.json({ url: urlData.publicUrl });
 }
