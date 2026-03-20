@@ -9,22 +9,18 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "❌ Отменено",
 };
 
-const FINANCE_ACTIONS: Record<string, { label: string; stepLabels: [string, string, string] }> = {
-  income_cash: {
-    label: "💵 Наличка (приход)",
-    stepLabels: ["📅 Введите дату (дд.мм.гггг или \"сегодня\"):", "👤 От кого:", "💰 Сумма (грн):"],
-  },
-  income_card: {
-    label: "💳 Карта (приход)",
-    stepLabels: ["📅 Введите дату (дд.мм.гггг или \"сегодня\"):", "👤 От кого:", "💰 Сумма (грн):"],
+const FINANCE_ACTIONS: Record<string, { label: string; stepLabels: [string, string] }> = {
+  income: {
+    label: "💰 Доход",
+    stepLabels: ["👤 От кого:", "💰 Сумма (грн):"],
   },
   expense: {
     label: "📉 Расход",
-    stepLabels: ["📅 Введите дату (дд.мм.гггг или \"сегодня\"):", "📝 Описание (на что):", "💰 Сумма (грн):"],
+    stepLabels: ["📝 Описание (на что):", "💰 Сумма (грн):"],
   },
 };
 
-const STEPS = ["date", "description", "amount"] as const;
+const STEPS = ["description", "amount"] as const;
 
 function isAllowedUser(chatId: number): boolean {
   const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
@@ -146,34 +142,6 @@ function getFinanceMenuKeyboard() {
   };
 }
 
-function getIncomeSubKeyboard() {
-  return {
-    inline_keyboard: [
-      [
-        { text: "💵 Наличка", callback_data: "fin:income_cash" },
-        { text: "💳 Карта", callback_data: "fin:income_card" },
-      ],
-      [{ text: "◀️ Назад", callback_data: "fin:back" }],
-    ],
-  };
-}
-
-function parseDate(input: string): string | null {
-  const today = new Date();
-  const lower = input.trim().toLowerCase();
-  if (["сегодня", "сьогодні", "today"].includes(lower)) {
-    return today.toISOString().split("T")[0];
-  }
-  const match = input.trim().match(/^(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})$/);
-  if (!match) return null;
-  const day = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-  let year = parseInt(match[3], 10);
-  if (year < 100) year += 2000;
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
 function parseAmount(input: string): number | null {
   const cleaned = input.trim().replace(/\s/g, "").replace(",", ".");
   const num = parseFloat(cleaned);
@@ -182,7 +150,7 @@ function parseAmount(input: string): number | null {
 }
 
 async function appendToFinanceSheet(record: {
-  type: string;
+  type: string; // "income" or "expense" — determines which column gets the amount
   date: string;
   description: string;
   amount: number;
@@ -334,35 +302,19 @@ async function handleFinanceCallback(
 
   const admin = createAdminClient();
 
-  // "Доход" → show sub-menu (edit existing message)
-  if (action === "income") {
-    await editMessage(botToken, chatId, messageId, "💰 <b>Выберите тип дохода:</b>", getIncomeSubKeyboard());
-    await answerCallback(botToken, callbackQuery.id, "");
-    return NextResponse.json({ ok: true });
-  }
-
-  // "Назад" → back to main finance menu
-  if (action === "back") {
-    await editMessage(botToken, chatId, messageId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
-    await answerCallback(botToken, callbackQuery.id, "");
-    return NextResponse.json({ ok: true });
-  }
-
   // "Отчет" → show report
   if (action === "report") {
     await answerCallback(botToken, callbackQuery.id, "Формирую отчет...");
     return handleReport(admin, botToken, chatId);
   }
 
-  // Start finance input flow (income_cash, income_card, expense)
+  // Start finance input flow (income, expense) — first step is description
   if (FINANCE_ACTIONS[action]) {
     const actionInfo = FINANCE_ACTIONS[action];
-    // Edit menu message to show what was selected
     await editMessage(botToken, chatId, messageId, `${actionInfo.label}\n\n<i>Заполните данные ниже. /cancel для отмены.</i>`);
     const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[0]);
-    // Save state to DB with message IDs to delete later
     await admin.from("telegram_bot_state").upsert(
-      { chat_id: chatId, action, step: "date", data: { msg_ids: [messageId, ...(promptMsgId ? [promptMsgId] : [])] }, updated_at: new Date().toISOString() },
+      { chat_id: chatId, action, step: "description", data: { msg_ids: [messageId, ...(promptMsgId ? [promptMsgId] : [])] }, updated_at: new Date().toISOString() },
       { onConflict: "chat_id" }
     );
     await answerCallback(botToken, callbackQuery.id, "");
@@ -391,27 +343,12 @@ async function handleFinanceStep(
   // Helper to get tracked message IDs array from state data
   const msgIds = (state.data.msg_ids as number[]) || [];
 
-  if (state.step === "date") {
-    const parsed = parseDate(input);
-    if (!parsed) {
-      await sendMessage(botToken, chatId, "⚠️ Неверный формат. Введите дд.мм.гггг или \"сегодня\":");
-      return NextResponse.json({ ok: true });
-    }
-    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[1]);
-    await admin.from("telegram_bot_state").update({
-      step: "description",
-      data: { ...state.data, date: parsed, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
-      updated_at: new Date().toISOString(),
-    }).eq("chat_id", chatId);
-    return NextResponse.json({ ok: true });
-  }
-
   if (state.step === "description") {
     if (!input || input.length < 1) {
       await sendMessage(botToken, chatId, "⚠️ Введите описание:");
       return NextResponse.json({ ok: true });
     }
-    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[2]);
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, actionInfo.stepLabels[1]);
     await admin.from("telegram_bot_state").update({
       step: "amount",
       data: { ...state.data, description: input, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
@@ -427,28 +364,13 @@ async function handleFinanceStep(
       return NextResponse.json({ ok: true });
     }
 
-    // Save record to DB
-    const dateStr = state.data.date as string;
+    // Save record — date is always today
     const descStr = state.data.description as string;
+    const today = new Date();
+    const dateStr = today.toISOString().split("T")[0];
+    const sheetDate = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
 
-    const record = {
-      type: state.action,
-      date: dateStr,
-      description: descStr,
-      amount,
-      recorded_by: chatId,
-    };
-
-    const { error: insertErr } = await admin.from("finance_records").insert(record);
-    if (insertErr) {
-      console.error("[Finance] Insert error:", insertErr);
-      await sendMessage(botToken, chatId, "❌ Ошибка сохранения. Попробуйте снова. Нажмите 📒 Финансы.");
-      await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-      return NextResponse.json({ ok: true });
-    }
-
-    // Append to Google Sheets (fire-and-forget) — date in dd.mm.yyyy format
-    const sheetDate = dateStr.split("-").reverse().join(".");
+    // Append to Google Sheets (single source of truth)
     appendToFinanceSheet({
       type: state.action,
       date: sheetDate,
@@ -464,12 +386,11 @@ async function handleFinanceStep(
       await deleteMessage(botToken, chatId, mid);
     }
 
-    // Final clean summary — send to ALL subscribers so everyone sees finance records
-    const dateFormatted = dateStr.split("-").reverse().join(".");
-    const typeEmoji = state.action === "expense" ? "📉" : state.action === "income_cash" ? "💵" : "💳";
-    const typeLabel = state.action === "expense" ? "Расход" : state.action === "income_cash" ? "Наличка" : "Карта";
+    // Final clean summary — send to ALL subscribers
+    const typeEmoji = state.action === "expense" ? "📉" : "💰";
+    const typeLabel = state.action === "expense" ? "Расход" : "Доход";
 
-    const summaryText = `📅 ${dateFormatted}\n${typeEmoji} ${typeLabel}\n👤 ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} грн`;
+    const summaryText = `${typeEmoji} ${typeLabel}\n📅 ${sheetDate}\n👤 ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} грн`;
 
     await sendToAllSubscribers(botToken, summaryText);
     return NextResponse.json({ ok: true });
@@ -517,10 +438,8 @@ async function handleReport(
       return NextResponse.json({ ok: true });
     }
 
-    const totalIncomeCash = result.totalIncomeCash || 0;
-    const totalIncomeCard = result.totalIncomeCard || 0;
+    const totalIncome = result.totalIncome || 0;
     const totalExpense = result.totalExpense || 0;
-    const totalIncome = totalIncomeCash + totalIncomeCard;
     const profit = totalIncome - totalExpense;
     const incomeByPerson: Record<string, number> = result.incomeByPerson || {};
     const expenseByCategory: Record<string, number> = result.expenseByCategory || {};
@@ -537,9 +456,7 @@ async function handleReport(
     const fmt = (n: number) => n.toLocaleString("ru-RU");
 
     let report = `📊 <b>Финансовый отчет</b>\n\n`;
-    report += `💵 Наличка: ${fmt(totalIncomeCash)} грн\n`;
-    report += `💳 Карта: ${fmt(totalIncomeCard)} грн\n`;
-    report += `📈 <b>Всего доходов: ${fmt(totalIncome)} грн</b>\n\n`;
+    report += `📈 <b>Всего доходов: ${fmt(totalIncome)} грн</b>\n`;
     report += `📉 <b>Всего расходов: ${fmt(totalExpense)} грн</b>\n\n`;
     report += `${profit >= 0 ? "✅" : "🔴"} <b>Прибыль: ${fmt(profit)} грн</b>\n`;
 

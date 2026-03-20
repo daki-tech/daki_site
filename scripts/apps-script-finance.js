@@ -1,9 +1,9 @@
 // Apps Script for "Учет финансов" spreadsheet
 // Spreadsheet ID: 1dOMtjAnxGwH-9CPDgFPG2lOzpR2eDrU5wiZFUVax410
-// Writes finance records to the LAST sheet (newest season)
-// Columns: A=Дата, B=Тип, C=Описание, D=Доход, E=Расход
-// Row 1 headers, G1="Итого доход", H1="Итого расход", I1="Разница"
-// Row 2 formulas: G2=SUM(D2:D), H2=SUM(E2:E), I2=G2-H2
+// New format (no "Тип" column):
+// Columns: A=Дата, B=Описание / От кого, C=Доход, D=Расход
+// Row 1 headers, F1="Итого доход", G1="Итого расход", H1="Разница"
+// Row 2 formulas: F2=SUM(C2:C), G2=SUM(D2:D), H2=F2-G2
 
 function doPost(e) {
   try {
@@ -32,32 +32,22 @@ function doPost(e) {
 function addFinanceRecord(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheets = ss.getSheets();
-  // Use the last sheet (most recent season)
   var sheet = sheets[sheets.length - 1];
 
-  // Check if headers need fixing (old format had "Сумма" in column D)
+  // Setup headers if needed
   var firstCell = sheet.getRange(1, 1).getValue();
-  var colD = sheet.getRange(1, 4).getValue();
-  if (!firstCell || firstCell !== "Дата" || colD === "Сумма") {
-    migrateAndSetupHeaders(sheet);
+  if (!firstCell || firstCell !== "Дата") {
+    setupHeaders(sheet);
   }
 
-  var typeLabels = {
-    "income_cash": "\ud83d\udcb5 Наличка",
-    "income_card": "\ud83d\udcb3 Карта",
-    "expense": "\ud83d\udcc9 Расход"
-  };
-
-  var typeLabel = typeLabels[data.type] || data.type;
   var amount = Number(data.amount) || 0;
   var isIncome = data.type !== "expense";
 
   var row = [
-    data.date || "",       // A: Дата (dd.mm.yyyy)
-    typeLabel,             // B: Тип
-    data.description || "",// C: Описание / От кого
-    isIncome ? amount : "",// D: Доход
-    isIncome ? "" : amount // E: Расход
+    data.date || "",           // A: Дата (dd.mm.yyyy)
+    data.description || "",    // B: Описание / От кого
+    isIncome ? amount : "",    // C: Доход
+    isIncome ? "" : amount     // D: Расход
   ];
 
   var lastRow = sheet.getLastRow();
@@ -67,98 +57,43 @@ function addFinanceRecord(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function migrateAndSetupHeaders(sheet) {
-  // Check if old format with "Сумма" column exists — need to migrate data
-  var colD = String(sheet.getRange(1, 4).getValue());
-  if (colD === "Сумма") {
-    // Old format: A=Дата, B=Тип, C=Описание, D=Сумма, E=Доход, F=Расход
-    // Need to: delete column D (Сумма), shift E→D, F→E
-    var lastRow = sheet.getLastRow();
-    if (lastRow > 1) {
-      // Move existing data: read old data rows, rewrite without Сумма column
-      var dataRange = sheet.getRange(2, 1, lastRow - 1, 6);
-      var oldData = dataRange.getValues();
-      var newData = oldData.map(function(row) {
-        // row[0]=Дата, row[1]=Тип, row[2]=Описание, row[3]=Сумма(skip), row[4]=Доход, row[5]=Расход
-        var dateVal = row[0];
-        // Fix date format: convert Date objects or yyyy-mm-dd strings to dd.mm.yyyy
-        if (dateVal instanceof Date) {
-          var d = dateVal.getDate();
-          var m = dateVal.getMonth() + 1;
-          var y = dateVal.getFullYear();
-          dateVal = (d < 10 ? "0" + d : d) + "." + (m < 10 ? "0" + m : m) + "." + y;
-        } else {
-          dateVal = String(dateVal);
-          var dateMatch = dateVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (dateMatch) {
-            dateVal = dateMatch[3] + "." + dateMatch[2] + "." + dateMatch[1];
-          }
-        }
-        // If the old data has amount in Сумма but not in Доход/Расход, migrate it
-        var income = row[4] || "";
-        var expense = row[5] || "";
-        if (!income && !expense && row[3]) {
-          // Determine from type if it's income or expense
-          var typeStr = String(row[1]);
-          if (typeStr.indexOf("Расход") >= 0) {
-            expense = Number(row[3]) || 0;
-          } else {
-            income = Number(row[3]) || 0;
-          }
-        }
-        return [dateVal, row[1], row[2], income, expense];
-      });
-      // Clear old data area (6 columns)
-      sheet.getRange(2, 1, lastRow - 1, 6).clearContent();
-      // Write migrated data (5 columns)
-      if (newData.length > 0) {
-        sheet.getRange(2, 1, newData.length, 5).setValues(newData);
-      }
-    }
-    // Clear old header columns F and beyond
-    var lastCol = sheet.getLastColumn();
-    if (lastCol > 5) {
-      sheet.getRange(1, 6, 1, lastCol - 5).clearContent();
-      sheet.getRange(1, 6, 1, lastCol - 5).clearFormat();
-    }
-  }
-
-  // Set proper headers
-  var headers = ["Дата", "Тип", "Описание / От кого", "Доход", "Расход"];
+function setupHeaders(sheet) {
+  // Set proper headers: A=Дата, B=Описание / От кого, C=Доход, D=Расход
+  var headers = ["Дата", "Описание / От кого", "Доход", "Расход"];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
   sheet.getRange(1, 1, 1, headers.length).setBackground("#4285f4");
   sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
 
-  // G1 = "Итого доход" label, G2 = SUM formula
-  sheet.getRange(1, 7).setValue("Итого доход");
+  // F1 = "Итого доход" label, F2 = SUM formula
+  sheet.getRange(1, 6).setValue("Итого доход");
+  sheet.getRange(1, 6).setFontWeight("bold");
+  sheet.getRange(1, 6).setBackground("#34a853");
+  sheet.getRange(1, 6).setFontColor("#ffffff");
+  sheet.getRange(2, 6).setFormula('=SUM(C2:C)');
+  sheet.getRange(2, 6).setFontWeight("bold");
+  sheet.getRange(2, 6).setBackground("#34a853");
+  sheet.getRange(2, 6).setFontColor("#ffffff");
+
+  // G1 = "Итого расход" label, G2 = SUM formula
+  sheet.getRange(1, 7).setValue("Итого расход");
   sheet.getRange(1, 7).setFontWeight("bold");
-  sheet.getRange(1, 7).setBackground("#34a853");
+  sheet.getRange(1, 7).setBackground("#ea4335");
   sheet.getRange(1, 7).setFontColor("#ffffff");
   sheet.getRange(2, 7).setFormula('=SUM(D2:D)');
   sheet.getRange(2, 7).setFontWeight("bold");
-  sheet.getRange(2, 7).setBackground("#34a853");
+  sheet.getRange(2, 7).setBackground("#ea4335");
   sheet.getRange(2, 7).setFontColor("#ffffff");
 
-  // H1 = "Итого расход" label, H2 = SUM formula
-  sheet.getRange(1, 8).setValue("Итого расход");
+  // H1 = "Разница" label, H2 = F2-G2 formula
+  sheet.getRange(1, 8).setValue("Разница");
   sheet.getRange(1, 8).setFontWeight("bold");
-  sheet.getRange(1, 8).setBackground("#ea4335");
+  sheet.getRange(1, 8).setBackground("#fbbc04");
   sheet.getRange(1, 8).setFontColor("#ffffff");
-  sheet.getRange(2, 8).setFormula('=SUM(E2:E)');
+  sheet.getRange(2, 8).setFormula('=F2-G2');
   sheet.getRange(2, 8).setFontWeight("bold");
-  sheet.getRange(2, 8).setBackground("#ea4335");
+  sheet.getRange(2, 8).setBackground("#fbbc04");
   sheet.getRange(2, 8).setFontColor("#ffffff");
-
-  // I1 = "Разница" label, I2 = G2-H2 formula
-  sheet.getRange(1, 9).setValue("Разница");
-  sheet.getRange(1, 9).setFontWeight("bold");
-  sheet.getRange(1, 9).setBackground("#fbbc04");
-  sheet.getRange(1, 9).setFontColor("#ffffff");
-  sheet.getRange(2, 9).setFormula('=G2-H2');
-  sheet.getRange(2, 9).setFontWeight("bold");
-  sheet.getRange(2, 9).setBackground("#fbbc04");
-  sheet.getRange(2, 9).setFontColor("#ffffff");
 }
 
 // ── Read all data from Google Sheet and return aggregated report ──
@@ -174,11 +109,10 @@ function getFinanceReport() {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  var data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
-  // Columns: A=Дата, B=Тип, C=Описание, D=Доход, E=Расход
+  // New format: A=Дата, B=Описание, C=Доход, D=Расход (4 columns)
+  var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
 
-  var totalIncomeCash = 0;
-  var totalIncomeCard = 0;
+  var totalIncome = 0;
   var totalExpense = 0;
   var incomeByPerson = {};
   var expenseByCategory = {};
@@ -186,25 +120,20 @@ function getFinanceReport() {
 
   for (var i = 0; i < data.length; i++) {
     var row = data[i];
-    var typeStr = String(row[1] || "");
-    var description = String(row[2] || "");
-    var incomeAmt = Number(row[3]) || 0;
-    var expenseAmt = Number(row[4]) || 0;
+    var description = String(row[1] || "");
+    var incomeAmt = Number(row[2]) || 0;
+    var expenseAmt = Number(row[3]) || 0;
 
-    if (!typeStr && !incomeAmt && !expenseAmt) continue; // skip empty rows
+    if (!description && !incomeAmt && !expenseAmt) continue;
     count++;
 
-    if (typeStr.indexOf("Наличка") >= 0) {
-      totalIncomeCash += incomeAmt;
+    if (incomeAmt > 0) {
+      totalIncome += incomeAmt;
       if (description) {
         incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
       }
-    } else if (typeStr.indexOf("Карта") >= 0) {
-      totalIncomeCard += incomeAmt;
-      if (description) {
-        incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
-      }
-    } else if (typeStr.indexOf("Расход") >= 0) {
+    }
+    if (expenseAmt > 0) {
       totalExpense += expenseAmt;
       if (description) {
         expenseByCategory[description] = (expenseByCategory[description] || 0) + expenseAmt;
@@ -215,8 +144,7 @@ function getFinanceReport() {
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
     empty: false,
-    totalIncomeCash: totalIncomeCash,
-    totalIncomeCard: totalIncomeCard,
+    totalIncome: totalIncome,
     totalExpense: totalExpense,
     incomeByPerson: incomeByPerson,
     expenseByCategory: expenseByCategory,
@@ -236,24 +164,24 @@ function deleteFinanceRecord(data) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  var rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  // New format: A=Дата, B=Описание, C=Доход, D=Расход
+  var rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
   var deleted = 0;
 
-  // Delete from bottom to top to preserve row indices
   for (var i = rows.length - 1; i >= 0; i--) {
     var match = true;
     if (data.date && String(rows[i][0]) !== data.date) match = false;
-    if (data.description && String(rows[i][2]) !== data.description) match = false;
+    if (data.description && String(rows[i][1]) !== data.description) match = false;
     if (data.amount) {
       var amt = Number(data.amount);
-      var incomeAmt = Number(rows[i][3]) || 0;
-      var expenseAmt = Number(rows[i][4]) || 0;
+      var incomeAmt = Number(rows[i][2]) || 0;
+      var expenseAmt = Number(rows[i][3]) || 0;
       if (incomeAmt !== amt && expenseAmt !== amt) match = false;
     }
     if (match) {
-      sheet.deleteRow(i + 2); // +2 because data starts at row 2
+      sheet.deleteRow(i + 2);
       deleted++;
-      if (!data.deleteAll) break; // delete only first match unless deleteAll flag
+      if (!data.deleteAll) break;
     }
   }
 
