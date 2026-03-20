@@ -774,9 +774,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     await refreshOrders();
   };
 
-  // Revenue
+  // Revenue (exclude cancelled orders)
   const revenueData = useMemo(() => {
-    let filtered = orders;
+    let filtered = orders.filter((o) => o.status !== "cancelled");
     if (revenueYear !== "all") filtered = filtered.filter((o) => String(new Date(o.created_at).getFullYear()) === revenueYear);
     if (revenueMonth !== "all") filtered = filtered.filter((o) => String(new Date(o.created_at).getMonth() + 1) === revenueMonth);
     const total = filtered.reduce((s, o) => s + o.total_amount, 0);
@@ -891,9 +891,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     navigator.clipboard.writeText(text).then(() => toast.success("Скопировано"));
   };
 
-  // Per-model revenue analytics
+  // Per-model revenue analytics (exclude cancelled orders)
   const modelRevenue = useMemo(() => {
-    let filtered = orders;
+    let filtered = orders.filter((o) => o.status !== "cancelled");
     if (revenueYear !== "all") filtered = filtered.filter((o) => String(new Date(o.created_at).getFullYear()) === revenueYear);
     if (revenueMonth !== "all") filtered = filtered.filter((o) => String(new Date(o.created_at).getMonth() + 1) === revenueMonth);
     const map: Record<string, { sku: string; name: string; qty: number; revenue: number }> = {};
