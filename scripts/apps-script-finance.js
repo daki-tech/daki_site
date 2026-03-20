@@ -13,6 +13,14 @@ function doPost(e) {
       return addFinanceRecord(data);
     }
 
+    if (data.action === "getReport") {
+      return getFinanceReport();
+    }
+
+    if (data.action === "deleteFinance") {
+      return deleteFinanceRecord(data);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Unknown action" }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
@@ -151,4 +159,104 @@ function migrateAndSetupHeaders(sheet) {
   sheet.getRange(2, 9).setFontWeight("bold");
   sheet.getRange(2, 9).setBackground("#fbbc04");
   sheet.getRange(2, 9).setFontColor("#ffffff");
+}
+
+// ── Read all data from Google Sheet and return aggregated report ──
+function getFinanceReport() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var sheet = sheets[sheets.length - 1];
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: true, empty: true
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  // Columns: A=Дата, B=Тип, C=Описание, D=Доход, E=Расход
+
+  var totalIncomeCash = 0;
+  var totalIncomeCard = 0;
+  var totalExpense = 0;
+  var incomeByPerson = {};
+  var expenseByCategory = {};
+  var count = 0;
+
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    var typeStr = String(row[1] || "");
+    var description = String(row[2] || "");
+    var incomeAmt = Number(row[3]) || 0;
+    var expenseAmt = Number(row[4]) || 0;
+
+    if (!typeStr && !incomeAmt && !expenseAmt) continue; // skip empty rows
+    count++;
+
+    if (typeStr.indexOf("Наличка") >= 0) {
+      totalIncomeCash += incomeAmt;
+      if (description) {
+        incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
+      }
+    } else if (typeStr.indexOf("Карта") >= 0) {
+      totalIncomeCard += incomeAmt;
+      if (description) {
+        incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
+      }
+    } else if (typeStr.indexOf("Расход") >= 0) {
+      totalExpense += expenseAmt;
+      if (description) {
+        expenseByCategory[description] = (expenseByCategory[description] || 0) + expenseAmt;
+      }
+    }
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({
+    ok: true,
+    empty: false,
+    totalIncomeCash: totalIncomeCash,
+    totalIncomeCard: totalIncomeCard,
+    totalExpense: totalExpense,
+    incomeByPerson: incomeByPerson,
+    expenseByCategory: expenseByCategory,
+    count: count
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── Delete a finance record by matching date+description+amount ──
+function deleteFinanceRecord(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var sheet = sheets[sheets.length - 1];
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, deleted: 0 }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  var deleted = 0;
+
+  // Delete from bottom to top to preserve row indices
+  for (var i = rows.length - 1; i >= 0; i--) {
+    var match = true;
+    if (data.date && String(rows[i][0]) !== data.date) match = false;
+    if (data.description && String(rows[i][2]) !== data.description) match = false;
+    if (data.amount) {
+      var amt = Number(data.amount);
+      var incomeAmt = Number(rows[i][3]) || 0;
+      var expenseAmt = Number(rows[i][4]) || 0;
+      if (incomeAmt !== amt && expenseAmt !== amt) match = false;
+    }
+    if (match) {
+      sheet.deleteRow(i + 2); // +2 because data starts at row 2
+      deleted++;
+      if (!data.deleteAll) break; // delete only first match unless deleteAll flag
+    }
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, deleted: deleted }))
+    .setMimeType(ContentService.MimeType.JSON);
 }

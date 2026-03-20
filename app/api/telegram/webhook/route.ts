@@ -486,73 +486,85 @@ async function handleReport(
   botToken: string,
   chatId: number,
 ) {
-  const { data: records, error } = await admin
-    .from("finance_records")
-    .select("type, date, description, amount")
-    .order("date", { ascending: false });
-
-  if (error || !records || records.length === 0) {
-    await sendMessage(botToken, chatId, "📊 Пока нет записей.");
+  // Read report data from Google Sheet (single source of truth)
+  const webhookUrl = process.env.GOOGLE_FINANCE_WEBHOOK_URL;
+  if (!webhookUrl) {
+    await sendMessage(botToken, chatId, "❌ GOOGLE_FINANCE_WEBHOOK_URL не настроен.");
     return NextResponse.json({ ok: true });
   }
 
-  let totalIncomeCash = 0;
-  let totalIncomeCard = 0;
-  let totalExpense = 0;
-  const incomeByPerson: Record<string, number> = {};
-  const expenseByCategory: Record<string, number> = {};
+  try {
+    const resp = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "getReport" }),
+    });
 
-  for (const r of records) {
-    const amt = Number(r.amount);
-    if (r.type === "income_cash") {
-      totalIncomeCash += amt;
-      incomeByPerson[r.description] = (incomeByPerson[r.description] || 0) + amt;
-    } else if (r.type === "income_card") {
-      totalIncomeCard += amt;
-      incomeByPerson[r.description] = (incomeByPerson[r.description] || 0) + amt;
-    } else if (r.type === "expense") {
-      totalExpense += amt;
-      expenseByCategory[r.description] = (expenseByCategory[r.description] || 0) + amt;
+    // Apps Script redirects, follow manually
+    let jsonText = await resp.text();
+    if (resp.status === 302 || resp.headers.get("location")) {
+      const loc = resp.headers.get("location");
+      if (loc) {
+        const r2 = await fetch(loc);
+        jsonText = await r2.text();
+      }
     }
+
+    const result = JSON.parse(jsonText);
+
+    if (!result.ok || result.empty) {
+      await sendMessage(botToken, chatId, "📊 Пока нет записей в таблице.");
+      return NextResponse.json({ ok: true });
+    }
+
+    const totalIncomeCash = result.totalIncomeCash || 0;
+    const totalIncomeCard = result.totalIncomeCard || 0;
+    const totalExpense = result.totalExpense || 0;
+    const totalIncome = totalIncomeCash + totalIncomeCard;
+    const profit = totalIncome - totalExpense;
+    const incomeByPerson: Record<string, number> = result.incomeByPerson || {};
+    const expenseByCategory: Record<string, number> = result.expenseByCategory || {};
+    const count = result.count || 0;
+
+    const topExpenses = Object.entries(expenseByCategory)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 5);
+
+    const topIncome = Object.entries(incomeByPerson)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 5);
+
+    const fmt = (n: number) => n.toLocaleString("ru-RU");
+
+    let report = `📊 <b>Финансовый отчет</b>\n\n`;
+    report += `💵 Наличка: ${fmt(totalIncomeCash)} грн\n`;
+    report += `💳 Карта: ${fmt(totalIncomeCard)} грн\n`;
+    report += `📈 <b>Всего доходов: ${fmt(totalIncome)} грн</b>\n\n`;
+    report += `📉 <b>Всего расходов: ${fmt(totalExpense)} грн</b>\n\n`;
+    report += `${profit >= 0 ? "✅" : "🔴"} <b>Прибыль: ${fmt(profit)} грн</b>\n`;
+
+    if (topExpenses.length > 0) {
+      report += `\n📉 <b>Топ расходов:</b>\n`;
+      for (const [cat, amt] of topExpenses) {
+        report += `  • ${cat}: ${fmt(amt as number)} грн\n`;
+      }
+    }
+
+    if (topIncome.length > 0) {
+      report += `\n💰 <b>От кого поступления:</b>\n`;
+      for (const [person, amt] of topIncome) {
+        report += `  • ${person}: ${fmt(amt as number)} грн\n`;
+      }
+    }
+
+    report += `\n📋 Всего записей: ${count}`;
+
+    await sendMessage(botToken, chatId, report);
+  } catch (err) {
+    console.error("[Finance Report] Error fetching from Google Sheet:", err);
+    await sendMessage(botToken, chatId, "❌ Ошибка получения отчёта из таблицы.");
   }
 
-  const totalIncome = totalIncomeCash + totalIncomeCard;
-  const profit = totalIncome - totalExpense;
-
-  const topExpenses = Object.entries(expenseByCategory)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const topIncome = Object.entries(incomeByPerson)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const fmt = (n: number) => n.toLocaleString("ru-RU");
-
-  let report = `📊 <b>Финансовый отчет</b>\n\n`;
-  report += `💵 Наличка: ${fmt(totalIncomeCash)} грн\n`;
-  report += `💳 Карта: ${fmt(totalIncomeCard)} грн\n`;
-  report += `📈 <b>Всего доходов: ${fmt(totalIncome)} грн</b>\n\n`;
-  report += `📉 <b>Всего расходов: ${fmt(totalExpense)} грн</b>\n\n`;
-  report += `${profit >= 0 ? "✅" : "🔴"} <b>Прибыль: ${fmt(profit)} грн</b>\n`;
-
-  if (topExpenses.length > 0) {
-    report += `\n📉 <b>Топ расходов:</b>\n`;
-    for (const [cat, amt] of topExpenses) {
-      report += `  • ${cat}: ${fmt(amt)} грн\n`;
-    }
-  }
-
-  if (topIncome.length > 0) {
-    report += `\n💰 <b>От кого поступления:</b>\n`;
-    for (const [person, amt] of topIncome) {
-      report += `  • ${person}: ${fmt(amt)} грн\n`;
-    }
-  }
-
-  report += `\n📋 Всего записей: ${records.length}`;
-
-  await sendMessage(botToken, chatId, report);
   return NextResponse.json({ ok: true });
 }
 

@@ -385,6 +385,17 @@ function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { val
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const cropFileRef = useRef<File | null>(null);
 
+  const deleteOldFile = useCallback(async (url: string) => {
+    if (!url || !url.includes("/storage/v1/object/public/")) return;
+    try {
+      await fetch("/api/admin/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch { /* ignore cleanup errors */ }
+  }, []);
+
   const uploadFile = useCallback(async (fileOrBlob: File | Blob, fileName: string) => {
     const file = fileOrBlob instanceof File ? fileOrBlob : new File([fileOrBlob], fileName, { type: fileOrBlob.type || "image/jpeg" });
     const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -395,6 +406,9 @@ function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { val
     }
     setUploading(true);
     try {
+      // Delete old file from storage before uploading new one
+      if (value) await deleteOldFile(value);
+
       if (file.size <= 4 * 1024 * 1024) {
         const fd = new FormData();
         fd.append("file", file);
@@ -427,7 +441,7 @@ function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { val
     } finally {
       setUploading(false);
     }
-  }, [onChange]);
+  }, [onChange, value, deleteOldFile]);
 
   const handleFileSelected = useCallback((file: File) => {
     if (file.type.startsWith("image/")) {
@@ -462,7 +476,7 @@ function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { val
           <SmartImage src={value} alt={label} fill className="object-cover" />
           <button
             type="button"
-            onClick={() => onChange("")}
+            onClick={() => { deleteOldFile(value); onChange(""); }}
             className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="h-3 w-3" />
