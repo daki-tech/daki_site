@@ -28,7 +28,7 @@ export function AboutPreview({ title, subtitle, text, mediaUrl, aspect }: AboutP
   const showVideo = isVideo(mediaSrc);
 
   // Parse aspect ratio string ("4:5") to CSS value ("4/5")
-  const cssAspect = aspect?.includes(":") ? aspect.replace(":", "/") : "4/5";
+  const cssAspect = aspect?.includes(":") ? aspect.replace(":", "/") : "4/3";
 
   return (
     <section className="py-12 md:py-16">

@@ -574,7 +574,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [aboutMediaUrl, setAboutMediaUrl] = useState("");
   // Aspect ratios for media (w:h) — editable in settings
   const [heroAspect, setHeroAspect] = useState("16:9");
-  const [aboutAspect, setAboutAspect] = useState("4:5");
+  const [aboutAspect, setAboutAspect] = useState("4:3");
   const [homepageLoading, setHomepageLoading] = useState(false);
 
   // Newsletter state
@@ -609,7 +609,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         setAboutSubtitle(m.about_subtitle ?? ""); setAboutText(m.about_text ?? "");
         setAboutMediaUrl(m.about_media_url ?? "");
         setHeroAspect(m.hero_aspect ?? "16:9");
-        setAboutAspect(m.about_aspect ?? "4:5");
+        setAboutAspect(m.about_aspect ?? "4:3");
         // Parse phones: try JSON array first, fallback to single phone
         try {
           const phones = JSON.parse(m.contact_phones || "[]");
@@ -982,7 +982,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Рассылка</span></TabsTrigger>
             </TabsList>
             {/* Вне сайта — розница и опт */}
-            <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-orange-50 border border-orange-200/60 p-1">
+            <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
               <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Розница</span><span className="sm:hidden">Розн.</span></TabsTrigger>
               <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
             </TabsList>
