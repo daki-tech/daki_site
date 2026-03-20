@@ -215,7 +215,6 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Опт</h3>
           <p className="text-sm text-muted-foreground">Оптовые продажи ростовками</p>
         </div>
         <Button className="rounded-xl" onClick={() => setShowForm(true)}>

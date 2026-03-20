@@ -228,7 +228,6 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Розница</h3>
           <p className="text-sm text-muted-foreground">Продажи через Instagram, TikTok, Prom и другие каналы</p>
         </div>
         <Button className="rounded-xl" onClick={() => setShowForm(true)}>
@@ -398,13 +397,13 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
             <thead>
               <tr className="bg-gray-50 text-left">
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Дата</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Источник</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Покупатель</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Модель</th>
-                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Размер</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Цвет</th>
+                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Размер</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Кол-во</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Сумма</th>
-                <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Источник</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase">Статус</th>
                 <th className="px-3 py-2 font-semibold text-gray-500 text-xs uppercase"></th>
               </tr>
@@ -416,13 +415,13 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
                 return (
                   <tr key={order.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} ${isCancelled ? "opacity-50" : ""}`}>
                     <td className="px-3 py-2 whitespace-nowrap">{format(new Date(order.created_at), "dd.MM.yyyy")}</td>
+                    <td className="px-3 py-2">{order.source}</td>
                     <td className="px-3 py-2">{order.customer_name}</td>
                     <td className="px-3 py-2">{item?.catalog_models?.sku ?? "—"}</td>
-                    <td className="px-3 py-2">{item?.size_label ?? "—"}</td>
                     <td className="px-3 py-2">{(item as unknown as { color?: string })?.color ?? "—"}</td>
+                    <td className="px-3 py-2">{item?.size_label ?? "—"}</td>
                     <td className="px-3 py-2">{item?.quantity ?? "—"}</td>
                     <td className="px-3 py-2 font-semibold">{order.total_amount?.toLocaleString()} UAH</td>
-                    <td className="px-3 py-2">{order.source}</td>
                     <td className="px-3 py-2">
                       {isCancelled ? (
                         <span className="text-xs text-red-500 font-medium">Отменён</span>
