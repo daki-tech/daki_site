@@ -8,12 +8,37 @@ function doPost(e) {
     if (data.action === "appendWholesaleOrder") {
       return appendWholesaleOrder(data);
     }
+    if (data.action === "deleteWholesaleOrder") {
+      return deleteOrderRows(data.orderNumber, "Опт");
+    }
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Unknown action" }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function deleteOrderRows(orderNumber, sheetName) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Sheet not found" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var deleted = 0;
+
+  // Iterate from bottom to top to preserve row indices
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]) === String(orderNumber)) {
+      sheet.deleteRow(i + 1);
+      deleted++;
+    }
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, deleted: deleted }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function appendWholesaleOrder(data) {

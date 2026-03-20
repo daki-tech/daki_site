@@ -5,11 +5,36 @@
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
+    if (data.action === "deleteOrder") {
+      return deleteOrderRows(data.orderNumber, "Заказы");
+    }
     return appendOrder(data);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function deleteOrderRows(orderNumber, sheetName) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Sheet not found" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var deleted = 0;
+
+  // Iterate from bottom to top to preserve row indices
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]) === String(orderNumber)) {
+      sheet.deleteRow(i + 1);
+      deleted++;
+    }
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, deleted: deleted }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function appendOrder(data) {
