@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { CatalogModel } from "@/lib/types";
+import { useConfirmDialog } from "@/components/admin/confirm-dialog";
 
 const S = {
   input: "rounded-xl border-gray-200 bg-gray-50/60 focus:bg-white transition-colors text-sm",
@@ -70,6 +71,7 @@ interface Order {
 }
 
 export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -139,7 +141,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
   };
 
   const handleCancel = async (orderId: string) => {
-    if (!confirm("Отменить заказ? Остатки будут возвращены на склад.")) return;
+    if (!(await confirm("Отменить заказ?", "Остатки будут возвращены на склад."))) return;
 
     setCancellingId(orderId);
     try {
@@ -223,6 +225,7 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs sm:text-sm text-muted-foreground">Оптовые продажи ростовками</p>
         <Button className="rounded-xl" size="sm" onClick={() => setShowForm(true)}>
