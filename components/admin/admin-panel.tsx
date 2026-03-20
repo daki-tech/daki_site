@@ -572,9 +572,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [aboutSubtitle, setAboutSubtitle] = useState("");
   const [aboutText, setAboutText] = useState("");
   const [aboutMediaUrl, setAboutMediaUrl] = useState("");
-  // Aspect ratios for media (w:h) — editable in settings
-  const [heroAspect, setHeroAspect] = useState("16:9");
-  const [aboutAspect, setAboutAspect] = useState("4:3");
   const [homepageLoading, setHomepageLoading] = useState(false);
 
   // Newsletter state
@@ -608,8 +605,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         setHeroBgUrl(m.hero_bg_url ?? ""); setAboutTitle(m.about_title ?? "");
         setAboutSubtitle(m.about_subtitle ?? ""); setAboutText(m.about_text ?? "");
         setAboutMediaUrl(m.about_media_url ?? "");
-        setHeroAspect(m.hero_aspect ?? "16:9");
-        setAboutAspect(m.about_aspect ?? "4:3");
         // Parse phones: try JSON array first, fallback to single phone
         try {
           const phones = JSON.parse(m.contact_phones || "[]");
@@ -851,8 +846,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
         { key: "hero_bg_url", value: heroBgUrl }, { key: "about_title", value: aboutTitle },
         { key: "about_subtitle", value: aboutSubtitle }, { key: "about_text", value: aboutText },
         { key: "about_media_url", value: aboutMediaUrl },
-        { key: "hero_aspect", value: heroAspect },
-        { key: "about_aspect", value: aboutAspect },
       ];
       for (const s of entries) {
         const res = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
@@ -955,16 +948,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   /*  RENDER                                                           */
   /* ================================================================ */
   const tabTriggerCls = "gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all whitespace-nowrap";
-
-  // Helper: parse aspect ratio string like "16:9" to {w, h} for cropper
-  const parseAspect = (s: string, fallbackW: number, fallbackH: number) => {
-    const parts = s.split(":").map(Number);
-    if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
-      const scale = Math.max(1, Math.round(fallbackW / parts[0]));
-      return { w: parts[0] * scale, h: parts[1] * scale };
-    }
-    return { w: fallbackW, h: fallbackH };
-  };
   return (
     <div className="space-y-2">
       <ConfirmDialog />
@@ -1501,26 +1484,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
             <CardContent className="space-y-4">
               <div><Label className={S.label}>Заголовок</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Новая весенняя коллекция" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Spring — 2026" className={S.input} /></div>
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" targetSize={parseAspect(heroAspect, 1920, 1080)} />
-                </div>
-                <div className="w-[130px]">
-                  <Label className={S.label}>Соотношение сторон</Label>
-                  <Select value={heroAspect} onValueChange={setHeroAspect}>
-                    <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="16:9">16:9 (широкий)</SelectItem>
-                      <SelectItem value="21:9">21:9 (ультрашир.)</SelectItem>
-                      <SelectItem value="4:3">4:3</SelectItem>
-                      <SelectItem value="3:2">3:2</SelectItem>
-                      <SelectItem value="1:1">1:1 (квадрат)</SelectItem>
-                      <SelectItem value="4:5">4:5 (портрет)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Формат JPG/PNG/WebP</p>
+              <SingleMediaUpload value={heroBgUrl} onChange={setHeroBgUrl} label="Фоновое изображение" targetSize={{ w: 1920, h: 1080 }} />
+              <p className="text-[10px] text-muted-foreground">Формат JPG/PNG/WebP · 16:9</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl">
@@ -1529,26 +1494,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <div><Label className={S.label}>Заголовок</Label><Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="О компании DaKi" className={S.input} /></div>
               <div><Label className={S.label}>Подзаголовок</Label><Input value={aboutSubtitle} onChange={(e) => setAboutSubtitle(e.target.value)} placeholder="Наша история" className={S.input} /></div>
               <div><Label className={S.label}>Текст</Label><Textarea rows={5} value={aboutText} onChange={(e) => setAboutText(e.target.value)} placeholder="Текст о компании..." className={S.textarea} /></div>
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" targetSize={parseAspect(aboutAspect, 800, 1000)} />
-                </div>
-                <div className="w-[130px]">
-                  <Label className={S.label}>Соотношение сторон</Label>
-                  <Select value={aboutAspect} onValueChange={setAboutAspect}>
-                    <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="4:5">4:5 (портрет)</SelectItem>
-                      <SelectItem value="3:4">3:4</SelectItem>
-                      <SelectItem value="1:1">1:1 (квадрат)</SelectItem>
-                      <SelectItem value="4:3">4:3 (альбом)</SelectItem>
-                      <SelectItem value="3:2">3:2</SelectItem>
-                      <SelectItem value="16:9">16:9 (широкий)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Видео: MP4 до 50MB</p>
+              <SingleMediaUpload value={aboutMediaUrl} onChange={setAboutMediaUrl} label="Фото / видео" targetSize={{ w: 800, h: 600 }} />
+              <p className="text-[10px] text-muted-foreground">Видео: MP4 до 50MB · 4:3</p>
             </CardContent>
           </Card>
           <Button className="rounded-xl" onClick={saveHomepage} disabled={homepageLoading}>

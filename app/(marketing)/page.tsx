@@ -26,7 +26,6 @@ export default async function LandingPage() {
         subtitle={settings.about_subtitle}
         text={settings.about_text}
         mediaUrl={settings.about_media_url}
-        aspect={settings.about_aspect}
       />
       <NewsletterCta />
     </>
