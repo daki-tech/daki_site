@@ -92,8 +92,8 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 14).setValue("Разница ₴");
   sheet.getRange(1, 12, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 12).setFormula('=SUMIFS(D:D,C:C,"грн")');
-  sheet.getRange(2, 13).setFormula('=SUMIFS(E:E,C:C,"грн")+SUMIFS(F:F,C:C,"грн")+SUMIFS(G:G,C:C,"грн")+SUMIFS(H:H,C:C,"грн")+SUMIFS(I:I,C:C,"грн")+SUMIFS(J:J,C:C,"грн")');
+  sheet.getRange(2, 12).setFormula('=SUMIFS(D:D;C:C;"грн")');
+  sheet.getRange(2, 13).setFormula('=SUMIFS(E:E;C:C;"грн")+SUMIFS(F:F;C:C;"грн")+SUMIFS(G:G;C:C;"грн")+SUMIFS(H:H;C:C;"грн")+SUMIFS(I:I;C:C;"грн")+SUMIFS(J:J;C:C;"грн")');
   sheet.getRange(2, 14).setFormula('=L2-M2');
   sheet.getRange(2, 12, 1, 3).setFontWeight("bold");
 
@@ -103,8 +103,8 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 18).setValue("Разница $");
   sheet.getRange(1, 16, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 16).setFormula('=SUMIFS(D:D,C:C,"дол")');
-  sheet.getRange(2, 17).setFormula('=SUMIFS(E:E,C:C,"дол")+SUMIFS(F:F,C:C,"дол")+SUMIFS(G:G,C:C,"дол")+SUMIFS(H:H,C:C,"дол")+SUMIFS(I:I,C:C,"дол")+SUMIFS(J:J,C:C,"дол")');
+  sheet.getRange(2, 16).setFormula('=SUMIFS(D:D;C:C;"дол")');
+  sheet.getRange(2, 17).setFormula('=SUMIFS(E:E;C:C;"дол")+SUMIFS(F:F;C:C;"дол")+SUMIFS(G:G;C:C;"дол")+SUMIFS(H:H;C:C;"дол")+SUMIFS(I:I;C:C;"дол")+SUMIFS(J:J;C:C;"дол")');
   sheet.getRange(2, 18).setFormula('=P2-Q2');
   sheet.getRange(2, 16, 1, 3).setFontWeight("bold");
 }
