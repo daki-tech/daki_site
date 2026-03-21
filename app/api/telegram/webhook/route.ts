@@ -603,7 +603,16 @@ async function saveFinanceRecord(
   }
   summaryText += `\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
 
-  await sendToAllSubscribers(botToken, summaryText);
+  // "Личное" notifications only go to allowed viewers
+  if (isExpense && category === "Личное") {
+    await Promise.allSettled(
+      PERSONAL_EXPENSE_VIEWERS.map((cid) =>
+        sendMessage(botToken, cid, summaryText)
+      )
+    );
+  } else {
+    await sendToAllSubscribers(botToken, summaryText);
+  }
   return NextResponse.json({ ok: true });
 }
 
