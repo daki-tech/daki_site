@@ -18,6 +18,11 @@ const EXPENSE_CATEGORIES: Record<string, { label: string; emoji: string; hint?: 
   newcollection: { label: "Разработка новой коллекции", emoji: "✨", hint: "лекала и прочее" },
 };
 
+// Only this user can create "Личное" expenses
+const PERSONAL_EXPENSE_CREATOR_ID = 729892588;
+// These users can see "Личное" in reports
+const PERSONAL_EXPENSE_VIEWERS = [330206846, 729892588];
+
 function isAllowedUser(chatId: number): boolean {
   const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
   if (!allowedStr.trim()) return false;
@@ -138,25 +143,29 @@ function getFinanceMenuKeyboard() {
   };
 }
 
-function getExpenseCategoryKeyboard() {
-  return {
-    inline_keyboard: [
-      [
-        { text: "👤 Личное", callback_data: "fin:cat:personal" },
-        { text: "💰 Зарплата", callback_data: "fin:cat:salary" },
-      ],
-      [
-        { text: "🔘 Фурнитура/кнопки", callback_data: "fin:cat:hardware" },
-        { text: "🧵 Ткань", callback_data: "fin:cat:fabric" },
-      ],
-      [
-        { text: "🏭 Цех", callback_data: "fin:cat:workshop" },
-      ],
-      [
-        { text: "✨ Разработка новой коллекции", callback_data: "fin:cat:newcollection" },
-      ],
-    ],
-  };
+function getExpenseCategoryKeyboard(chatId: number) {
+  const rows: { text: string; callback_data: string }[][] = [];
+  if (chatId === PERSONAL_EXPENSE_CREATOR_ID) {
+    rows.push([
+      { text: "👤 Личное", callback_data: "fin:cat:personal" },
+      { text: "💰 Зарплата", callback_data: "fin:cat:salary" },
+    ]);
+  } else {
+    rows.push([
+      { text: "💰 Зарплата", callback_data: "fin:cat:salary" },
+    ]);
+  }
+  rows.push([
+    { text: "🔘 Фурнитура/кнопки", callback_data: "fin:cat:hardware" },
+    { text: "🧵 Ткань", callback_data: "fin:cat:fabric" },
+  ]);
+  rows.push([
+    { text: "🏭 Цех", callback_data: "fin:cat:workshop" },
+  ]);
+  rows.push([
+    { text: "✨ Разработка новой коллекции", callback_data: "fin:cat:newcollection" },
+  ]);
+  return { inline_keyboard: rows };
 }
 
 function parseAmount(input: string): number | null {
@@ -174,9 +183,14 @@ async function appendToFinanceSheet(record: {
   currency: string;
   category?: string;
 }) {
-  const webhookUrl = process.env.GOOGLE_FINANCE_WEBHOOK_URL;
+  // "Личное" goes to separate personal sheet
+  const isPersonal = record.category === "Личное";
+  const webhookUrl = isPersonal
+    ? process.env.GOOGLE_PERSONAL_WEBHOOK_URL
+    : process.env.GOOGLE_FINANCE_WEBHOOK_URL;
+
   if (!webhookUrl) {
-    console.warn("[Finance] GOOGLE_FINANCE_WEBHOOK_URL not configured");
+    console.warn(`[Finance] ${isPersonal ? "GOOGLE_PERSONAL_WEBHOOK_URL" : "GOOGLE_FINANCE_WEBHOOK_URL"} not configured`);
     return;
   }
   try {
@@ -437,7 +451,7 @@ async function handleFinanceCallback(
   // Start expense flow — show category buttons
   if (action === "expense") {
     const catText = `📉 <b>Расход</b>\n\n<i>Выберите категорию. /cancel для отмены.</i>\n\n🏭 <b>Цех</b> — коммуналка, аренда и прочие расходы по цеху\n✨ <b>Разработка новой коллекции</b> — лекала и прочее`;
-    await editMessage(botToken, chatId, messageId, catText, getExpenseCategoryKeyboard());
+    await editMessage(botToken, chatId, messageId, catText, getExpenseCategoryKeyboard(chatId));
     await admin.from("telegram_bot_state").upsert(
       { chat_id: chatId, action: "expense", step: "category", data: { msg_ids: [messageId] }, updated_at: new Date().toISOString() },
       { onConflict: "chat_id" }
@@ -629,17 +643,45 @@ async function handleReport(
       return NextResponse.json({ ok: true });
     }
 
-    const totalIncome = result.totalIncome || 0;
-    const totalExpense = result.totalExpense || 0;
-    const profit = totalIncome - totalExpense;
-    const totalIncomeUsd = result.totalIncomeUsd || 0;
-    const totalExpenseUsd = result.totalExpenseUsd || 0;
-    const profitUsd = totalIncomeUsd - totalExpenseUsd;
+    let totalIncome = result.totalIncome || 0;
+    let totalExpense = result.totalExpense || 0;
+    let totalIncomeUsd = result.totalIncomeUsd || 0;
+    let totalExpenseUsd = result.totalExpenseUsd || 0;
     const incomeByPerson: Record<string, number> = result.incomeByPerson || {};
     const expenseByCategory: Record<string, number> = result.expenseByCategory || {};
     const incomeByPersonUsd: Record<string, number> = result.incomeByPersonUsd || {};
     const expenseByCategoryUsd: Record<string, number> = result.expenseByCategoryUsd || {};
-    const count = result.count || 0;
+    let count = result.count || 0;
+
+    // Fetch personal expenses for allowed viewers
+    const canSeePersonal = PERSONAL_EXPENSE_VIEWERS.includes(chatId);
+    if (canSeePersonal && process.env.GOOGLE_PERSONAL_WEBHOOK_URL) {
+      try {
+        const pResp = await fetch(process.env.GOOGLE_PERSONAL_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "getReport" }),
+        });
+        let pText = await pResp.text();
+        if (pResp.status === 302 || pResp.headers.get("location")) {
+          const loc = pResp.headers.get("location");
+          if (loc) { const r2 = await fetch(loc); pText = await r2.text(); }
+        }
+        const pResult = JSON.parse(pText);
+        if (pResult.ok && !pResult.empty) {
+          const pExp = pResult.totalExpense || 0;
+          const pExpUsd = pResult.totalExpenseUsd || 0;
+          totalExpense += pExp;
+          totalExpenseUsd += pExpUsd;
+          count += pResult.count || 0;
+          if (pExp > 0) expenseByCategory["Личное"] = (expenseByCategory["Личное"] || 0) + pExp;
+          if (pExpUsd > 0) expenseByCategoryUsd["Личное"] = (expenseByCategoryUsd["Личное"] || 0) + pExpUsd;
+        }
+      } catch { /* personal sheet not available */ }
+    }
+
+    const profit = totalIncome - totalExpense;
+    const profitUsd = totalIncomeUsd - totalExpenseUsd;
 
     const fmt = (n: number) => n.toLocaleString("ru-RU");
 

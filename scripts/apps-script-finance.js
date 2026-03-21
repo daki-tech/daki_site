@@ -1,20 +1,19 @@
 // Apps Script for "Учет финансов" spreadsheet
 // Spreadsheet ID: 1dOMtjAnxGwH-9CPDgFPG2lOzpR2eDrU5wiZFUVax410
 // Columns: A=Дата, B=Описание / От кого, C=Валюта, D=Доход,
-//          E=Личное, F=Зарплата, G=Фурнитура/кнопки, H=Ткань, I=Цех, J=Разработка новой коллекции
-// Row 1: headers + summary labels (L-N for ₴, P-R for $)
-// Row 2+: data; L2-N2 and P2-R2 have SUMIFS formulas
+//          E=Зарплата, F=Фурнитура/кнопки, G=Ткань, H=Цех, I=Разработка новой коллекции
+// Row 1: headers + summary labels (K-M for ₴, O-Q for $)
+// Row 2+: data
 
 var CATEGORY_COLS = {
-  "Личное": 5,
-  "Зарплата": 6,
-  "Фурнитура/кнопки": 7,
-  "Ткань": 8,
-  "Цех": 9,
-  "Разработка новой коллекции": 10
+  "Зарплата": 5,
+  "Фурнитура/кнопки": 6,
+  "Ткань": 7,
+  "Цех": 8,
+  "Разработка новой коллекции": 9
 };
 
-var NUM_COLS = 10;
+var NUM_COLS = 9;
 
 function doPost(e) {
   try {
@@ -82,35 +81,35 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 1, 2, 20).clear();
 
   var headers = ["Дата", "Описание / От кого", "Валюта", "Доход",
-    "Личное", "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех", "Разработка новой коллекции"];
+    "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех", "Разработка новой коллекции"];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
 
-  // Currency labels in T1, T2 (used by formulas to avoid encoding issues)
-  sheet.getRange(1, 20).setValue("грн");
-  sheet.getRange(2, 20).setValue("дол");
+  // Currency labels in S1, S2 (used by formulas to avoid encoding issues)
+  sheet.getRange(1, 19).setValue("грн");
+  sheet.getRange(2, 19).setValue("дол");
 
-  // ₴ totals: L(12), M(13), N(14)
-  sheet.getRange(1, 12).setValue("Итого доход ₴");
-  sheet.getRange(1, 13).setValue("Итого расход ₴");
-  sheet.getRange(1, 14).setValue("Разница ₴");
-  sheet.getRange(1, 12, 1, 3).setFontWeight("bold");
+  // ₴ totals: K(11), L(12), M(13)
+  sheet.getRange(1, 11).setValue("Итого доход ₴");
+  sheet.getRange(1, 12).setValue("Итого расход ₴");
+  sheet.getRange(1, 13).setValue("Разница ₴");
+  sheet.getRange(1, 11, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 12).setFormula("=SUMIFS(D:D,C:C,T1)");
-  sheet.getRange(2, 13).setFormula("=SUMIFS(E:E,C:C,T1)+SUMIFS(F:F,C:C,T1)+SUMIFS(G:G,C:C,T1)+SUMIFS(H:H,C:C,T1)+SUMIFS(I:I,C:C,T1)+SUMIFS(J:J,C:C,T1)");
-  sheet.getRange(2, 14).setFormula("=L2-M2");
-  sheet.getRange(2, 12, 1, 3).setFontWeight("bold");
+  sheet.getRange(2, 11).setFormula("=SUMIFS(D:D,C:C,S1)");
+  sheet.getRange(2, 12).setFormula("=SUMIFS(E:E,C:C,S1)+SUMIFS(F:F,C:C,S1)+SUMIFS(G:G,C:C,S1)+SUMIFS(H:H,C:C,S1)+SUMIFS(I:I,C:C,S1)");
+  sheet.getRange(2, 13).setFormula("=K2-L2");
+  sheet.getRange(2, 11, 1, 3).setFontWeight("bold");
 
-  // $ totals: P(16), Q(17), R(18)
-  sheet.getRange(1, 16).setValue("Итого доход $");
-  sheet.getRange(1, 17).setValue("Итого расход $");
-  sheet.getRange(1, 18).setValue("Разница $");
-  sheet.getRange(1, 16, 1, 3).setFontWeight("bold");
+  // $ totals: O(15), P(16), Q(17)
+  sheet.getRange(1, 15).setValue("Итого доход $");
+  sheet.getRange(1, 16).setValue("Итого расход $");
+  sheet.getRange(1, 17).setValue("Разница $");
+  sheet.getRange(1, 15, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 16).setFormula("=SUMIFS(D:D,C:C,T2)");
-  sheet.getRange(2, 17).setFormula("=SUMIFS(E:E,C:C,T2)+SUMIFS(F:F,C:C,T2)+SUMIFS(G:G,C:C,T2)+SUMIFS(H:H,C:C,T2)+SUMIFS(I:I,C:C,T2)+SUMIFS(J:J,C:C,T2)");
-  sheet.getRange(2, 18).setFormula("=P2-Q2");
-  sheet.getRange(2, 16, 1, 3).setFontWeight("bold");
+  sheet.getRange(2, 15).setFormula("=SUMIFS(D:D,C:C,S2)");
+  sheet.getRange(2, 16).setFormula("=SUMIFS(E:E,C:C,S2)+SUMIFS(F:F,C:C,S2)+SUMIFS(G:G,C:C,S2)+SUMIFS(H:H,C:C,S2)+SUMIFS(I:I,C:C,S2)");
+  sheet.getRange(2, 17).setFormula("=O2-P2");
+  sheet.getRange(2, 15, 1, 3).setFontWeight("bold");
 }
 
 function getFinanceReport() {
