@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import type { CatalogModel, ModelColor } from "@/lib/types";
 import { ProductHero } from "@/components/catalog/product-hero";
-import { ProductDescription } from "@/components/catalog/product-description";
 import { ProductSizeChart } from "@/components/catalog/product-size-chart";
+import { RelatedProducts } from "@/components/catalog/related-products";
 
 interface ProductPageClientProps {
   model: CatalogModel;
@@ -15,25 +15,18 @@ interface ProductPageClientProps {
 export function ProductPageClient({ model, contacts }: ProductPageClientProps) {
   const colors = model.model_colors ?? [];
   const defaultColor = colors.find((c) => c.is_default) ?? colors[0] ?? null;
-  const [selectedColor, setSelectedColor] = useState<ModelColor | null>(defaultColor);
+  const [, setSelectedColor] = useState<ModelColor | null>(defaultColor);
 
   return (
     <>
-      {/* BLOCK 1: Hero — Info left + Gallery right */}
+      {/* BLOCK 1: Hero — Info left + Gallery right (includes accordion + share) */}
       <section>
         <div className="mx-auto max-w-[1400px] px-4 py-4 lg:px-8 lg:py-6">
           <ProductHero model={model} onColorChange={setSelectedColor} contacts={contacts} />
         </div>
       </section>
 
-      {/* BLOCK 2: Description + Composition & Care */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1400px] px-4 py-8 lg:px-8 lg:py-10">
-          <ProductDescription model={model} selectedColor={selectedColor} />
-        </div>
-      </section>
-
-      {/* BLOCK 3: Size chart */}
+      {/* BLOCK 2: Size chart */}
       {model.size_chart && (
         <section className="bg-white">
           <div className="mx-auto max-w-[1400px] px-4 py-8 lg:px-8 lg:py-10">
@@ -41,6 +34,9 @@ export function ProductPageClient({ model, contacts }: ProductPageClientProps) {
           </div>
         </section>
       )}
+
+      {/* BLOCK 3: Related products */}
+      <RelatedProducts currentModelId={model.id} category={model.category} />
     </>
   );
 }

@@ -9,6 +9,9 @@ import { SmartImage } from "@/components/ui/smart-image";
 import { addToCart } from "@/lib/cart-store";
 import { useWishlist, toggleWishlist } from "@/lib/wishlist-store";
 import { CONTACTS } from "@/lib/constants";
+import { ProductAccordion } from "@/components/catalog/product-accordion";
+import { ProductShare } from "@/components/catalog/product-share";
+
 interface ProductHeroProps {
   model: CatalogModel;
   onColorChange?: (color: ModelColor | null) => void;
@@ -250,6 +253,12 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
             </div>
           </div>
         )}
+
+        {/* Accordion sections */}
+        <ProductAccordion model={model} />
+
+        {/* Share */}
+        <ProductShare model={model} />
       </div>
 
       {/* RIGHT: Gallery */}

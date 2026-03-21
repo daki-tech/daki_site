@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { getCatalogModels } from "@/lib/data";
 import { catalogFilterSchema } from "@/lib/validations";
@@ -19,6 +19,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const models = await getCatalogModels(parsed.data);
+  let models = await getCatalogModels(parsed.data);
+
+  const exclude = searchParams.get("exclude");
+  if (exclude) {
+    models = models.filter((m) => m.id !== exclude);
+  }
+
+  const limit = searchParams.get("limit");
+  if (limit) {
+    models = models.slice(0, Number(limit));
+  }
+
   return NextResponse.json(models);
 }

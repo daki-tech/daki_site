@@ -1699,36 +1699,23 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
 
       <div className={S.divider} />
 
-      {/* Description */}
+      {/* Характеристики */}
       <div>
-        <Label className={S.label}>Описание (HTML)</Label>
-        <Textarea rows={3} value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="HTML-описание товара..." className={S.textarea} />
+        <Label className={S.label}>Характеристики</Label>
+        <Textarea rows={3} value={form.delivery_info} onChange={(e) => update("delivery_info", e.target.value)} placeholder="Матеріал, склад, сезон, стиль, крій..." className={S.textarea} />
+        <p className="text-[10px] text-gray-400 mt-1">Кожна характеристика з нового рядка: Матеріал: плащова тканина</p>
       </div>
 
-      {/* Care */}
-      <div className="space-y-3">
-        <div>
-          <Label className={S.label}>Склад и уход (HTML)</Label>
-          <Textarea rows={2} value={form.care_instructions} onChange={(e) => update("care_instructions", e.target.value)} placeholder="Состав и уход..." className={S.textarea} />
-        </div>
-        <SingleMediaUpload value={form.care_media_url} onChange={(v) => update("care_media_url", v)} label="Медиа — склад и уход" targetSize={{ w: 800, h: 600 }} />
-        <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
-      </div>
-
-      {/* Delivery */}
-      <div className="space-y-3">
-        <div>
-          <Label className={S.label}>Правила доставки (HTML)</Label>
-          <Textarea rows={2} value={form.delivery_info} onChange={(e) => update("delivery_info", e.target.value)} placeholder="Правила доставки..." className={S.textarea} />
-        </div>
-        <SingleMediaUpload value={form.delivery_media_url} onChange={(v) => update("delivery_media_url", v)} label="Медиа — доставка" targetSize={{ w: 800, h: 600 }} />
-        <p className="text-[10px] text-gray-400">Рекомендуемое соотношение: 4:3 (800×600 px)</p>
-      </div>
-
-      {/* Return */}
+      {/* Опис */}
       <div>
-        <Label className={S.label}>Правила возврата (HTML)</Label>
-        <Textarea rows={2} value={form.return_info} onChange={(e) => update("return_info", e.target.value)} placeholder="Правила возврата..." className={S.textarea} />
+        <Label className={S.label}>Опис</Label>
+        <Textarea rows={3} value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="Детальний опис товару..." className={S.textarea} />
+      </div>
+
+      {/* Догляд за виробом */}
+      <div>
+        <Label className={S.label}>Догляд за виробом</Label>
+        <Textarea rows={2} value={form.care_instructions} onChange={(e) => update("care_instructions", e.target.value)} placeholder="Прання, прасування, відбілювання..." className={S.textarea} />
       </div>
 
       <div className={S.divider} />
