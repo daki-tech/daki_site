@@ -18,7 +18,7 @@ export default function ExchangeAndReturnPage() {
       <div className="mx-auto mt-8 max-w-3xl space-y-12">
         {/* Умови повернення */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Умови повернення
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -39,7 +39,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Як оформити повернення */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Як оформити повернення
           </h2>
           <div className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
@@ -82,7 +82,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Умови обміну */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Умови обміну
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -103,7 +103,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Важлива інформація */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Важлива інформація
           </h2>
           <div className="mt-4 rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-muted-foreground">

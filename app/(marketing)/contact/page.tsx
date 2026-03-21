@@ -41,10 +41,10 @@ export default async function ContactPage() {
     <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
       {/* Header */}
       <div className="text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+        <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
           Зв&apos;яжіться з нами
         </p>
-        <h1 className="mt-3 text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
+        <h1 className="mt-3 text-2xl font-light tracking-wide md:text-3xl">
           Контакти
         </h1>
         <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
@@ -60,7 +60,7 @@ export default async function ContactPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <Phone className="h-5 w-5" />
             </div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
               Телефон
             </p>
             <div className="flex flex-col items-center gap-1.5">
@@ -87,7 +87,7 @@ export default async function ContactPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
                 <Mail className="h-5 w-5" />
               </div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
                 Email
               </p>
               <p className="text-sm font-medium">{email}</p>
@@ -101,7 +101,7 @@ export default async function ContactPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <MessageCircle className="h-5 w-5" />
             </div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
               Месенджери
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
@@ -116,7 +116,7 @@ export default async function ContactPage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <span className="text-[9px] font-medium tracking-wide text-muted-foreground">
                     {label}
                   </span>
                 </a>
@@ -131,7 +131,7 @@ export default async function ContactPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
               <Instagram className="h-5 w-5" />
             </div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
               Соцмережі
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
@@ -146,7 +146,7 @@ export default async function ContactPage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <span className="text-[9px] font-medium tracking-wide text-muted-foreground">
                     {label}
                   </span>
                 </a>

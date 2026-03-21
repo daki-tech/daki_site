@@ -27,7 +27,7 @@ export default function AboutPage() {
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 px-4 text-center text-white">
-          <h1 className="text-3xl font-light uppercase tracking-[0.2em] md:text-5xl">
+          <h1 className="text-3xl font-light tracking-wide md:text-5xl">
             {t("about.heroTitle")}
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-sm text-white/70 md:text-base">
@@ -50,7 +50,7 @@ export default function AboutPage() {
               />
             </div>
             <div>
-              <h2 className="text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+              <h2 className="text-xl font-light tracking-wide md:text-2xl">
                 {t("about.storyTitle")}
               </h2>
               <p className="mt-6 text-sm leading-relaxed text-muted-foreground md:text-base">
@@ -64,13 +64,13 @@ export default function AboutPage() {
       {/* Values */}
       <section className="border-t border-border py-16 md:py-24">
         <div className="mx-auto max-w-[1600px] px-3 lg:px-4">
-          <h2 className="text-center text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+          <h2 className="text-center text-xl font-light tracking-wide md:text-2xl">
             {t("about.valuesTitle")}
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((v, i) => (
               <div key={i} className="text-center">
-                <h3 className="text-sm font-medium uppercase tracking-[0.1em]">{v.title}</h3>
+                <h3 className="text-sm font-medium">{v.title}</h3>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{v.desc}</p>
               </div>
             ))}

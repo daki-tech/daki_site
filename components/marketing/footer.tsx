@@ -52,7 +52,7 @@ export function Footer({ contacts }: FooterProps) {
 
           {/* Navigation */}
           <div className="space-y-3">
-            <h3 className="text-xs font-medium uppercase tracking-[0.15em]">
+            <h3 className="text-xs font-medium">
               {t("footer.navigation")}
             </h3>
             <nav className="flex flex-col gap-2">
@@ -70,7 +70,7 @@ export function Footer({ contacts }: FooterProps) {
 
           {/* Account */}
           <div className="space-y-3">
-            <h3 className="text-xs font-medium uppercase tracking-[0.15em]">
+            <h3 className="text-xs font-medium">
               {t("footer.account")}
             </h3>
             <nav className="flex flex-col gap-2">
@@ -88,7 +88,7 @@ export function Footer({ contacts }: FooterProps) {
 
           {/* Contacts + Social */}
           <div className="space-y-3">
-            <h3 className="text-xs font-medium uppercase tracking-[0.15em]">
+            <h3 className="text-xs font-medium">
               {t("footer.contacts")}
             </h3>
             <div className="flex flex-col gap-2">

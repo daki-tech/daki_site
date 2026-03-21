@@ -18,7 +18,7 @@ export default function DeliveryAndPaymentPage() {
       <div className="mx-auto mt-8 max-w-3xl space-y-12">
         {/* Способи доставки */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Способи доставки
           </h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
@@ -47,7 +47,7 @@ export default function DeliveryAndPaymentPage() {
 
         {/* Терміни доставки */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Терміни доставки
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -62,7 +62,7 @@ export default function DeliveryAndPaymentPage() {
 
         {/* Вартість доставки */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Вартість доставки
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -77,7 +77,7 @@ export default function DeliveryAndPaymentPage() {
 
         {/* Способи оплати */}
         <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          <h2 className="text-lg font-medium md:text-xl">
             Способи оплати
           </h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">

@@ -53,7 +53,7 @@ export default function SizeGuidePage() {
         та підібрати розмір, який підходить саме Вам, використовуючи таблицю розмірів.
       </p>
 
-      <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">Як правильно зробити заміри?</h2>
+      <h2 className="text-lg font-medium md:text-xl">Як правильно зробити заміри?</h2>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_0.7fr] lg:gap-16 lg:items-center">
         {/* Left: instructions */}

@@ -150,7 +150,7 @@ export default function FaqPage() {
       <div className="mx-auto mt-8 max-w-3xl space-y-10">
         {faqData.map((category) => (
           <section key={category.title}>
-            <h2 className="mb-4 text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+            <h2 className="mb-4 text-lg font-medium md:text-xl">
               {category.title}
             </h2>
             <div>
