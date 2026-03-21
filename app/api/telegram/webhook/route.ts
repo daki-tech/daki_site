@@ -643,9 +643,9 @@ async function handleReport(
       return NextResponse.json({ ok: true });
     }
 
-    let totalIncome = result.totalIncome || 0;
+    const totalIncome = result.totalIncome || 0;
     let totalExpense = result.totalExpense || 0;
-    let totalIncomeUsd = result.totalIncomeUsd || 0;
+    const totalIncomeUsd = result.totalIncomeUsd || 0;
     let totalExpenseUsd = result.totalExpenseUsd || 0;
     const incomeByPerson: Record<string, number> = result.incomeByPerson || {};
     const expenseByCategory: Record<string, number> = result.expenseByCategory || {};
