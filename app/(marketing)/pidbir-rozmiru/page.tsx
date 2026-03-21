@@ -37,9 +37,9 @@ const measurements = [
 
 export default function SizeGuidePage() {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-8">
       {/* Breadcrumb */}
-      <nav className="mb-8 flex items-center gap-1.5 text-xs text-neutral-400">
+      <nav className="mb-4 flex items-center gap-1.5 text-xs text-neutral-400">
         <Link href="/" className="transition hover:text-neutral-900">Головна</Link>
         <ChevronRight className="h-3 w-3" />
         <span className="text-neutral-900">Підбір розміру</span>
@@ -77,8 +77,8 @@ export default function SizeGuidePage() {
           </div>
         </div>
 
-        {/* Right: SVG figure */}
-        <div className="sticky top-24 hidden lg:block">
+        {/* Right: SVG figure — centered vertically */}
+        <div className="sticky top-24 hidden lg:flex lg:items-center lg:justify-center lg:min-h-full">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
             <svg viewBox="0 0 200 400" className="mx-auto h-auto w-full max-w-[240px]">
               {/* Head */}

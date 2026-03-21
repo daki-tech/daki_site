@@ -2,13 +2,13 @@ import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 export default function ExchangeAndReturnPage() {
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
       <Breadcrumbs
         items={[
           { label: "Головна", href: "/" },
           { label: "Обмін та повернення" },
         ]}
-        className="mb-8"
+        className="mb-4"
       />
 
       {/* Header */}

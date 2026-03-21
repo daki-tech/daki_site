@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Heart, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
+import { Heart, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useLanguage } from "@/components/providers/language-provider";
@@ -116,47 +116,20 @@ export function MarketingHeader() {
                 return (
                   <div
                     key={item.href}
-                    className="relative"
+                    className="static"
                     onMouseEnter={handleCatalogEnter}
                     onMouseLeave={handleCatalogLeave}
                   >
                     <Link
                       href={item.href}
                       className={cn(
-                        "relative flex items-center gap-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200",
+                        "relative text-[13px] font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200",
                         "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
                         isActive && "after:w-full",
                       )}
                     >
                       {t(item.labelKey)}
-                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", catalogOpen && "rotate-180")} />
                     </Link>
-
-                    {/* Catalog dropdown */}
-                    <div
-                      className={cn(
-                        "absolute left-0 top-full pt-3 transition-all duration-200",
-                        catalogOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-1 pointer-events-none",
-                      )}
-                    >
-                      <div className="w-56 rounded-xl border border-neutral-200/60 bg-white/95 backdrop-blur-xl shadow-lg overflow-hidden">
-                        <Link
-                          href="/catalog"
-                          className="block px-4 py-3 text-sm font-medium hover:bg-neutral-50 transition border-b border-neutral-100"
-                        >
-                          Всі моделі
-                        </Link>
-                        {MODEL_SEASONS.map((season) => (
-                          <Link
-                            key={season}
-                            href={`/catalog?season=${encodeURIComponent(season)}`}
-                            className="block px-4 py-3 text-sm hover:bg-neutral-50 transition"
-                          >
-                            {SEASON_LABELS[season] || season}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 );
               }
@@ -263,6 +236,33 @@ export function MarketingHeader() {
             </Link>
           </div>
         </div>
+
+        {/* Full-width catalog mega-menu */}
+        <div
+          className={cn(
+            "absolute left-0 right-0 top-full border-t border-neutral-100 bg-white shadow-lg transition-all duration-200 z-40",
+            catalogOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-1 pointer-events-none",
+          )}
+          onMouseEnter={handleCatalogEnter}
+          onMouseLeave={handleCatalogLeave}
+        >
+          <div className="mx-auto max-w-[1800px] px-6 py-8">
+            <div className="grid grid-cols-4 gap-8">
+              <Link href="/catalog" className="group">
+                <span className="text-sm font-semibold uppercase tracking-wide text-neutral-900 group-hover:underline">Всі моделі</span>
+                <p className="mt-1 text-xs text-neutral-400">Переглянути весь каталог</p>
+              </Link>
+              {MODEL_SEASONS.map((season) => (
+                <Link key={season} href={`/catalog?season=${encodeURIComponent(season)}`} className="group">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-neutral-900 group-hover:underline">
+                    {SEASON_LABELS[season] || season}
+                  </span>
+                  <p className="mt-1 text-xs text-neutral-400">Колекція {season.toLowerCase()}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Mobile drawer */}
@@ -292,7 +292,7 @@ export function MarketingHeader() {
                         className="flex w-full items-center justify-between px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
                       >
                         {t(item.labelKey)}
-                        <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", mobileCatalogOpen && "rotate-180")} />
+                        <span className={cn("text-xs transition-transform duration-200 inline-block", mobileCatalogOpen && "rotate-180")}>▾</span>
                       </button>
                       <div className={cn("overflow-hidden transition-all duration-200", mobileCatalogOpen ? "max-h-60" : "max-h-0")}>
                         <Link
