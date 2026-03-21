@@ -67,7 +67,30 @@ function addFinanceRecord(data) {
   var lastDataRow = getLastDataRow(sheet);
   sheet.getRange(lastDataRow + 1, 1, 1, NUM_COLS).setValues([row]);
 
+  // Always ensure summary formulas exist in L2-R2
+  ensureFormulas(sheet);
+
   return respond({ ok: true, sheet: sheet.getName() });
+}
+
+function ensureFormulas(sheet) {
+  // Check if L2 has a formula; if not, re-set all summary formulas
+  var l2 = sheet.getRange(2, 12).getFormula();
+  if (l2) return; // formulas already exist
+
+  // Currency helper cells
+  sheet.getRange(1, 20).setValue("грн");
+  sheet.getRange(2, 20).setValue("дол");
+
+  // ₴ totals
+  sheet.getRange(2, 12).setFormula("=SUMIFS(D:D,C:C,T1)");
+  sheet.getRange(2, 13).setFormula("=SUMIFS(E:E,C:C,T1)+SUMIFS(F:F,C:C,T1)+SUMIFS(G:G,C:C,T1)+SUMIFS(H:H,C:C,T1)+SUMIFS(I:I,C:C,T1)+SUMIFS(J:J,C:C,T1)");
+  sheet.getRange(2, 14).setFormula("=L2-M2");
+
+  // $ totals
+  sheet.getRange(2, 16).setFormula("=SUMIFS(D:D,C:C,T2)");
+  sheet.getRange(2, 17).setFormula("=SUMIFS(E:E,C:C,T2)+SUMIFS(F:F,C:C,T2)+SUMIFS(G:G,C:C,T2)+SUMIFS(H:H,C:C,T2)+SUMIFS(I:I,C:C,T2)+SUMIFS(J:J,C:C,T2)");
+  sheet.getRange(2, 18).setFormula("=P2-Q2");
 }
 
 function getLastDataRow(sheet) {
