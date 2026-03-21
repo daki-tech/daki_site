@@ -1666,7 +1666,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                     <div className="mt-2">
                       <p className="text-[10px] text-gray-400 mb-1">Кількість по розмірах</p>
                       <div className="flex flex-wrap gap-2">
-                        {form.selected_sizes.map((sz) => (
+                        {[...form.selected_sizes].sort((a, b) => Number(a) - Number(b)).map((sz) => (
                           <div key={sz} className="flex flex-col items-center gap-0.5">
                             <span className="text-[10px] font-medium text-gray-500">{sz}</span>
                             <Input
