@@ -685,7 +685,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: editForm.sku, name: editForm.name, category: editForm.category,
       season: editForm.season,
       base_price: Number(editForm.base_price), discount_percent: Number(editForm.discount_percent),
-      wholesale_price: Number(editForm.wholesale_price), min_wholesale_qty: Number(editForm.min_wholesale_qty),
+      wholesale_price: 0, min_wholesale_qty: 0,
       description: editForm.description || null,
       image_urls: editForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: editForm.care_instructions || null,
@@ -712,7 +712,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: createForm.sku, name: createForm.name, category: createForm.category,
       season: createForm.season,
       base_price: Number(createForm.base_price), discount_percent: Number(createForm.discount_percent),
-      wholesale_price: Number(createForm.wholesale_price), min_wholesale_qty: Number(createForm.min_wholesale_qty),
+      wholesale_price: 0, min_wholesale_qty: 0,
       description: createForm.description || null,
       image_urls: createForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: createForm.care_instructions || null,
@@ -1586,8 +1586,8 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
         </div>
       </div>
 
-      {/* Row 3: Price + Discount + Wholesale */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* Row 3: Price + Discount */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className={S.label}>Цена (UAH)</Label>
           <Input type="number" value={form.base_price} onChange={(e) => update("base_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("base_price", ""); }} className={S.input} />
@@ -1595,14 +1595,6 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
         <div>
           <Label className={S.label}>Скидка %</Label>
           <Input type="number" value={form.discount_percent} onChange={(e) => update("discount_percent", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("discount_percent", ""); }} className={S.input} />
-        </div>
-        <div>
-          <Label className={S.label}>Опт цена (UAH)</Label>
-          <Input type="number" value={form.wholesale_price} onChange={(e) => update("wholesale_price", e.target.value)} onFocus={(e) => { if (e.target.value === "0") update("wholesale_price", ""); }} className={S.input} />
-        </div>
-        <div>
-          <Label className={S.label}>Мін. замовлення (шт)</Label>
-          <Input type="number" value={form.min_wholesale_qty} onChange={(e) => update("min_wholesale_qty", e.target.value)} onFocus={(e) => { if (e.target.value === "1") update("min_wholesale_qty", ""); }} className={S.input} />
         </div>
       </div>
 

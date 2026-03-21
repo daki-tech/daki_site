@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Heart, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useLanguage } from "@/components/providers/language-provider";
-import { NAV_LINKS } from "@/lib/constants";
+import { MODEL_SEASONS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart-store";
 import { useWishlist } from "@/lib/wishlist-store";
 import { createClient } from "@/lib/supabase/client";
+
+const SEASON_LABELS: Record<string, string> = {
+  "Осінньо-весняна": "Осінньо-весняна колекція",
+  "Зимова": "Зимова колекція",
+  "Літо": "Літня колекція",
+};
 
 export function MarketingHeader() {
   const pathname = usePathname();
@@ -22,6 +28,19 @@ export function MarketingHeader() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false);
+  const catalogTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCatalogEnter = useCallback(() => {
+    if (catalogTimeout.current) clearTimeout(catalogTimeout.current);
+    setCatalogOpen(true);
+  }, []);
+
+  const handleCatalogLeave = useCallback(() => {
+    catalogTimeout.current = setTimeout(() => setCatalogOpen(false), 150);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +110,57 @@ export function MarketingHeader() {
             {NAV_LINKS.marketing.map((item) => {
               const baseHref = item.href.split("?")[0];
               const isActive = baseHref === "/" ? pathname === "/" : pathname.startsWith(baseHref);
+              const isCatalog = item.href === "/catalog";
+
+              if (isCatalog) {
+                return (
+                  <div
+                    key={item.href}
+                    className="relative"
+                    onMouseEnter={handleCatalogEnter}
+                    onMouseLeave={handleCatalogLeave}
+                  >
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "relative flex items-center gap-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200",
+                        "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
+                        isActive && "after:w-full",
+                      )}
+                    >
+                      {t(item.labelKey)}
+                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", catalogOpen && "rotate-180")} />
+                    </Link>
+
+                    {/* Catalog dropdown */}
+                    <div
+                      className={cn(
+                        "absolute left-0 top-full pt-3 transition-all duration-200",
+                        catalogOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-1 pointer-events-none",
+                      )}
+                    >
+                      <div className="w-56 rounded-xl border border-neutral-200/60 bg-white/95 backdrop-blur-xl shadow-lg overflow-hidden">
+                        <Link
+                          href="/catalog"
+                          className="block px-4 py-3 text-sm font-medium hover:bg-neutral-50 transition border-b border-neutral-100"
+                        >
+                          Всі моделі
+                        </Link>
+                        {MODEL_SEASONS.map((season) => (
+                          <Link
+                            key={season}
+                            href={`/catalog?season=${encodeURIComponent(season)}`}
+                            className="block px-4 py-3 text-sm hover:bg-neutral-50 transition"
+                          >
+                            {SEASON_LABELS[season] || season}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
@@ -211,16 +281,53 @@ export function MarketingHeader() {
               </button>
             </div>
             <nav className="flex flex-col py-4">
-              {NAV_LINKS.marketing.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
-                >
-                  {t(item.labelKey)}
-                </Link>
-              ))}
+              {NAV_LINKS.marketing.map((item) => {
+                const isCatalog = item.href === "/catalog";
+
+                if (isCatalog) {
+                  return (
+                    <div key={item.href}>
+                      <button
+                        onClick={() => setMobileCatalogOpen(!mobileCatalogOpen)}
+                        className="flex w-full items-center justify-between px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
+                      >
+                        {t(item.labelKey)}
+                        <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", mobileCatalogOpen && "rotate-180")} />
+                      </button>
+                      <div className={cn("overflow-hidden transition-all duration-200", mobileCatalogOpen ? "max-h-60" : "max-h-0")}>
+                        <Link
+                          href="/catalog"
+                          onClick={() => setMobileOpen(false)}
+                          className="block px-10 py-2.5 text-sm text-neutral-600 transition hover:bg-muted"
+                        >
+                          Всі моделі
+                        </Link>
+                        {MODEL_SEASONS.map((season) => (
+                          <Link
+                            key={season}
+                            href={`/catalog?season=${encodeURIComponent(season)}`}
+                            onClick={() => setMobileOpen(false)}
+                            className="block px-10 py-2.5 text-sm text-neutral-600 transition hover:bg-muted"
+                          >
+                            {SEASON_LABELS[season] || season}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
+                  >
+                    {t(item.labelKey)}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="border-t border-border px-6 py-4">
               <Link href="/wishlist" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-2 text-sm">

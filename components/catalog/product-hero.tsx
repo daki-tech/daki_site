@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Heart, ShoppingBag } from "lucide-react";
 
 import type { CatalogModel, ModelColor } from "@/lib/types";
@@ -40,6 +40,8 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   const [selectedColor, setSelectedColor] = useState<ModelColor | null>(defaultColor);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, number>>({});
   const [mainImageIdx, setMainImageIdx] = useState(0);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
 
   const currentImages = (selectedColor?.image_urls?.length
     ? selectedColor.image_urls
@@ -117,6 +119,11 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
     });
     setSelectedSizes({});
   }
+
+  const handleZoomMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+  }, []);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:gap-12 items-start">
@@ -248,16 +255,35 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
       {/* RIGHT: Gallery */}
       <div className="flex gap-3 h-[calc(100vh-64px-48px-5px)]">
         {/* Main image */}
-        <div className="relative flex-1 overflow-hidden bg-neutral-100 rounded-xl">
+        <div
+          className="relative flex-1 overflow-hidden bg-neutral-100 rounded-xl"
+          style={{ cursor: isZooming ? "crosshair" : undefined }}
+          onMouseMove={handleZoomMove}
+          onMouseEnter={() => setIsZooming(true)}
+          onMouseLeave={() => setIsZooming(false)}
+        >
           {currentImages[mainImageIdx] && (
-            <SmartImage
-              src={currentImages[mainImageIdx]}
-              alt={`${model.name}${selectedColor ? ` — ${selectedColor.name}` : ""}`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              priority
-            />
+            <>
+              <SmartImage
+                src={currentImages[mainImageIdx]}
+                alt={`${model.name}${selectedColor ? ` — ${selectedColor.name}` : ""}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 55vw"
+                priority
+              />
+              {isZooming && (
+                <div
+                  className="absolute inset-0 z-10"
+                  style={{
+                    backgroundImage: `url(${currentImages[mainImageIdx]})`,
+                    backgroundSize: "250%",
+                    backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                    backgroundRepeat: "no-repeat",
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
 

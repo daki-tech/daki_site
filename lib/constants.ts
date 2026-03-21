@@ -28,14 +28,17 @@ export const MODEL_STYLES = [
   "Oversize",
 ];
 
-export const MODEL_SEASONS = ["Зима", "Весна", "Лето", "Осень", "Деми"];
+export const MODEL_SEASONS = ["Осінньо-весняна", "Зимова", "Літо"];
 
 export const DEFAULT_SIZE_SCALE = ["42", "44", "46", "48", "50", "52", "54"];
 
 export const NAV_LINKS = {
   marketing: [
     { href: "/catalog", labelKey: "nav.catalog" },
-    // { href: "/catalog?sale=true", labelKey: "nav.sale" },
+    { href: "/faq", labelKey: "nav.faq" },
+    { href: "/dostavka-ta-oplata", labelKey: "nav.delivery" },
+    { href: "/obmin-ta-povernennya", labelKey: "nav.returns" },
+    { href: "/pidbir-rozmiru", labelKey: "nav.sizeGuide" },
     { href: "/about", labelKey: "nav.about" },
     { href: "/contact", labelKey: "nav.contact" },
   ],

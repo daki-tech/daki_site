@@ -42,6 +42,10 @@ const ru: Dictionary = {
   "nav.orders": "Заказы",
   "nav.settings": "Настройки",
   "nav.admin": "Админ",
+  "nav.faq": "Часті запитання",
+  "nav.delivery": "Доставка та оплата",
+  "nav.returns": "Обмін та повернення",
+  "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Производитель верхней одежды",
   "hero.title": "Верхняя женская одежда от производителя",
@@ -275,6 +279,10 @@ const uk: Dictionary = {
   "nav.orders": "Замовлення",
   "nav.settings": "Налаштування",
   "nav.admin": "Адмін",
+  "nav.faq": "Часті запитання",
+  "nav.delivery": "Доставка та оплата",
+  "nav.returns": "Обмін та повернення",
+  "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Виробник верхнього одягу",
   "hero.title": "Верхній жіночий одяг від виробника",
@@ -508,6 +516,10 @@ const en: Dictionary = {
   "nav.orders": "Orders",
   "nav.settings": "Settings",
   "nav.admin": "Admin",
+  "nav.faq": "FAQ",
+  "nav.delivery": "Shipping & Payment",
+  "nav.returns": "Exchange & Returns",
+  "nav.sizeGuide": "Size Guide",
 
   "hero.badge": "Outerwear manufacturer",
   "hero.title": "Women's outerwear from manufacturer",

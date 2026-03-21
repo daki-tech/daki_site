@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { CatalogModel, ModelColor } from "@/lib/types";
 import { ProductHero } from "@/components/catalog/product-hero";
 import { ProductDescription } from "@/components/catalog/product-description";
-import { ProductDelivery } from "@/components/catalog/product-delivery";
 import { ProductSizeChart } from "@/components/catalog/product-size-chart";
 
 interface ProductPageClientProps {
@@ -34,14 +33,7 @@ export function ProductPageClient({ model, contacts }: ProductPageClientProps) {
         </div>
       </section>
 
-      {/* BLOCK 3: Delivery rules + Return policy */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1400px] px-4 py-8 lg:px-8 lg:py-10">
-          <ProductDelivery model={model} selectedColor={selectedColor} />
-        </div>
-      </section>
-
-      {/* BLOCK 4: Size chart */}
+      {/* BLOCK 3: Size chart */}
       {model.size_chart && (
         <section className="bg-white">
           <div className="mx-auto max-w-[1400px] px-4 py-8 lg:px-8 lg:py-10">
