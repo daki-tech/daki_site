@@ -1679,7 +1679,7 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
                                 update("color_variants", c);
                               }}
                               onFocus={(e) => { if (e.target.value === "0") e.target.value = ""; }}
-                              className={`w-14 h-8 text-xs text-center ${S.input}`}
+                              className={`w-16 h-8 text-xs text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${S.input}`}
                               placeholder="0"
                             />
                           </div>

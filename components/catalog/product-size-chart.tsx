@@ -42,7 +42,7 @@ function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
                 {row.map((cell, cIdx) => (
                   <td
                     key={cIdx}
-                    className={`py-4 ${cIdx === 0 ? "text-left pl-1 font-semibold text-neutral-900" : "text-center text-neutral-500"}`}
+                    className={`py-4 ${cIdx === 0 ? "text-left pl-1 font-semibold text-neutral-900" : "text-center text-neutral-500 min-w-[60px]"}`}
                   >
                     {cell ?? ""}
                     {cIdx === row.length - 1 && cell && !String(cell).includes("шт") ? " шт." : ""}
