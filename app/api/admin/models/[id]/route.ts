@@ -181,7 +181,8 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // Delete sizes first, then the model
+  // Delete related records first to avoid FK constraint errors
+  await auth.supabase.from("order_items").delete().eq("model_id", id);
   await auth.supabase.from("model_sizes").delete().eq("model_id", id);
   const { error } = await auth.supabase.from("catalog_models").delete().eq("id", id);
 

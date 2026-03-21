@@ -140,6 +140,28 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
     setColorEntries(prev => prev.map((entry, i) => i === idx ? { ...entry, [field]: value } : entry));
   };
 
+  const handleDelete = async (orderId: string) => {
+    if (!(await confirm("Удалить заказ?", "Заказ будет удалён навсегда."))) return;
+
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (res.ok) {
+        toast.success("Заказ удалён");
+        fetchOrders();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка удаления");
+      }
+    } catch {
+      toast.error("Ошибка сервера");
+    }
+  };
+
   const handleCancel = async (orderId: string) => {
     if (!(await confirm("Отменить заказ?", "Остатки будут возвращены на склад."))) return;
 
@@ -430,7 +452,16 @@ export function WholesaleOrdersTab({ models }: WholesaleOrdersTabProps) {
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      {!isCancelled && (
+                      {isCancelled ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-400 hover:text-red-600"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(order.id); }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      ) : (
                         <Button
                           variant="ghost"
                           size="icon"
