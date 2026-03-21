@@ -86,15 +86,19 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
 
+  // Currency labels in T1, T2 (used by formulas to avoid encoding issues)
+  sheet.getRange(1, 20).setValue("грн");
+  sheet.getRange(2, 20).setValue("дол");
+
   // ₴ totals: L(12), M(13), N(14)
   sheet.getRange(1, 12).setValue("Итого доход ₴");
   sheet.getRange(1, 13).setValue("Итого расход ₴");
   sheet.getRange(1, 14).setValue("Разница ₴");
   sheet.getRange(1, 12, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 12).setFormula('=SUMIFS(D:D;C:C;"грн")');
-  sheet.getRange(2, 13).setFormula('=SUMIFS(E:E;C:C;"грн")+SUMIFS(F:F;C:C;"грн")+SUMIFS(G:G;C:C;"грн")+SUMIFS(H:H;C:C;"грн")+SUMIFS(I:I;C:C;"грн")+SUMIFS(J:J;C:C;"грн")');
-  sheet.getRange(2, 14).setFormula('=L2-M2');
+  sheet.getRange(2, 12).setFormula("=SUMIFS(D:D,C:C,T1)");
+  sheet.getRange(2, 13).setFormula("=SUMIFS(E:E,C:C,T1)+SUMIFS(F:F,C:C,T1)+SUMIFS(G:G,C:C,T1)+SUMIFS(H:H,C:C,T1)+SUMIFS(I:I,C:C,T1)+SUMIFS(J:J,C:C,T1)");
+  sheet.getRange(2, 14).setFormula("=L2-M2");
   sheet.getRange(2, 12, 1, 3).setFontWeight("bold");
 
   // $ totals: P(16), Q(17), R(18)
@@ -103,9 +107,9 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 18).setValue("Разница $");
   sheet.getRange(1, 16, 1, 3).setFontWeight("bold");
 
-  sheet.getRange(2, 16).setFormula('=SUMIFS(D:D;C:C;"дол")');
-  sheet.getRange(2, 17).setFormula('=SUMIFS(E:E;C:C;"дол")+SUMIFS(F:F;C:C;"дол")+SUMIFS(G:G;C:C;"дол")+SUMIFS(H:H;C:C;"дол")+SUMIFS(I:I;C:C;"дол")+SUMIFS(J:J;C:C;"дол")');
-  sheet.getRange(2, 18).setFormula('=P2-Q2');
+  sheet.getRange(2, 16).setFormula("=SUMIFS(D:D,C:C,T2)");
+  sheet.getRange(2, 17).setFormula("=SUMIFS(E:E,C:C,T2)+SUMIFS(F:F,C:C,T2)+SUMIFS(G:G,C:C,T2)+SUMIFS(H:H,C:C,T2)+SUMIFS(I:I,C:C,T2)+SUMIFS(J:J,C:C,T2)");
+  sheet.getRange(2, 18).setFormula("=P2-Q2");
   sheet.getRange(2, 16, 1, 3).setFontWeight("bold");
 }
 
