@@ -1,9 +1,8 @@
 // Apps Script for "Учет финансов" spreadsheet
 // Spreadsheet ID: 1dOMtjAnxGwH-9CPDgFPG2lOzpR2eDrU5wiZFUVax410
-// New format (no "Тип" column):
-// Columns: A=Дата, B=Описание / От кого, C=Доход, D=Расход
-// Row 1 headers, F1="Итого доход", G1="Итого расход", H1="Разница"
-// Row 2 formulas: F2=SUM(C2:C), G2=SUM(D2:D), H2=F2-G2
+// Columns: A=Дата, B=Описание / От кого, C=Валюта, D=Доход, E=Расход
+// Row 1: headers + summary labels (G1-I1 for ₴, K1-M1 for $)
+// Row 2+: data starts here; G2-I2 and K2-M2 have SUMIFS formulas
 
 function doPost(e) {
   try {
@@ -42,12 +41,14 @@ function addFinanceRecord(data) {
 
   var amount = Number(data.amount) || 0;
   var isIncome = data.type !== "expense";
+  var currency = data.currency || "грн";
 
   var row = [
     data.date || "",           // A: Дата (dd.mm.yyyy)
     data.description || "",    // B: Описание / От кого
-    isIncome ? amount : "",    // C: Доход
-    isIncome ? "" : amount     // D: Расход
+    currency,                  // C: Валюта
+    isIncome ? amount : "",    // D: Доход
+    isIncome ? "" : amount     // E: Расход
   ];
 
   var lastRow = sheet.getLastRow();
@@ -58,42 +59,40 @@ function addFinanceRecord(data) {
 }
 
 function setupHeaders(sheet) {
-  // Set proper headers: A=Дата, B=Описание / От кого, C=Доход, D=Расход
-  var headers = ["Дата", "Описание / От кого", "Доход", "Расход"];
+  // Data headers: A=Дата, B=Описание / От кого, C=Валюта, D=Доход, E=Расход
+  var headers = ["Дата", "Описание / От кого", "Валюта", "Доход", "Расход"];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
-  sheet.getRange(1, 1, 1, headers.length).setBackground("#4285f4");
-  sheet.getRange(1, 1, 1, headers.length).setFontColor("#ffffff");
 
-  // F1 = "Итого доход" label, F2 = SUM formula
-  sheet.getRange(1, 6).setValue("Итого доход");
-  sheet.getRange(1, 6).setFontWeight("bold");
-  sheet.getRange(1, 6).setBackground("#34a853");
-  sheet.getRange(1, 6).setFontColor("#ffffff");
-  sheet.getRange(2, 6).setFormula('=SUM(C2:C)');
-  sheet.getRange(2, 6).setFontWeight("bold");
-  sheet.getRange(2, 6).setBackground("#34a853");
-  sheet.getRange(2, 6).setFontColor("#ffffff");
-
-  // G1 = "Итого расход" label, G2 = SUM formula
-  sheet.getRange(1, 7).setValue("Итого расход");
+  // ₴ totals: G1 label, G2 formula
+  sheet.getRange(1, 7).setValue("Итого доход ₴");
   sheet.getRange(1, 7).setFontWeight("bold");
-  sheet.getRange(1, 7).setBackground("#ea4335");
-  sheet.getRange(1, 7).setFontColor("#ffffff");
-  sheet.getRange(2, 7).setFormula('=SUM(D2:D)');
-  sheet.getRange(2, 7).setFontWeight("bold");
-  sheet.getRange(2, 7).setBackground("#ea4335");
-  sheet.getRange(2, 7).setFontColor("#ffffff");
-
-  // H1 = "Разница" label, H2 = F2-G2 formula
-  sheet.getRange(1, 8).setValue("Разница");
+  sheet.getRange(1, 8).setValue("Итого расход ₴");
   sheet.getRange(1, 8).setFontWeight("bold");
-  sheet.getRange(1, 8).setBackground("#fbbc04");
-  sheet.getRange(1, 8).setFontColor("#ffffff");
-  sheet.getRange(2, 8).setFormula('=F2-G2');
+  sheet.getRange(1, 9).setValue("Разница ₴");
+  sheet.getRange(1, 9).setFontWeight("bold");
+
+  sheet.getRange(2, 7).setFormula('=SUMIFS(D:D,C:C,"грн")');
+  sheet.getRange(2, 7).setFontWeight("bold");
+  sheet.getRange(2, 8).setFormula('=SUMIFS(E:E,C:C,"грн")');
   sheet.getRange(2, 8).setFontWeight("bold");
-  sheet.getRange(2, 8).setBackground("#fbbc04");
-  sheet.getRange(2, 8).setFontColor("#ffffff");
+  sheet.getRange(2, 9).setFormula('=G2-H2');
+  sheet.getRange(2, 9).setFontWeight("bold");
+
+  // $ totals: K1 label, K2 formula
+  sheet.getRange(1, 11).setValue("Итого доход $");
+  sheet.getRange(1, 11).setFontWeight("bold");
+  sheet.getRange(1, 12).setValue("Итого расход $");
+  sheet.getRange(1, 12).setFontWeight("bold");
+  sheet.getRange(1, 13).setValue("Разница $");
+  sheet.getRange(1, 13).setFontWeight("bold");
+
+  sheet.getRange(2, 11).setFormula('=SUMIFS(D:D,C:C,"дол")');
+  sheet.getRange(2, 11).setFontWeight("bold");
+  sheet.getRange(2, 12).setFormula('=SUMIFS(E:E,C:C,"дол")');
+  sheet.getRange(2, 12).setFontWeight("bold");
+  sheet.getRange(2, 13).setFormula('=K2-L2');
+  sheet.getRange(2, 13).setFontWeight("bold");
 }
 
 // ── Read all data from Google Sheet and return aggregated report ──
@@ -109,34 +108,46 @@ function getFinanceReport() {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // New format: A=Дата, B=Описание, C=Доход, D=Расход (4 columns)
-  var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  // A=Дата, B=Описание, C=Валюта, D=Доход, E=Расход (5 columns)
+  var data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
 
   var totalIncome = 0;
   var totalExpense = 0;
+  var totalIncomeUsd = 0;
+  var totalExpenseUsd = 0;
   var incomeByPerson = {};
   var expenseByCategory = {};
+  var incomeByPersonUsd = {};
+  var expenseByCategoryUsd = {};
   var count = 0;
 
   for (var i = 0; i < data.length; i++) {
     var row = data[i];
     var description = String(row[1] || "");
-    var incomeAmt = Number(row[2]) || 0;
-    var expenseAmt = Number(row[3]) || 0;
+    var currency = String(row[2] || "грн");
+    var incomeAmt = Number(row[3]) || 0;
+    var expenseAmt = Number(row[4]) || 0;
 
     if (!description && !incomeAmt && !expenseAmt) continue;
     count++;
 
-    if (incomeAmt > 0) {
-      totalIncome += incomeAmt;
-      if (description) {
-        incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
+    if (currency === "дол") {
+      if (incomeAmt > 0) {
+        totalIncomeUsd += incomeAmt;
+        if (description) incomeByPersonUsd[description] = (incomeByPersonUsd[description] || 0) + incomeAmt;
       }
-    }
-    if (expenseAmt > 0) {
-      totalExpense += expenseAmt;
-      if (description) {
-        expenseByCategory[description] = (expenseByCategory[description] || 0) + expenseAmt;
+      if (expenseAmt > 0) {
+        totalExpenseUsd += expenseAmt;
+        if (description) expenseByCategoryUsd[description] = (expenseByCategoryUsd[description] || 0) + expenseAmt;
+      }
+    } else {
+      if (incomeAmt > 0) {
+        totalIncome += incomeAmt;
+        if (description) incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
+      }
+      if (expenseAmt > 0) {
+        totalExpense += expenseAmt;
+        if (description) expenseByCategory[description] = (expenseByCategory[description] || 0) + expenseAmt;
       }
     }
   }
@@ -148,6 +159,10 @@ function getFinanceReport() {
     totalExpense: totalExpense,
     incomeByPerson: incomeByPerson,
     expenseByCategory: expenseByCategory,
+    totalIncomeUsd: totalIncomeUsd,
+    totalExpenseUsd: totalExpenseUsd,
+    incomeByPersonUsd: incomeByPersonUsd,
+    expenseByCategoryUsd: expenseByCategoryUsd,
     count: count
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -164,8 +179,8 @@ function deleteFinanceRecord(data) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  // New format: A=Дата, B=Описание, C=Доход, D=Расход
-  var rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  // A=Дата, B=Описание, C=Валюта, D=Доход, E=Расход
+  var rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   var deleted = 0;
 
   for (var i = rows.length - 1; i >= 0; i--) {
@@ -174,8 +189,8 @@ function deleteFinanceRecord(data) {
     if (data.description && String(rows[i][1]) !== data.description) match = false;
     if (data.amount) {
       var amt = Number(data.amount);
-      var incomeAmt = Number(rows[i][2]) || 0;
-      var expenseAmt = Number(rows[i][3]) || 0;
+      var incomeAmt = Number(rows[i][3]) || 0;
+      var expenseAmt = Number(rows[i][4]) || 0;
       if (incomeAmt !== amt && expenseAmt !== amt) match = false;
     }
     if (match) {
