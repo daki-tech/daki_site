@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Підбір розміру | DaKi",
@@ -37,24 +36,26 @@ const measurements = [
 
 export default function SizeGuidePage() {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-4 flex items-center gap-1.5 text-xs text-neutral-400">
-        <Link href="/" className="transition hover:text-neutral-900">Головна</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-neutral-900">Підбір розміру</span>
-      </nav>
+    <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
+      <Breadcrumbs
+        items={[
+          { label: "Головна", href: "/" },
+          { label: "Підбір розміру" },
+        ]}
+        className="mb-4"
+      />
 
       <h1 className="text-2xl font-light tracking-wide lg:text-3xl">Підбір розміру</h1>
 
-      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-neutral-500">
+      <div className="mx-auto mt-8 max-w-3xl space-y-10">
+      <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
         В описі кожного товару є розмірна сітка конкретно під цей товар. Ви можете зняти свої мірки
         та підібрати розмір, який підходить саме Вам, використовуючи таблицю розмірів.
       </p>
 
-      <h2 className="mt-10 text-lg font-medium">Як правильно зробити заміри?</h2>
+      <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">Як правильно зробити заміри?</h2>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_0.7fr] lg:gap-16 lg:items-center">
+      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_0.7fr] lg:gap-16 lg:items-center">
         {/* Left: instructions */}
         <div className="space-y-8">
           {measurements.map((m) => (
@@ -69,8 +70,8 @@ export default function SizeGuidePage() {
             </div>
           ))}
 
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-sm text-neutral-600">
+          <div className="rounded-2xl border border-neutral-200 p-6">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               <span className="font-medium">Порада:</span> знімайте мірки у нижній білизні або тонкому одязі,
               стійте рівно, не затягуйте стрічку занадто щільно.
             </p>
@@ -120,6 +121,7 @@ export default function SizeGuidePage() {
             </svg>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
