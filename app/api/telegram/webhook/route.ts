@@ -337,21 +337,21 @@ async function handleFinanceCallback(
       .single();
 
     if (!state || state.step !== "category") {
-      await answerCallback(botToken, callbackQuery.id, "Сесія застаріла");
+      await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
       return NextResponse.json({ ok: true });
     }
 
-    await editMessage(botToken, chatId, messageId, `📝 Категорія: ${category.emoji} ${category.label}`);
+    await editMessage(botToken, chatId, messageId, `📝 Категория: ${category.emoji} ${category.label}`);
 
     const currencyKeyboard = {
       inline_keyboard: [
         [
-          { text: "🇺🇦 Гривня", callback_data: "fin:cur:грн" },
-          { text: "💵 Долар", callback_data: "fin:cur:дол" },
+          { text: "🇺🇦 Гривна", callback_data: "fin:cur:грн" },
+          { text: "💵 Доллар", callback_data: "fin:cur:дол" },
         ],
       ],
     };
-    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💱 Оберіть валюту:", currencyKeyboard);
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💱 Выберите валюту:", currencyKeyboard);
     const msgIds = (state.data?.msg_ids as number[]) || [];
     await admin.from("telegram_bot_state").update({
       step: "currency",
@@ -373,11 +373,11 @@ async function handleFinanceCallback(
       .single();
 
     if (!state || state.step !== "currency") {
-      await answerCallback(botToken, callbackQuery.id, "Сесія застаріла");
+      await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
       return NextResponse.json({ ok: true });
     }
 
-    const currencyLabel = currency === "дол" ? "💵 Долар" : "🇺🇦 Гривня";
+    const currencyLabel = currency === "дол" ? "💵 Доллар" : "🇺🇦 Гривна";
     await editMessage(botToken, chatId, messageId, `💱 Валюта: ${currencyLabel}`);
 
     const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💰 Сума:");
@@ -390,6 +390,30 @@ async function handleFinanceCallback(
 
     await answerCallback(botToken, callbackQuery.id, "");
     return NextResponse.json({ ok: true });
+  }
+
+  // Skip description for expense
+  if (action === "skipdesc") {
+    const { data: state } = await admin
+      .from("telegram_bot_state")
+      .select("*")
+      .eq("chat_id", chatId)
+      .single();
+
+    if (!state || state.step !== "expense_description") {
+      await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
+      return NextResponse.json({ ok: true });
+    }
+
+    await editMessage(botToken, chatId, messageId, "📝 Описание: —");
+
+    const amount = state.data.amount as number;
+    const currency = (state.data.currency as string) || "грн";
+    const category = state.data.category as string;
+    const msgIds = (state.data.msg_ids as number[]) || [];
+
+    await answerCallback(botToken, callbackQuery.id, "");
+    return saveFinanceRecord(admin, botToken, chatId, "expense", "", amount, currency, category, msgIds);
   }
 
   // "Отчет" → show report
@@ -412,7 +436,7 @@ async function handleFinanceCallback(
 
   // Start expense flow — show category buttons
   if (action === "expense") {
-    const catText = `📉 <b>Расход</b>\n\n<i>Оберіть категорію. /cancel для отмены.</i>\n\n🏭 <b>Цех</b> — коммуналка, аренда и прочие расходы по цеху\n✨ <b>Разработка новой коллекции</b> — лекала и прочее`;
+    const catText = `📉 <b>Расход</b>\n\n<i>Выберите категорию. /cancel для отмены.</i>\n\n🏭 <b>Цех</b> — коммуналка, аренда и прочие расходы по цеху\n✨ <b>Разработка новой коллекции</b> — лекала и прочее`;
     await editMessage(botToken, chatId, messageId, catText, getExpenseCategoryKeyboard());
     await admin.from("telegram_bot_state").upsert(
       { chat_id: chatId, action: "expense", step: "category", data: { msg_ids: [messageId] }, updated_at: new Date().toISOString() },
@@ -451,12 +475,12 @@ async function handleFinanceStep(
     const currencyKeyboard = {
       inline_keyboard: [
         [
-          { text: "🇺🇦 Гривня", callback_data: "fin:cur:грн" },
-          { text: "💵 Долар", callback_data: "fin:cur:дол" },
+          { text: "🇺🇦 Гривна", callback_data: "fin:cur:грн" },
+          { text: "💵 Доллар", callback_data: "fin:cur:дол" },
         ],
       ],
     };
-    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💱 Оберіть валюту:", currencyKeyboard);
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💱 Выберите валюту:", currencyKeyboard);
     await admin.from("telegram_bot_state").update({
       step: "currency",
       data: { ...state.data, description: input, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
@@ -467,13 +491,13 @@ async function handleFinanceStep(
 
   // Expense: category step — user must click a button
   if (state.step === "category") {
-    await sendMessage(botToken, chatId, "⚠️ Оберіть категорію, натиснувши кнопку вище ☝️");
+    await sendMessage(botToken, chatId, "⚠️ Выберите категорию, нажав кнопку выше ☝️");
     return NextResponse.json({ ok: true });
   }
 
   // Currency step — user must click a button
   if (state.step === "currency") {
-    await sendMessage(botToken, chatId, "⚠️ Оберіть валюту, натиснувши кнопку вище ☝️");
+    await sendMessage(botToken, chatId, "⚠️ Выберите валюту, нажав кнопку выше ☝️");
     return NextResponse.json({ ok: true });
   }
 
@@ -485,40 +509,87 @@ async function handleFinanceStep(
     }
 
     const isExpense = state.action === "expense";
-    const descStr = isExpense ? (state.data.category as string) : (state.data.description as string);
-    const currency = (state.data.currency as string) || "грн";
-    const today = new Date();
-    const sheetDate = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
 
-    appendToFinanceSheet({
-      type: state.action,
-      date: sheetDate,
-      description: descStr,
-      amount,
-      currency,
-      ...(isExpense ? { category: descStr } : {}),
-    });
-
-    await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-
-    for (const mid of msgIds) {
-      await deleteMessage(botToken, chatId, mid);
+    if (isExpense) {
+      // After amount, ask for optional description
+      const skipKeyboard = {
+        inline_keyboard: [[{ text: "⏭ Пропустить", callback_data: "fin:skipdesc" }]],
+      };
+      const promptMsgId = await sendMessageAndTrack(botToken, chatId, "📝 Описание (необязательно):", skipKeyboard);
+      await admin.from("telegram_bot_state").update({
+        step: "expense_description",
+        data: { ...state.data, amount, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
+        updated_at: new Date().toISOString(),
+      }).eq("chat_id", chatId);
+      return NextResponse.json({ ok: true });
     }
 
-    const typeEmoji = isExpense ? "📉" : "💰";
-    const typeLabel = isExpense ? "Расход" : "Доход";
-    const currencySymbol = currency === "дол" ? "$" : "грн";
-    const descIcon = isExpense ? "📝" : "👤";
+    // Income — save immediately
+    const currency = (state.data.currency as string) || "грн";
+    const descStr = state.data.description as string;
+    return saveFinanceRecord(admin, botToken, chatId, state.action, descStr, amount, currency, undefined, msgIds);
+  }
 
-    const summaryText = `${typeEmoji} ${typeLabel}\n📅 ${sheetDate}\n${descIcon} ${descStr}\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
-
-    await sendToAllSubscribers(botToken, summaryText);
-    return NextResponse.json({ ok: true });
+  // Expense description step (optional text or skip)
+  if (state.step === "expense_description") {
+    const description = input.trim() || "";
+    const amount = state.data.amount as number;
+    const currency = (state.data.currency as string) || "грн";
+    const category = state.data.category as string;
+    return saveFinanceRecord(admin, botToken, chatId, "expense", description, amount, currency, category, msgIds);
   }
 
   // Unknown step — reset
   await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
   await sendMessage(botToken, chatId, "❌ Ошибка. Нажмите 📒 Финансы.");
+  return NextResponse.json({ ok: true });
+}
+
+async function saveFinanceRecord(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  action: string,
+  description: string,
+  amount: number,
+  currency: string,
+  category: string | undefined,
+  msgIds: number[],
+) {
+  const today = new Date();
+  const sheetDate = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
+  const isExpense = action === "expense";
+
+  appendToFinanceSheet({
+    type: action,
+    date: sheetDate,
+    description: isExpense ? description : description,
+    amount,
+    currency,
+    ...(isExpense && category ? { category } : {}),
+  });
+
+  await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+
+  for (const mid of msgIds) {
+    await deleteMessage(botToken, chatId, mid);
+  }
+
+  const typeEmoji = isExpense ? "📉" : "💰";
+  const typeLabel = isExpense ? "Расход" : "Доход";
+  const currencySymbol = currency === "дол" ? "$" : "грн";
+
+  let summaryText = `${typeEmoji} ${typeLabel}\n📅 ${sheetDate}`;
+  if (isExpense && category) {
+    summaryText += `\n📂 ${category}`;
+  }
+  if (description) {
+    const descIcon = isExpense ? "📝" : "👤";
+    summaryText += `\n${descIcon} ${description}`;
+  }
+  summaryText += `\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
+
+  await sendToAllSubscribers(botToken, summaryText);
   return NextResponse.json({ ok: true });
 }
 
@@ -575,10 +646,10 @@ async function handleReport(
     let report = `📊 <b>Финансовый отчет</b>\n`;
 
     // UAH section
-    report += `\n🇺🇦 <b>Гривня:</b>\n`;
-    report += `📈 Доходи: ${fmt(totalIncome)} грн\n`;
-    report += `📉 Витрати: ${fmt(totalExpense)} грн\n`;
-    report += `${profit >= 0 ? "✅" : "🔴"} Різниця: ${fmt(profit)} грн\n`;
+    report += `\n🇺🇦 <b>Гривна:</b>\n`;
+    report += `📈 Доходы: ${fmt(totalIncome)} грн\n`;
+    report += `📉 Расходы: ${fmt(totalExpense)} грн\n`;
+    report += `${profit >= 0 ? "✅" : "🔴"} Разница: ${fmt(profit)} грн\n`;
 
     const topIncome = Object.entries(incomeByPerson)
       .sort((a, b) => (b[1] as number) - (a[1] as number))
@@ -594,7 +665,7 @@ async function handleReport(
       .sort((a, b) => (b[1] as number) - (a[1] as number))
       .slice(0, 5);
     if (topExpenses.length > 0) {
-      report += `\n📉 <b>Витрати (₴):</b>\n`;
+      report += `\n📉 <b>Расходы (₴):</b>\n`;
       for (const [cat, amt] of topExpenses) {
         report += `  • ${cat}: ${fmt(amt as number)} грн\n`;
       }
@@ -602,10 +673,10 @@ async function handleReport(
 
     // USD section
     if (totalIncomeUsd > 0 || totalExpenseUsd > 0) {
-      report += `\n💵 <b>Долар:</b>\n`;
-      report += `📈 Доходи: ${fmt(totalIncomeUsd)} $\n`;
-      report += `📉 Витрати: ${fmt(totalExpenseUsd)} $\n`;
-      report += `${profitUsd >= 0 ? "✅" : "🔴"} Різниця: ${fmt(profitUsd)} $\n`;
+      report += `\n💵 <b>Доллар:</b>\n`;
+      report += `📈 Доходы: ${fmt(totalIncomeUsd)} $\n`;
+      report += `📉 Расходы: ${fmt(totalExpenseUsd)} $\n`;
+      report += `${profitUsd >= 0 ? "✅" : "🔴"} Разница: ${fmt(profitUsd)} $\n`;
 
       const topIncomeUsd = Object.entries(incomeByPersonUsd)
         .sort((a, b) => (b[1] as number) - (a[1] as number))
@@ -621,14 +692,14 @@ async function handleReport(
         .sort((a, b) => (b[1] as number) - (a[1] as number))
         .slice(0, 5);
       if (topExpensesUsd.length > 0) {
-        report += `\n📉 <b>Витрати ($):</b>\n`;
+        report += `\n📉 <b>Расходы ($):</b>\n`;
         for (const [cat, amt] of topExpensesUsd) {
           report += `  • ${cat}: ${fmt(amt as number)} $\n`;
         }
       }
     }
 
-    report += `\n📋 Всього записів: ${count}`;
+    report += `\n📋 Всего записей: ${count}`;
 
     await sendMessage(botToken, chatId, report);
   } catch (err) {
