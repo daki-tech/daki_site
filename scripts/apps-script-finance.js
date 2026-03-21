@@ -63,10 +63,19 @@ function addFinanceRecord(data) {
     if (col) row[col - 1] = amount;
   }
 
-  var lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow + 1, 1, 1, NUM_COLS).setValues([row]);
+  // Use column A to find last data row (getLastRow() counts formula cells in L-R columns)
+  var lastDataRow = getLastDataRow(sheet);
+  sheet.getRange(lastDataRow + 1, 1, 1, NUM_COLS).setValues([row]);
 
   return respond({ ok: true, sheet: sheet.getName() });
+}
+
+function getLastDataRow(sheet) {
+  var colA = sheet.getRange("A:A").getValues();
+  for (var i = colA.length - 1; i >= 0; i--) {
+    if (colA[i][0] !== "") return i + 1;
+  }
+  return 1; // only header row
 }
 
 function setupHeaders(sheet) {
@@ -104,13 +113,13 @@ function getFinanceReport() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheets = ss.getSheets();
   var sheet = sheets[sheets.length - 1];
-  var lastRow = sheet.getLastRow();
+  var lastDataRow = getLastDataRow(sheet);
 
-  if (lastRow < 2) {
+  if (lastDataRow < 2) {
     return respond({ ok: true, empty: true });
   }
 
-  var data = sheet.getRange(2, 1, lastRow - 1, NUM_COLS).getValues();
+  var data = sheet.getRange(2, 1, lastDataRow - 1, NUM_COLS).getValues();
 
   var totalIncome = 0, totalExpense = 0;
   var totalIncomeUsd = 0, totalExpenseUsd = 0;
@@ -181,13 +190,13 @@ function deleteFinanceRecord(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheets = ss.getSheets();
   var sheet = sheets[sheets.length - 1];
-  var lastRow = sheet.getLastRow();
+  var lastDataRow = getLastDataRow(sheet);
 
-  if (lastRow < 2) {
+  if (lastDataRow < 2) {
     return respond({ ok: true, deleted: 0 });
   }
 
-  var rows = sheet.getRange(2, 1, lastRow - 1, NUM_COLS).getValues();
+  var rows = sheet.getRange(2, 1, lastDataRow - 1, NUM_COLS).getValues();
   var deleted = 0;
 
   for (var i = rows.length - 1; i >= 0; i--) {
