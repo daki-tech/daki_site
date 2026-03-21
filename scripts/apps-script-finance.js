@@ -79,7 +79,7 @@ function getLastDataRow(sheet) {
 }
 
 function setupHeaders(sheet) {
-  sheet.getRange(1, 1, 2, 20).clear();
+  sheet.getRange(1, 1, 1, 20).clear();
 
   var headers = ["Дата", "Описание / От кого", "Валюта", "Доход",
     "Личное", "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех", "Разработка новой коллекции"];
