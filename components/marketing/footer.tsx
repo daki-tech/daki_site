@@ -39,7 +39,7 @@ export function Footer({ contacts }: FooterProps) {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
-        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-8">
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-0 lg:justify-items-center">
           {/* Brand */}
           <div className="space-y-3">
             <Link href="/" className="font-logo text-xl tracking-[0.2em] uppercase">

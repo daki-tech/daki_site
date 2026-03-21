@@ -247,7 +247,7 @@ export function MarketingHeader() {
           onMouseLeave={handleCatalogLeave}
         >
           <div className="mx-auto max-w-[1800px] px-6 py-6">
-            <div className="flex items-center gap-10">
+            <div className="flex items-center justify-between">
               <Link href="/catalog" className="text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:underline">
                 Всі моделі
               </Link>
