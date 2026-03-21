@@ -212,7 +212,7 @@ function OrdersTab({ orders }: { orders: WholesaleOrder[] }) {
         </p>
         <Link
           href="/catalog"
-          className="mt-6 inline-block border border-black px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] transition hover:bg-black hover:text-white"
+          className="mt-6 inline-block border border-black px-8 py-3 text-xs font-medium transition hover:bg-black hover:text-white"
         >
           Перейти до каталогу
         </Link>
@@ -276,7 +276,7 @@ function OrderCard({ order }: { order: WholesaleOrder }) {
           {/* Items */}
           {items.length > 0 && (
             <div className="mb-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
+              <p className="mb-2 text-xs font-medium text-neutral-400">
                 Товари
               </p>
               <div className="space-y-2">
@@ -445,7 +445,7 @@ function ProfileTab({
     <div className="max-w-[480px] space-y-5">
       {/* Email (read-only) */}
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Email</label>
+        <label className="text-[11px] font-semibold text-neutral-400">Email</label>
         <input
           type="email"
           value={profile?.email || ""}
@@ -456,7 +456,7 @@ function ProfileTab({
 
       {/* Full name */}
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Повне ім&apos;я</label>
+        <label className="text-[11px] font-semibold text-neutral-400">Повне ім&apos;я</label>
         <input
           type="text"
           value={fullName}
@@ -468,7 +468,7 @@ function ProfileTab({
 
       {/* Phone */}
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Телефон</label>
+        <label className="text-[11px] font-semibold text-neutral-400">Телефон</label>
         <PhoneInput
           value={phone}
           onChange={(v) => setPhone(v)}
@@ -478,7 +478,7 @@ function ProfileTab({
 
       {/* City — NP autocomplete */}
       <div className="relative space-y-1.5">
-        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Місто доставки</label>
+        <label className="text-[11px] font-semibold text-neutral-400">Місто доставки</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-300" />
           <input
@@ -506,7 +506,7 @@ function ProfileTab({
 
       {/* Warehouse — NP autocomplete */}
       <div className="relative space-y-1.5">
-        <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Відділення Нової Пошти</label>
+        <label className="text-[11px] font-semibold text-neutral-400">Відділення Нової Пошти</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-300" />
           <input

@@ -100,7 +100,7 @@ export function ProductCard({ model }: ProductCardProps) {
             </>
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground/30">
-              <span className="text-xs uppercase tracking-widest">Photo</span>
+              <span className="text-xs tracking-wide">Photo</span>
             </div>
           )}
 
@@ -114,7 +114,7 @@ export function ProductCard({ model }: ProductCardProps) {
           {/* Out of stock overlay */}
           {model.is_out_of_stock && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-              <span className="text-xs font-medium uppercase tracking-wider text-foreground/60">
+              <span className="text-xs font-medium text-foreground/60">
                 Немає в наявності
               </span>
             </div>

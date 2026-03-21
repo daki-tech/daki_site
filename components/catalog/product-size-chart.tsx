@@ -19,7 +19,7 @@ const headerLabels: Record<string, string> = {
 function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
   return (
     <div>
-      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-neutral-800 mb-6">
+      <h3 className="flex items-center gap-2 text-xs font-semibold text-neutral-800 mb-6">
         <span className="text-base">📐</span> Таблиця розмірів
       </h3>
       <div className="overflow-x-auto">
@@ -29,7 +29,7 @@ function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
               {headers.map((h, i) => (
                 <th
                   key={i}
-                  className={`pb-3 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 ${i === 0 ? "text-left pl-1" : "text-center"}`}
+                  className={`pb-3 text-[11px] font-semibold text-neutral-400 ${i === 0 ? "text-left pl-1" : "text-center"}`}
                 >
                   {h}
                 </th>

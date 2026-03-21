@@ -23,7 +23,7 @@ function AccordionItem({ title, children, defaultOpen = false }: AccordionItemPr
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between py-4 text-left transition-colors hover:text-neutral-600"
       >
-        <span className="text-sm font-semibold uppercase tracking-wide">{title}</span>
+        <span className="text-sm font-semibold">{title}</span>
         {open ? <Minus className="h-4 w-4 flex-shrink-0" /> : <Plus className="h-4 w-4 flex-shrink-0" />}
       </button>
       <div

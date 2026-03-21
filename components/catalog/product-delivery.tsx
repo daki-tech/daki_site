@@ -97,7 +97,7 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
     <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-start">
       {/* Left: Delivery & return text */}
       <div>
-        <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-6">
+        <p className="text-[10px] font-medium tracking-wide text-neutral-400 mb-6">
           Правила доставки
         </p>
         {deliveryIsHtml ? (
@@ -110,7 +110,7 @@ export function ProductDelivery({ model, selectedColor }: ProductDeliveryProps) 
         )}
 
         <div className="mt-10">
-          <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-4">
+          <p className="text-[10px] font-medium tracking-wide text-neutral-400 mb-4">
             Правила повернення
           </p>
           {returnIsHtml ? (

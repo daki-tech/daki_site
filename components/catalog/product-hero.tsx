@@ -133,7 +133,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
       {/* LEFT: Product info */}
       <div className="flex flex-col justify-start pt-0 lg:pt-4">
         {/* SKU */}
-        <p className="text-xs tracking-widest text-neutral-400 uppercase">{model.sku}</p>
+        <p className="text-xs tracking-widest text-neutral-400">{model.sku}</p>
 
         {/* Name */}
         <h1 className="mt-1 text-2xl font-light tracking-wide lg:text-3xl">{model.name}</h1>
@@ -234,7 +234,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
         {/* Messenger order links */}
         {messengerLinks.length > 0 && (
           <div className="mt-5">
-            <p className="mb-3 text-[10px] tracking-[0.15em] text-neutral-400 uppercase">
+            <p className="mb-3 text-[10px] tracking-[0.15em] text-neutral-400">
               або замовити через
             </p>
             <div className="flex gap-2">

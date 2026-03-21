@@ -123,7 +123,7 @@ export function MarketingHeader() {
                     <Link
                       href={item.href}
                       className={cn(
-                        "relative text-[13px] font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200",
+                        "relative text-[13px] font-semibold text-black transition-colors duration-200",
                         "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
                         isActive && "after:w-full",
                       )}
@@ -139,7 +139,7 @@ export function MarketingHeader() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative text-[13px] font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200",
+                    "relative text-[13px] font-semibold text-black transition-colors duration-200",
                     "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
                     isActive && "after:w-full",
                   )}
@@ -248,11 +248,11 @@ export function MarketingHeader() {
         >
           <div className="mx-auto max-w-[1800px] px-6 py-6">
             <div className="flex items-center justify-center gap-8">
-              <Link href="/catalog" className="text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:underline">
+              <Link href="/catalog" className="text-sm font-semibold text-neutral-900 transition hover:underline">
                 Всі моделі
               </Link>
               {MODEL_SEASONS.map((season) => (
-                <Link key={season} href={`/catalog?season=${encodeURIComponent(season)}`} className="text-sm uppercase tracking-wide text-neutral-600 transition hover:text-neutral-900 hover:underline">
+                <Link key={season} href={`/catalog?season=${encodeURIComponent(season)}`} className="text-sm text-neutral-600 transition hover:text-neutral-900 hover:underline">
                   {SEASON_LABELS[season] || season}
                 </Link>
               ))}
@@ -285,7 +285,7 @@ export function MarketingHeader() {
                     <div key={item.href}>
                       <button
                         onClick={() => setMobileCatalogOpen(!mobileCatalogOpen)}
-                        className="flex w-full items-center justify-between px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
+                        className="flex w-full items-center justify-between px-6 py-3 text-sm font-medium transition hover:bg-muted"
                       >
                         {t(item.labelKey)}
                         <span className={cn("text-xs transition-transform duration-200 inline-block", mobileCatalogOpen && "rotate-180")}>▾</span>
@@ -318,7 +318,7 @@ export function MarketingHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-6 py-3 text-sm font-medium uppercase tracking-[0.1em] transition hover:bg-muted"
+                    className="px-6 py-3 text-sm font-medium transition hover:bg-muted"
                   >
                     {t(item.labelKey)}
                   </Link>

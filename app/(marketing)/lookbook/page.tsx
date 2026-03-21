@@ -39,7 +39,7 @@ export default function LookbookPage() {
                 <ScrollReveal key={photo.id} variant="fade-up" delay={(i % 3) * 0.1}>
                   <div className={`mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-muted to-muted/60 ${h}`}>
                     <div className="flex h-full items-center justify-center text-muted-foreground/20">
-                      <span className="text-xs uppercase tracking-widest">Photo {photo.id}</span>
+                      <span className="text-xs tracking-wide">Photo {photo.id}</span>
                     </div>
                   </div>
                 </ScrollReveal>

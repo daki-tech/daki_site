@@ -34,7 +34,7 @@ export function RelatedProducts({ currentModelId, category }: RelatedProductsPro
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1400px] px-4 py-10 lg:px-8 lg:py-14">
-        <h2 className="text-lg font-medium tracking-wide uppercase mb-8">Інші товари</h2>
+        <h2 className="text-lg font-medium tracking-wide mb-8">Інші товари</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
           {products.slice(0, 8).map((p) => {
             const finalPrice = p.base_price * (1 - p.discount_percent / 100);
@@ -62,7 +62,7 @@ export function RelatedProducts({ currentModelId, category }: RelatedProductsPro
                   )}
                 </div>
                 <div className="mt-2.5">
-                  <p className="text-xs text-neutral-400 uppercase">{p.sku}</p>
+                  <p className="text-xs text-neutral-400">{p.sku}</p>
                   <p className="mt-0.5 text-sm font-medium line-clamp-1">{p.name}</p>
                   <div className="mt-1 flex items-baseline gap-2">
                     <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>

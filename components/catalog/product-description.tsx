@@ -71,7 +71,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
       {/* RIGHT: Description + Composition & Care */}
       <div className="flex flex-col justify-start">
         {/* Опис */}
-        <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-5">
+        <p className="text-[10px] font-medium tracking-wide text-neutral-400 mb-5">
           Опис
         </p>
         {descriptionIsHtml ? (
@@ -99,7 +99,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
         <div className="my-8 border-t border-neutral-100" />
 
         {/* Склад і догляд */}
-        <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-5">
+        <p className="text-[10px] font-medium tracking-wide text-neutral-400 mb-5">
           Склад і догляд
         </p>
 
@@ -139,7 +139,7 @@ export function ProductDescription({ model, selectedColor }: ProductDescriptionP
                       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
                         {match ? match[1].icon : <Sparkles className="h-4 w-4" />}
                       </span>
-                      <span className="text-[11px] uppercase tracking-[0.08em] text-neutral-500 leading-tight">
+                      <span className="text-[11px] tracking-wide text-neutral-500 leading-tight">
                         {match ? match[1].label : item}
                       </span>
                     </div>

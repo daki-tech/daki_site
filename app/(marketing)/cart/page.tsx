@@ -74,11 +74,11 @@ export default function CartPage() {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
         <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
-        <h1 className="mt-4 text-xl font-light uppercase tracking-[0.15em]">{t("cart.empty")}</h1>
+        <h1 className="mt-4 text-xl font-light tracking-wide">{t("cart.empty")}</h1>
         <p className="mt-2 text-xs text-muted-foreground">{t("cart.emptySub")}</p>
         <Link
           href="/catalog"
-          className="mt-6 rounded-xl bg-black px-8 py-3 text-xs font-medium uppercase tracking-[0.1em] text-white transition hover:bg-neutral-800"
+          className="mt-6 rounded-xl bg-black px-8 py-3 text-xs font-medium text-white transition hover:bg-neutral-800"
         >
           {t("cart.continueShopping")}
         </Link>
@@ -97,7 +97,7 @@ export default function CartPage() {
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-8 lg:px-4 lg:py-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+        <h1 className="text-xl font-light tracking-wide md:text-2xl">
           {t("cart.title")}
         </h1>
         <button
@@ -181,7 +181,7 @@ export default function CartPage() {
                       {/* Color selector */}
                       {meta.colors.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-2">Колір</p>
+                          <p className="text-[11px] font-medium text-neutral-400 mb-2">Колір</p>
                           <div className="flex flex-wrap gap-2">
                             {meta.colors.map((color) => {
                               const isActive = item.color === color.name;
@@ -213,7 +213,7 @@ export default function CartPage() {
                       {/* Size selector */}
                       {meta.sizes.length > 0 && (
                         <div>
-                          <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-2">Розмір</p>
+                          <p className="text-[11px] font-medium text-neutral-400 mb-2">Розмір</p>
                           <div className="flex flex-wrap gap-2">
                             {meta.sizes.map((size) => {
                               const isSelected = item.sizes.some((s) => s.sizeLabel === size.size_label);
@@ -312,7 +312,7 @@ export default function CartPage() {
                 <button
                   onClick={() => !incomplete && setCheckoutOpen(true)}
                   disabled={incomplete}
-                  className={`mt-6 w-full rounded-xl py-3 text-xs font-medium uppercase tracking-[0.15em] transition ${
+                  className={`mt-6 w-full rounded-xl py-3 text-xs font-medium transition ${
                     incomplete
                       ? "cursor-not-allowed bg-neutral-200 text-neutral-400"
                       : "bg-black text-white hover:bg-neutral-800"
@@ -335,7 +335,7 @@ export default function CartPage() {
               if (links.length === 0) return null;
               return (
                 <div className="mt-4">
-                  <p className="mb-3 text-center text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <p className="mb-3 text-center text-[11px] text-muted-foreground">
                     {t("cart.orderVia")}
                   </p>
                   <div className="flex items-center justify-center gap-3">

@@ -56,7 +56,7 @@ export default function WishlistPage() {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
         <Heart className="h-12 w-12 text-muted-foreground/30" />
-        <h1 className="mt-4 text-xl font-light uppercase tracking-[0.15em]">
+        <h1 className="mt-4 text-xl font-light tracking-wide">
           Список бажань порожній
         </h1>
         <p className="mt-2 text-xs text-muted-foreground">
@@ -64,7 +64,7 @@ export default function WishlistPage() {
         </p>
         <Link
           href="/catalog"
-          className="mt-6 border border-foreground px-8 py-3 text-xs font-medium uppercase tracking-[0.1em] transition hover:bg-foreground hover:text-background"
+          className="mt-6 border border-foreground px-8 py-3 text-xs font-medium transition hover:bg-foreground hover:text-background"
         >
           {t("nav.catalog")}
         </Link>
@@ -74,7 +74,7 @@ export default function WishlistPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-10 lg:px-4 lg:py-14">
-      <h1 className="text-xl font-light uppercase tracking-[0.15em] md:text-2xl">
+      <h1 className="text-xl font-light tracking-wide md:text-2xl">
         Список бажань
       </h1>
       <p className="mt-2 text-xs text-muted-foreground">
