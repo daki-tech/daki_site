@@ -11,17 +11,11 @@ export default function ExchangeAndReturnPage() {
         className="mb-4"
       />
 
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
-          Обмін та повернення
-        </h1>
-        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
-          Умови обміну та повернення товарів
-        </p>
-      </div>
+      <h1 className="text-2xl font-light tracking-wide lg:text-3xl">
+        Обмін та повернення
+      </h1>
 
-      <div className="mx-auto mt-12 max-w-3xl space-y-12">
+      <div className="mx-auto mt-8 max-w-3xl space-y-12">
         {/* Умови повернення */}
         <section>
           <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">

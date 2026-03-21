@@ -11,17 +11,11 @@ export default function DeliveryAndPaymentPage() {
         className="mb-4"
       />
 
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
-          Доставка та оплата
-        </h1>
-        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
-          Все, що потрібно знати про доставку та оплату замовлень
-        </p>
-      </div>
+      <h1 className="text-2xl font-light tracking-wide lg:text-3xl">
+        Доставка та оплата
+      </h1>
 
-      <div className="mx-auto mt-12 max-w-3xl space-y-12">
+      <div className="mx-auto mt-8 max-w-3xl space-y-12">
         {/* Способи доставки */}
         <section>
           <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">

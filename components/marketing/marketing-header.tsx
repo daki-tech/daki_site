@@ -106,7 +106,7 @@ export function MarketingHeader() {
           </Link>
 
           {/* Desktop navigation — centered */}
-          <nav className="absolute left-1/2 -translate-x-1/2 hidden items-center gap-7 lg:flex">
+          <nav className="absolute left-1/2 -translate-x-1/2 hidden items-center gap-5 xl:gap-6 lg:flex">
             {NAV_LINKS.marketing.map((item) => {
               const baseHref = item.href.split("?")[0];
               const isActive = baseHref === "/" ? pathname === "/" : pathname.startsWith(baseHref);
@@ -246,18 +246,14 @@ export function MarketingHeader() {
           onMouseEnter={handleCatalogEnter}
           onMouseLeave={handleCatalogLeave}
         >
-          <div className="mx-auto max-w-[1800px] px-6 py-8">
-            <div className="grid grid-cols-4 gap-8">
-              <Link href="/catalog" className="group">
-                <span className="text-sm font-semibold uppercase tracking-wide text-neutral-900 group-hover:underline">Всі моделі</span>
-                <p className="mt-1 text-xs text-neutral-400">Переглянути весь каталог</p>
+          <div className="mx-auto max-w-[1800px] px-6 py-6">
+            <div className="flex items-center gap-10">
+              <Link href="/catalog" className="text-sm font-semibold uppercase tracking-wide text-neutral-900 transition hover:underline">
+                Всі моделі
               </Link>
               {MODEL_SEASONS.map((season) => (
-                <Link key={season} href={`/catalog?season=${encodeURIComponent(season)}`} className="group">
-                  <span className="text-sm font-semibold uppercase tracking-wide text-neutral-900 group-hover:underline">
-                    {SEASON_LABELS[season] || season}
-                  </span>
-                  <p className="mt-1 text-xs text-neutral-400">Колекція {season.toLowerCase()}</p>
+                <Link key={season} href={`/catalog?season=${encodeURIComponent(season)}`} className="text-sm uppercase tracking-wide text-neutral-600 transition hover:text-neutral-900 hover:underline">
+                  {SEASON_LABELS[season] || season}
                 </Link>
               ))}
             </div>

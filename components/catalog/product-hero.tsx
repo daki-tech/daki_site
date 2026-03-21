@@ -266,7 +266,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
         {/* Main image */}
         <div
           className="relative flex-1 overflow-hidden bg-neutral-100 rounded-xl"
-          style={{ cursor: isZooming ? "crosshair" : undefined }}
+          style={{ cursor: isZooming ? "zoom-in" : undefined }}
           onMouseMove={handleZoomMove}
           onMouseEnter={() => setIsZooming(true)}
           onMouseLeave={() => setIsZooming(false)}

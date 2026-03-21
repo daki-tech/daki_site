@@ -54,7 +54,7 @@ export default function SizeGuidePage() {
 
       <h2 className="mt-10 text-lg font-medium">Як правильно зробити заміри?</h2>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_0.7fr] lg:gap-16">
+      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_0.7fr] lg:gap-16 lg:items-center">
         {/* Left: instructions */}
         <div className="space-y-8">
           {measurements.map((m) => (
@@ -77,8 +77,8 @@ export default function SizeGuidePage() {
           </div>
         </div>
 
-        {/* Right: SVG figure — centered vertically */}
-        <div className="sticky top-24 hidden lg:flex lg:items-center lg:justify-center lg:min-h-full">
+        {/* Right: SVG figure — centered */}
+        <div className="hidden lg:flex lg:items-center lg:justify-center">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
             <svg viewBox="0 0 200 400" className="mx-auto h-auto w-full max-w-[240px]">
               {/* Head */}
