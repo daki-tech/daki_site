@@ -181,10 +181,12 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // Delete related records first to avoid FK constraint errors
-  await auth.supabase.from("order_items").delete().eq("model_id", id);
-  await auth.supabase.from("model_sizes").delete().eq("model_id", id);
-  const { error } = await auth.supabase.from("catalog_models").delete().eq("id", id);
+  // Use admin client to bypass RLS for deleting related records
+  const admin = createAdminClient();
+  await admin.from("order_items").delete().eq("model_id", id);
+  await admin.from("model_sizes").delete().eq("model_id", id);
+  await admin.from("model_colors").delete().eq("model_id", id);
+  const { error } = await admin.from("catalog_models").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
