@@ -7,6 +7,8 @@ import { ProductPageClient } from "./product-page-client";
 import { RelatedModels } from "@/components/catalog/related-models";
 import { ProductJsonLd } from "@/components/catalog/product-json-ld";
 
+export const revalidate = 60;
+
 interface ProductPageProps {
   params: Promise<{ id: string }>;
 }

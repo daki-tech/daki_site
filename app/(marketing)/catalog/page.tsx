@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { CatalogGrid } from "@/components/catalog/catalog-grid";
 import { getCatalogModels } from "@/lib/data";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Каталог",
   description: "Каталог верхнього жіночого одягу DaKi — пальта, пуховики, куртки, жилети. Ціни від виробника.",

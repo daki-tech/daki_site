@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { CatalogModel, ModelColor } from "@/lib/types";
 import { ProductHero } from "@/components/catalog/product-hero";
 import { ProductSizeChart } from "@/components/catalog/product-size-chart";
-import { RelatedProducts } from "@/components/catalog/related-products";
+
 
 interface ProductPageClientProps {
   model: CatalogModel;
@@ -35,8 +35,7 @@ export function ProductPageClient({ model, contacts }: ProductPageClientProps) {
         </section>
       )}
 
-      {/* BLOCK 3: Related products */}
-      <RelatedProducts currentModelId={model.id} category={model.category} />
+      {/* Related products rendered server-side in page.tsx */}
     </>
   );
 }

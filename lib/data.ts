@@ -28,7 +28,7 @@ export async function getCatalogModels(filters: CatalogFilterInput = {}): Promis
 
     let query = supabase
       .from("catalog_models")
-      .select("*, model_sizes(*), model_colors(*)")
+      .select("id, name, sku, category, style, season, year, base_price, discount_percent, image_urls, is_active, is_out_of_stock, created_at, model_sizes(id, size_label, total_stock, sold_stock, reserved_stock), model_colors(id, name, hex, image_urls, is_default)")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -203,10 +203,11 @@ export async function getRelatedModels(modelId: string): Promise<CatalogModel[]>
 
     const { data, error } = await supabase
       .from("catalog_models")
-      .select("*, model_sizes(*), model_colors(*)")
+      .select("id, name, sku, base_price, discount_percent, image_urls, is_out_of_stock, category, model_sizes(size_label, total_stock, sold_stock, reserved_stock), model_colors(name, hex, image_urls)")
       .eq("is_active", true)
       .eq("category", current.category)
-      .neq("id", modelId);
+      .neq("id", modelId)
+      .limit(8);
 
     if (error) throw error;
     return (data ?? []) as CatalogModel[];

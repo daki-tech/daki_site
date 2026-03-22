@@ -597,17 +597,25 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     })();
   }, []);
 
-  // Refresh helpers
-  const refreshModels = async () => {
-    const res = await fetch("/api/admin/models", { cache: "no-store" });
-    if (res.ok) setModels(await res.json());
-  };
-  const refreshOrders = async () => {
-    const res = await fetch("/api/admin/orders", { cache: "no-store" });
-    if (res.ok) setOrders(await res.json());
-  };
+  // Debounced refresh helpers — avoid triple-refetch when realtime fires on models+colors+sizes
+  const modelsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ordersTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshModels = useCallback(() => {
+    if (modelsTimerRef.current) clearTimeout(modelsTimerRef.current);
+    modelsTimerRef.current = setTimeout(async () => {
+      const res = await fetch("/api/admin/models", { cache: "no-store" });
+      if (res.ok) setModels(await res.json());
+    }, 500);
+  }, []);
+  const refreshOrders = useCallback(() => {
+    if (ordersTimerRef.current) clearTimeout(ordersTimerRef.current);
+    ordersTimerRef.current = setTimeout(async () => {
+      const res = await fetch("/api/admin/orders", { cache: "no-store" });
+      if (res.ok) setOrders(await res.json());
+    }, 500);
+  }, []);
 
-  // Realtime subscriptions — auto-refresh on DB changes
+  // Realtime subscriptions — auto-refresh on DB changes (debounced)
   useRealtimeTable("orders", refreshOrders);
   useRealtimeTable("catalog_models", refreshModels);
   useRealtimeTable("model_colors", refreshModels);
