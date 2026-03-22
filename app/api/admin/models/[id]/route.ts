@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { requireApiAdmin } from "@/lib/server-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -81,8 +82,9 @@ export async function PATCH(
     if (colorsResult?.data) data.model_colors = colorsResult.data;
     if (sizesResult?.data) data.model_sizes = sizesResult.data;
 
-    // Sync stock to Google Sheets in background
+    // Sync stock to Google Sheets in background + revalidate pages
     after(() => syncStockToGoogleSheets());
+    revalidatePath("/", "layout");
 
     return NextResponse.json(data);
   }
@@ -97,6 +99,7 @@ export async function PATCH(
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidatePath("/", "layout");
     return NextResponse.json(data);
   }
 
