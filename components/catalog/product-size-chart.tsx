@@ -13,8 +13,10 @@ const headerLabels: Record<string, string> = {
   chest: "Обхват грудей (см)",
   waist: "Обхват талії (см)",
   hips: "Обхват стегон",
-  available: "В наявності",
 };
+
+// Columns hidden from customers (admin-only data)
+const HIDDEN_COLUMNS = new Set(["available", "в наявності"]);
 
 function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
   return (
@@ -45,7 +47,6 @@ function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
                     className={`py-4 ${cIdx === 0 ? "text-left pl-1 font-semibold text-neutral-900" : "text-center text-neutral-500 min-w-[60px]"}`}
                   >
                     {cell ?? ""}
-                    {cIdx === row.length - 1 && cell && !String(cell).includes("шт") ? " шт." : ""}
                   </td>
                 ))}
               </tr>
@@ -70,7 +71,7 @@ export function ProductSizeChart({ sizeChart }: ProductSizeChartProps) {
   }
 
   if (jsonRows && jsonRows.length > 0) {
-    const keys = Object.keys(jsonRows[0]).filter((k) => jsonRows![0][k] !== undefined);
+    const keys = Object.keys(jsonRows[0]).filter((k) => jsonRows![0][k] !== undefined && !HIDDEN_COLUMNS.has(k.toLowerCase()));
     if (keys.length === 0) return null;
 
     const headers = keys.map((k) => headerLabels[k.toLowerCase()] ?? k);
@@ -99,5 +100,11 @@ export function ProductSizeChart({ sizeChart }: ProductSizeChartProps) {
       .filter(Boolean)
   );
 
-  return renderTable(rows[0], rows.slice(1));
+  // Filter out hidden columns by header name
+  const headerRow = rows[0];
+  const visibleIndices = headerRow.map((h, i) => HIDDEN_COLUMNS.has(h.toLowerCase()) ? -1 : i).filter((i) => i !== -1);
+  const filteredHeaders = visibleIndices.map((i) => headerRow[i]);
+  const filteredData = rows.slice(1).map((row) => visibleIndices.map((i) => row[i]));
+
+  return renderTable(filteredHeaders, filteredData);
 }
