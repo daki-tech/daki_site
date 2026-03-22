@@ -117,7 +117,7 @@ export function Footer({ contacts }: FooterProps) {
                 </a>
               )}
               {viber && (
-                <a href={viber.startsWith("viber") ? viber : `viber://chat?number=${viber.replace(/[^+\d]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber">
+                <a href={`https://viber.click/${viber.replace(/[^+\d]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber">
                   <ViberIcon className="h-4 w-4" />
                 </a>
               )}
