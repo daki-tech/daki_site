@@ -11,12 +11,12 @@ export const PROTECTED_ROUTES = ["/profile", "/settings", "/orders", "/admin", "
 export const AUTH_ROUTES = ["/login", "/signup", "/verify", "/forgot-password", "/new-password"];
 
 export const CATALOG_CATEGORIES = [
-  "Пальто",
+  "Пальта",
   "Пуховики",
   "Куртки",
-  "Тренчи",
+  "Тренчі",
   "Парки",
-  "Жилеты",
+  "Жилети",
 ];
 
 export const MODEL_STYLES = [

@@ -45,7 +45,7 @@ const ru: Dictionary = {
   "nav.faq": "FAQ",
   "nav.delivery": "Доставка",
   "nav.returns": "Обмін",
-  "nav.sizeGuide": "Розміри",
+  "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Производитель верхней одежды",
   "hero.title": "Верхняя женская одежда от производителя",
@@ -282,7 +282,7 @@ const uk: Dictionary = {
   "nav.faq": "FAQ",
   "nav.delivery": "Доставка",
   "nav.returns": "Обмін",
-  "nav.sizeGuide": "Розміри",
+  "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Виробник верхнього одягу",
   "hero.title": "Верхній жіночий одяг від виробника",
