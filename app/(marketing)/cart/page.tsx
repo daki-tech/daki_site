@@ -78,7 +78,7 @@ export default function CartPage() {
         <p className="mt-2 text-xs text-muted-foreground">{t("cart.emptySub")}</p>
         <Link
           href="/catalog"
-          className="mt-6 rounded-xl bg-black px-8 py-3 text-xs font-medium text-white transition hover:bg-neutral-800"
+          className="mt-6 border border-foreground px-8 py-3 text-xs font-medium transition hover:bg-foreground hover:text-background"
         >
           {t("cart.continueShopping")}
         </Link>

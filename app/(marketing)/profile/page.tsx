@@ -212,7 +212,7 @@ function OrdersTab({ orders }: { orders: WholesaleOrder[] }) {
         </p>
         <Link
           href="/catalog"
-          className="mt-6 inline-block border border-black px-8 py-3 text-xs font-medium transition hover:bg-black hover:text-white"
+          className="mt-6 inline-block border border-foreground px-8 py-3 text-xs font-medium transition hover:bg-foreground hover:text-background"
         >
           Перейти до каталогу
         </Link>
