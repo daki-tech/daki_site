@@ -78,10 +78,15 @@ async function sendTelegramNotification(order: {
     console.log("[Telegram] telegram_subscribers table error:", e);
   }
 
-  // Always include env var chat ID (ensures delivery even if DB has bad data)
-  const envChatId = (process.env.TELEGRAM_CHAT_ID || "").trim();
-  if (envChatId && !chatIds.includes(envChatId)) {
-    chatIds.push(envChatId);
+  // Always include ALL env var chat IDs (comma-separated) — ensures delivery even if DB has bad data
+  const envChatIdStr = (process.env.TELEGRAM_CHAT_ID || "").trim();
+  if (envChatIdStr) {
+    const envIds = envChatIdStr.split(",").map((id) => id.trim()).filter(Boolean);
+    for (const eid of envIds) {
+      if (eid && eid !== "NaN" && !chatIds.includes(eid)) {
+        chatIds.push(eid);
+      }
+    }
   }
 
   if (chatIds.length === 0) {

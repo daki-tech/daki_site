@@ -64,11 +64,13 @@ async function sendToAllSubscribers(botToken: string, text: string, parse_mode?:
     // Table may not exist yet
   }
 
-  // Fallback to env var
-  if (chatIds.length === 0) {
-    const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
-    const ids = allowedStr.split(",").map((id) => id.trim()).filter(Boolean).map(Number).filter((n) => !isNaN(n));
-    chatIds.push(...ids);
+  // Always include ALL env var chat IDs (not just fallback)
+  const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
+  const envIds = allowedStr.split(",").map((id) => id.trim()).filter(Boolean).map(Number).filter((n) => !isNaN(n));
+  for (const eid of envIds) {
+    if (!chatIds.includes(eid)) {
+      chatIds.push(eid);
+    }
   }
 
   if (chatIds.length === 0) return [];
