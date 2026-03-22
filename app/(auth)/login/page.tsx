@@ -30,7 +30,11 @@ function LoginForm() {
       const savedRemember = localStorage.getItem("remember-me");
       if (savedRemember === "true") {
         const savedEmail = localStorage.getItem("remember-email");
+        const savedPwd = localStorage.getItem("remember-pwd");
         if (savedEmail) setEmail(savedEmail);
+        if (savedPwd) {
+          try { setPassword(atob(savedPwd)); } catch { /* invalid base64 */ }
+        }
         setRememberMe(true);
       }
     } catch {}
@@ -51,8 +55,10 @@ function LoginForm() {
       localStorage.setItem("remember-me", String(rememberMe));
       if (rememberMe) {
         localStorage.setItem("remember-email", email);
+        localStorage.setItem("remember-pwd", btoa(password));
       } else {
         localStorage.removeItem("remember-email");
+        localStorage.removeItem("remember-pwd");
       }
       sessionStorage.setItem("session-active", "true");
 
