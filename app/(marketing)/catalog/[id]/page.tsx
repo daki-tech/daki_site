@@ -46,14 +46,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {/* Blocks 1-4 with shared color state */}
       <ProductPageClient model={model} contacts={settings} />
 
-      {/* BLOCK 5: Related models */}
-      {related.length > 0 && (
-        <section className="bg-white">
-          <div className="mx-auto max-w-[1400px] px-4 py-12 lg:px-8 lg:py-16">
-            <RelatedModels models={related} />
-          </div>
-        </section>
-      )}
+      {/* Related models — temporarily hidden */}
     </>
   );
 }
