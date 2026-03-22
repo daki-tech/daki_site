@@ -2,23 +2,29 @@ import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 export default function ExchangeAndReturnPage() {
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
+    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
       <Breadcrumbs
         items={[
           { label: "Головна", href: "/" },
           { label: "Обмін та повернення" },
         ]}
-        className="mb-4"
+        className="mb-8"
       />
 
-      <h1 className="text-2xl font-light tracking-wide lg:text-3xl">
-        Обмін та повернення
-      </h1>
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
+          Обмін та повернення
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
+          Умови обміну та повернення товарів
+        </p>
+      </div>
 
-      <div className="mx-auto mt-8 max-w-3xl space-y-12">
+      <div className="mx-auto mt-12 max-w-3xl space-y-12">
         {/* Умови повернення */}
         <section>
-          <h2 className="text-lg font-medium md:text-xl">
+          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
             Умови повернення
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -39,7 +45,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Як оформити повернення */}
         <section>
-          <h2 className="text-lg font-medium md:text-xl">
+          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
             Як оформити повернення
           </h2>
           <div className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
@@ -82,7 +88,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Умови обміну */}
         <section>
-          <h2 className="text-lg font-medium md:text-xl">
+          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
             Умови обміну
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -103,7 +109,7 @@ export default function ExchangeAndReturnPage() {
 
         {/* Важлива інформація */}
         <section>
-          <h2 className="text-lg font-medium md:text-xl">
+          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
             Важлива інформація
           </h2>
           <div className="mt-4 rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-muted-foreground">

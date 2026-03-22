@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 interface FaqItem {
   question: string;
@@ -133,24 +134,31 @@ function AccordionItem({ question, answer }: FaqItem) {
 
 export default function FaqPage() {
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
-      <Breadcrumbs
-        items={[
-          { label: "Головна", href: "/" },
-          { label: "Часті запитання" },
-        ]}
-        className="mb-4"
-      />
+    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
+      {/* Breadcrumb */}
+      <nav className="mb-8 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Link href="/" className="transition hover:text-foreground">
+          Головна
+        </Link>
+        <ChevronRight className="h-3 w-3" />
+        <span className="text-foreground">Часті запитання</span>
+      </nav>
 
-      <h1 className="text-2xl font-light tracking-wide lg:text-3xl">
-        Часті запитання
-      </h1>
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
+          Часті запитання
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
+          Відповіді на найпопулярніші питання про замовлення, доставку та повернення.
+        </p>
+      </div>
 
       {/* FAQ sections */}
-      <div className="mx-auto mt-8 max-w-3xl space-y-10">
+      <div className="mx-auto mt-12 max-w-2xl space-y-10">
         {faqData.map((category) => (
           <section key={category.title}>
-            <h2 className="mb-4 text-lg font-medium md:text-xl">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em]">
               {category.title}
             </h2>
             <div>

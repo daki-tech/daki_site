@@ -262,7 +262,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
       </div>
 
       {/* RIGHT: Gallery */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 max-h-[calc(100vh-120px)]">
         {/* Main image */}
         <div
           className="relative flex-1 aspect-[3/4] overflow-hidden bg-neutral-100 rounded-xl"
