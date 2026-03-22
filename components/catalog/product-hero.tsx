@@ -262,10 +262,10 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
       </div>
 
       {/* RIGHT: Gallery */}
-      <div className="flex gap-3 h-[calc(100vh-64px-48px-5px)]">
+      <div className="flex gap-3">
         {/* Main image */}
         <div
-          className="relative flex-1 overflow-hidden bg-neutral-100 rounded-xl"
+          className="relative flex-1 aspect-[3/4] overflow-hidden bg-neutral-100 rounded-xl"
           style={{ cursor: isZooming ? "zoom-in" : undefined }}
           onMouseMove={handleZoomMove}
           onMouseEnter={() => setIsZooming(true)}
