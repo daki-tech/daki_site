@@ -441,6 +441,45 @@ export async function POST(req: Request) {
       console.error("Supabase order creation failed:", err);
     }
 
+    // Decrement stock for each ordered item (same as admin retail orders)
+    if (orderId) {
+      const admin = createAdminClient();
+      for (const item of items) {
+        for (const size of item.sizes) {
+          // Decrement model_colors.stock_per_size
+          if (item.color) {
+            const { data: colorRows } = await admin
+              .from("model_colors")
+              .select("id, stock_per_size")
+              .eq("model_id", item.modelId)
+              .eq("name", item.color);
+
+            if (colorRows && colorRows.length > 0) {
+              const colorRow = colorRows[0];
+              const stockPerSize = (colorRow.stock_per_size as Record<string, number>) || {};
+              const currentStock = stockPerSize[size.sizeLabel] || 0;
+              stockPerSize[size.sizeLabel] = Math.max(0, currentStock - size.quantity);
+              await admin.from("model_colors").update({ stock_per_size: stockPerSize }).eq("id", colorRow.id);
+            }
+          }
+
+          // Decrement model_sizes.total_stock
+          const { data: sizeRows } = await admin
+            .from("model_sizes")
+            .select("id, total_stock")
+            .eq("model_id", item.modelId)
+            .eq("size_label", size.sizeLabel);
+
+          if (sizeRows && sizeRows.length > 0) {
+            const sizeRow = sizeRows[0];
+            await admin.from("model_sizes").update({
+              total_stock: Math.max(0, sizeRow.total_stock - size.quantity),
+            }).eq("id", sizeRow.id);
+          }
+        }
+      }
+    }
+
     const orderData = {
       id: orderId,
       orderNumber,

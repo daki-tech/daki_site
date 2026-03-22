@@ -88,20 +88,23 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user && !cancelled) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, email, phone, delivery_city, delivery_branch")
-            .eq("id", user.id)
-            .single();
-
-          // Get last order for pre-filling delivery info
-          const { data: lastOrder } = await supabase
-            .from("orders")
-            .select("customer_name, customer_phone, customer_email, delivery_oblast, delivery_city, delivery_branch")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
+          // Parallel queries for faster form load
+          const [profileResult, lastOrderResult] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("full_name, email, phone, delivery_city, delivery_branch")
+              .eq("id", user.id)
+              .single(),
+            supabase
+              .from("orders")
+              .select("customer_name, customer_phone, customer_email, delivery_oblast, delivery_city, delivery_branch")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single(),
+          ]);
+          const profile = profileResult.data;
+          const lastOrder = lastOrderResult.data;
 
           if (!cancelled) {
             const name = lastOrder?.customer_name || profile?.full_name || "";
