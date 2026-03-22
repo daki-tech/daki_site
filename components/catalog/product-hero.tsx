@@ -129,7 +129,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   }, []);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:gap-12 items-start">
+    <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr] lg:gap-8 items-start">
       {/* LEFT: Product info */}
       <div className="flex flex-col justify-start pt-0 lg:pt-4">
         {/* SKU */}

@@ -56,7 +56,8 @@ async function sendTelegramNotification(order: {
   }
 
   // Get subscribers: try DB table first, fallback to env var
-  const chatIds: number[] = [];
+  // chat_id can be bigint in Postgres — Supabase returns as string, so use string type
+  const chatIds: string[] = [];
   try {
     const admin = createAdminClient();
     const { data: subscribers, error } = await admin
@@ -65,16 +66,22 @@ async function sendTelegramNotification(order: {
       .eq("is_active", true);
 
     if (!error && subscribers && subscribers.length > 0) {
-      chatIds.push(...subscribers.map((s: { chat_id: number }) => s.chat_id));
+      for (const s of subscribers) {
+        const cid = String(s.chat_id ?? "").trim();
+        if (cid && cid !== "null" && cid !== "undefined" && cid !== "NaN") {
+          chatIds.push(cid);
+        }
+      }
     }
-  } catch {
-    // Table may not exist yet — that's OK, use env fallback
+    console.log(`[Telegram] DB subscribers found: ${chatIds.length}, raw:`, subscribers?.map((s: { chat_id: unknown }) => s.chat_id));
+  } catch (e) {
+    console.log("[Telegram] telegram_subscribers table error:", e);
   }
 
-  // Fallback to env var
-  if (chatIds.length === 0) {
-    const envChatId = (process.env.TELEGRAM_CHAT_ID || "").trim();
-    if (envChatId) chatIds.push(Number(envChatId));
+  // Always include env var chat ID (ensures delivery even if DB has bad data)
+  const envChatId = (process.env.TELEGRAM_CHAT_ID || "").trim();
+  if (envChatId && !chatIds.includes(envChatId)) {
+    chatIds.push(envChatId);
   }
 
   if (chatIds.length === 0) {
