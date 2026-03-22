@@ -68,10 +68,17 @@ export function ProductCard({ model }: ProductCardProps) {
     });
   };
 
+  const outOfStock = model.is_out_of_stock;
+  const Wrapper = outOfStock ? "div" : Link;
+  const wrapperProps = outOfStock
+    ? { className: "block cursor-default" }
+    : { href: `/catalog/${model.id}`, className: "block" };
+
   return (
     <div
-      className="group relative"
+      className={`group relative ${outOfStock ? "opacity-50 grayscale" : ""}`}
       onMouseEnter={() => {
+        if (outOfStock) return;
         setIsHovering(true);
         startCarousel();
       }}
@@ -80,7 +87,8 @@ export function ProductCard({ model }: ProductCardProps) {
         stopCarousel();
       }}
     >
-      <Link href={`/catalog/${model.id}`} className="block">
+      {/* @ts-expect-error — dynamic wrapper */}
+      <Wrapper {...wrapperProps}>
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           {images.length > 0 ? (
@@ -105,38 +113,38 @@ export function ProductCard({ model }: ProductCardProps) {
           )}
 
           {/* Discount badge */}
-          {model.discount_percent > 0 && (
+          {model.discount_percent > 0 && !outOfStock && (
             <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-400 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
               -{model.discount_percent}%
             </span>
           )}
 
           {/* Out of stock overlay */}
-          {model.is_out_of_stock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/60 pointer-events-none">
-              <span className="text-xs font-medium text-foreground/60">
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+              <span className="rounded-full bg-neutral-900/70 px-4 py-1.5 text-xs font-medium text-white">
                 Немає в наявності
               </span>
             </div>
           )}
 
-          {/* Action buttons - top right, outline style without background */}
-          <div className="absolute right-3 top-3 flex flex-row gap-2">
-            {/* Wishlist */}
-            <button
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggle(model.id);
-              }}
-              aria-label="Додати в список бажань"
-            >
-              <Heart className={`h-4 w-4 transition ${isFav ? "fill-red-500 text-red-500" : "text-black hover:scale-110"}`} strokeWidth={1.5} />
-            </button>
+          {/* Action buttons - only when in stock */}
+          {!outOfStock && (
+            <div className="absolute right-3 top-3 flex flex-row gap-2">
+              {/* Wishlist */}
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggle(model.id);
+                }}
+                aria-label="Додати в список бажань"
+              >
+                <Heart className={`h-4 w-4 transition ${isFav ? "fill-red-500 text-red-500" : "text-black hover:scale-110"}`} strokeWidth={1.5} />
+              </button>
 
-            {/* Quick add to cart */}
-            {!model.is_out_of_stock && (
+              {/* Quick add to cart */}
               <button
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
                 onClick={handleQuickAdd}
@@ -144,10 +152,8 @@ export function ProductCard({ model }: ProductCardProps) {
               >
                 <ShoppingBag className="h-4 w-4 text-black transition hover:scale-110" strokeWidth={1.5} />
               </button>
-            )}
-          </div>
-
-          {/* Carousel dots removed per design */}
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -155,16 +161,20 @@ export function ProductCard({ model }: ProductCardProps) {
           <p className="text-[11px] text-muted-foreground">{model.sku}</p>
           <h3 className="text-sm font-normal text-foreground">{model.name}</h3>
 
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium">{formatCurrency(displayPrice)}</span>
-            {model.discount_percent > 0 && (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatCurrency(model.base_price)}
-              </span>
-            )}
-          </div>
+          {outOfStock ? (
+            <p className="text-xs text-muted-foreground">Немає в наявності</p>
+          ) : (
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-medium">{formatCurrency(displayPrice)}</span>
+              {model.discount_percent > 0 && (
+                <span className="text-xs text-muted-foreground line-through">
+                  {formatCurrency(model.base_price)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      </Link>
+      </Wrapper>
     </div>
   );
 }
