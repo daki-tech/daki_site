@@ -32,7 +32,14 @@ export default function NewPasswordPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        toast.error(error.message);
+        const msg = error.message.toLowerCase();
+        if (msg.includes("different from the old")) {
+          toast.error("Новий пароль має відрізнятися від попереднього");
+        } else if (msg.includes("at least")) {
+          toast.error("Пароль занадто короткий");
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
       toast.success("Пароль оновлено");

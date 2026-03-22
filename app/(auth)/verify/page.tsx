@@ -30,7 +30,14 @@ function VerifyForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.verifyOtp({ email, token, type });
       if (error) {
-        toast.error(error.message);
+        const msg = error.message.toLowerCase();
+        if (msg.includes("expired") || msg.includes("invalid")) {
+          toast.error("Невірний або прострочений код");
+        } else if (msg.includes("rate") || msg.includes("security")) {
+          toast.error("Зачекайте перед повторною спробою");
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
 
