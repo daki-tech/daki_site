@@ -48,10 +48,16 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
           {models.slice(0, 4).map((model) => {
             const finalPrice = model.base_price * (1 - model.discount_percent / 100);
             const firstImage = model.image_urls?.[0] || model.model_colors?.[0]?.image_urls?.[0];
+            const outOfStock = model.is_out_of_stock;
+            const Wrapper = outOfStock ? "div" : Link;
+            const wrapperProps = outOfStock
+              ? { className: "group block cursor-default" }
+              : { href: `/catalog/${model.id}` as string, className: "group block" };
 
             return (
-              <Link key={model.id} href={`/catalog/${model.id}`} className="group block">
-                <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+              // @ts-expect-error — dynamic wrapper
+              <Wrapper key={model.id} {...wrapperProps}>
+                <div className={`relative aspect-[3/4] overflow-hidden bg-muted ${outOfStock ? "opacity-50 grayscale" : ""}`}>
                   {firstImage ? (
                     <SmartImage
                       src={firstImage}
@@ -64,26 +70,35 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
                       No image
                     </div>
                   )}
-                  {model.discount_percent > 0 && (
+                  {model.discount_percent > 0 && !outOfStock && (
                     <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-400 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
                       -{model.discount_percent}%
                     </span>
                   )}
 
-                  {/* Action buttons */}
-                  <div className={`absolute right-3 top-3 flex flex-row gap-2 transition-opacity duration-300 ${has(model.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                    <button
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggle(model.id);
-                      }}
-                      aria-label="Додати в список бажань"
-                    >
-                      <Heart className={`h-4 w-4 transition ${has(model.id) ? "fill-red-500 text-red-500" : "text-black"}`} strokeWidth={1.5} />
-                    </button>
-                    {!model.is_out_of_stock && (
+                  {/* Out of stock overlay */}
+                  {outOfStock && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+                      <span className="rounded-full bg-neutral-900/70 px-4 py-1.5 text-xs font-medium text-white">
+                        Немає в наявності
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Action buttons — only when in stock */}
+                  {!outOfStock && (
+                    <div className={`absolute right-3 top-3 flex flex-row gap-2 transition-opacity duration-300 ${has(model.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                      <button
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggle(model.id);
+                        }}
+                        aria-label="Додати в список бажань"
+                      >
+                        <Heart className={`h-4 w-4 transition ${has(model.id) ? "fill-red-500 text-red-500" : "text-black"}`} strokeWidth={1.5} />
+                      </button>
                       <button
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
                         onClick={(e) => {
@@ -107,24 +122,28 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
                       >
                         <ShoppingBag className="h-4 w-4 text-black" strokeWidth={1.5} />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3 space-y-1.5">
                   <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
                     {model.sku}
                   </p>
                   <h3 className="text-sm font-normal leading-tight">{model.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
-                    {model.discount_percent > 0 && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        {formatCurrency(model.base_price)}
-                      </span>
-                    )}
-                  </div>
+                  {outOfStock ? (
+                    <p className="text-xs text-muted-foreground">Немає в наявності</p>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
+                      {model.discount_percent > 0 && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatCurrency(model.base_price)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </Link>
+              </Wrapper>
             );
           })}
         </div>
