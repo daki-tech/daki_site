@@ -113,7 +113,7 @@ export function ProductCard({ model }: ProductCardProps) {
 
           {/* Out of stock overlay */}
           {model.is_out_of_stock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 pointer-events-none">
               <span className="text-xs font-medium text-foreground/60">
                 Немає в наявності
               </span>
