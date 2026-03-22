@@ -23,7 +23,7 @@ export default function NewPasswordPage() {
     event.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Пароли не совпадают");
+      toast.error("Паролі не збігаються");
       return;
     }
 
@@ -35,10 +35,10 @@ export default function NewPasswordPage() {
         toast.error(error.message);
         return;
       }
-      toast.success("Пароль обновлен");
+      toast.success("Пароль оновлено");
       router.push("/success");
     } catch {
-      toast.error("Cannot update password. Ensure recovery link session is active.");
+      toast.error("Не вдалося оновити пароль. Спробуйте ще раз.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ export default function NewPasswordPage() {
           <Input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label>Confirm password</Label>
+          <Label>Підтвердіть пароль</Label>
           <Input
             type="password"
             required

@@ -46,7 +46,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
+  // Don't redirect away from /new-password or /verify?type=recovery — user needs these after OTP verification
+  const isRecoveryFlow =
+    pathname.startsWith("/new-password") ||
+    (pathname.startsWith("/verify") && request.nextUrl.searchParams.get("type") === "recovery");
+
+  if (user && !isRecoveryFlow && AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/profile";
     return NextResponse.redirect(redirectUrl);

@@ -34,11 +34,11 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      toast.success("Код отправлен на вашу почту");
+      toast.success("Код надіслано на вашу пошту");
       // Redirect to verify page with recovery type (same flow as registration)
       router.push(`/verify?email=${encodeURIComponent(email)}&type=recovery`);
     } catch {
-      toast.error("Recovery flow is not configured.");
+      toast.error("Відновлення паролю не налаштовано.");
     } finally {
       setLoading(false);
     }
