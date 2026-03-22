@@ -55,14 +55,39 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   const wishlist = useWishlist();
   const isWished = wishlist.ids.includes(model.id);
 
-  const viberLink = useMemo(() => {
-    const vb = contacts?.contact_viber || CONTACTS.viber;
-    if (!vb) return null;
+  const contactLinks = useMemo(() => {
     const productUrl = `https://dakifashion.com/catalog/${model.id}`;
     const message = `Доброго дня! Мене цікавить модель: ${model.name} (арт. ${model.sku})\n${productUrl}`;
     const encoded = encodeURIComponent(message);
-    const viberNum = vb.replace(/[^+\d]/g, "");
-    return { name: "Viber", href: `https://viber.click/${viberNum}`, color: "#7360F2" };
+    const tgSupport = CONTACTS.telegram_support || "daki_support";
+    const vb = contacts?.contact_viber || CONTACTS.viber;
+
+    const links: { name: string; href: string; color: string; icon: React.ReactNode }[] = [];
+
+    // Telegram first
+    links.push({
+      name: "Telegram",
+      href: `https://t.me/${tgSupport}?text=${encoded}`,
+      color: "#0088cc",
+      icon: (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.283c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.6l-2.95-.924c-.642-.203-.654-.642.136-.952l11.526-4.443c.535-.194 1.003.131.83.967z" />
+        </svg>
+      ),
+    });
+
+    // Viber second
+    if (vb) {
+      const viberNum = vb.replace(/[^+\d]/g, "");
+      links.push({
+        name: "Viber",
+        href: `https://viber.click/${viberNum}`,
+        color: "#7360F2",
+        icon: <ViberIcon />,
+      });
+    }
+
+    return links;
   }, [model.id, model.name, model.sku, contacts]);
 
   function handleColorChange(color: ModelColor) {
@@ -208,22 +233,25 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
           </button>
         </div>
 
-        {/* Viber contact link */}
-        {viberLink && (
+        {/* Contact links */}
+        {contactLinks.length > 0 && (
           <div className="mt-5">
             <p className="mb-3 text-[10px] tracking-[0.15em] text-neutral-400">
               Виникли запитання:
             </p>
             <div className="flex gap-2">
-              <a
-                href={viberLink.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-2.5 text-xs text-neutral-600 transition-all hover:border-neutral-700 hover:text-neutral-900"
-              >
-                <span style={{ color: viberLink.color }}><ViberIcon /></span>
-                Viber
-              </a>
+              {contactLinks.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-2.5 text-xs text-neutral-600 transition-all hover:border-neutral-700 hover:text-neutral-900"
+                >
+                  <span style={{ color: link.color }}>{link.icon}</span>
+                  {link.name}
+                </a>
+              ))}
             </div>
           </div>
         )}
