@@ -69,8 +69,8 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel, targetSize }: Ima
   const cropAspect = targetSize ? targetSize.w / targetSize.h : imgSize.w / imgSize.h;
 
   // Compute crop area dimensions fitting within max bounds
-  const maxW = 580;
-  const maxH = Math.min(480, window.innerHeight - 160);
+  const maxW = Math.min(600, window.innerWidth - 40);
+  const maxH = Math.min(window.innerHeight - 180, 700);
   let cropW = maxW;
   let cropH = maxW / cropAspect;
   if (cropH > maxH) {
@@ -144,7 +144,7 @@ export function ImageCropper({ imageSrc, onCropDone, onCancel, targetSize }: Ima
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid={false}
-            objectFit="contain"
+            objectFit="cover"
             style={{
               containerStyle: { width: "100%", height: "100%", position: "absolute", top: 0, left: 0 },
             }}
