@@ -61,8 +61,8 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
     const productUrl = `https://dakifashion.com/catalog/${model.id}`;
     const message = `Доброго дня! Мене цікавить модель: ${model.name} (арт. ${model.sku})\n${productUrl}`;
     const encoded = encodeURIComponent(message);
-    const viberNum = vb.replace(/[^+\d]/g, "");
-    return { name: "Viber", href: `viber://chat?number=${viberNum}&text=${encoded}`, color: "#7360F2" };
+    const viberNum = encodeURIComponent(vb.replace(/[^+\d]/g, ""));
+    return { name: "Viber", href: `viber://chat/?number=${viberNum}&text=${encoded}`, color: "#7360F2" };
   }, [model.id, model.name, model.sku, contacts]);
 
   function handleColorChange(color: ModelColor) {
