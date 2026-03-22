@@ -47,7 +47,7 @@ export const CONTACTS = {
   email: "daki.fashion.ua@gmail.com",
   telegram: "https://t.me/DaKiWholesale",
   telegram_support: "daki_support",
-  viber: "",
+  viber: "+380973952163",
   whatsapp: "",
   instagram: "https://instagram.com/daki.ua",
 };
