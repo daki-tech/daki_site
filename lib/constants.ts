@@ -19,14 +19,6 @@ export const CATALOG_CATEGORIES = [
   "Жилети",
 ];
 
-export const MODEL_STYLES = [
-  "Классика",
-  "Urban",
-  "Minimal",
-  "Premium",
-  "Sport Chic",
-  "Oversize",
-];
 
 export const MODEL_SEASONS = ["Осінньо-весняна", "Зимова", "Літо"];
 
