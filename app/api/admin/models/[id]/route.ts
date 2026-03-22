@@ -6,6 +6,24 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { inventoryMovementSchema } from "@/lib/validations";
 import { syncStockToGoogleSheets } from "@/lib/google-sheets-stock";
 
+const BUCKET = "media";
+
+/** Extract storage path from a Supabase public URL */
+function storagePathFromUrl(url: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
+}
+
+/** Delete an array of public URLs from Supabase Storage */
+async function deleteStorageUrls(urls: string[]) {
+  const paths = urls.map(storagePathFromUrl).filter((p): p is string => p !== null);
+  if (paths.length === 0) return;
+  const admin = createAdminClient();
+  await admin.storage.from(BUCKET).remove(paths);
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -31,13 +49,19 @@ export async function PATCH(
     const [modelResult, colorsResult, sizesResult] = await Promise.all([
       // 1. Update model fields
       admin.from("catalog_models").update(updatePayload).eq("id", id).select("*, model_sizes(*), model_colors(*)").single(),
-      // 2. Update colors (delete + insert)
+      // 2. Update colors (delete + insert), clean up removed images from storage
       colorVariants && colorVariants.length > 0
-        ? admin.from("model_colors").delete().eq("model_id", id).then(() => {
-            const colorRows = colorVariants.map((c, i) => ({
-              model_id: id, name: c.name || c.hex, hex: c.hex, image_urls: c.image_urls ?? [], is_default: i === 0, stock_per_size: c.stock_per_size ?? {},
-            }));
-            return admin.from("model_colors").insert(colorRows).select("*");
+        ? admin.from("model_colors").select("image_urls").eq("model_id", id).then(({ data: oldColors }) => {
+            const oldUrls = new Set((oldColors ?? []).flatMap((c: { image_urls: string[] }) => c.image_urls ?? []));
+            const newUrls = new Set(colorVariants.flatMap((c) => c.image_urls ?? []));
+            const removedUrls = [...oldUrls].filter((u) => !newUrls.has(u));
+            if (removedUrls.length > 0) after(() => deleteStorageUrls(removedUrls));
+            return admin.from("model_colors").delete().eq("model_id", id).then(() => {
+              const colorRows = colorVariants.map((c, i) => ({
+                model_id: id, name: c.name || c.hex, hex: c.hex, image_urls: c.image_urls ?? [], is_default: i === 0, stock_per_size: c.stock_per_size ?? {},
+              }));
+              return admin.from("model_colors").insert(colorRows).select("*");
+            });
           })
         : Promise.resolve(null),
       // 3. Update sizes (delete + insert)
@@ -183,11 +207,26 @@ export async function DELETE(
 
   // Use admin client to bypass RLS for deleting related records
   const admin = createAdminClient();
+
+  // Collect all image URLs before deleting
+  const [{ data: model }, { data: colors }] = await Promise.all([
+    admin.from("catalog_models").select("image_urls").eq("id", id).single(),
+    admin.from("model_colors").select("image_urls").eq("model_id", id),
+  ]);
+  const allUrls = [
+    ...((model?.image_urls as string[]) ?? []),
+    ...(colors ?? []).flatMap((c: { image_urls: string[] }) => c.image_urls ?? []),
+  ];
+
   await admin.from("order_items").delete().eq("model_id", id);
   await admin.from("model_sizes").delete().eq("model_id", id);
   await admin.from("model_colors").delete().eq("model_id", id);
   const { error } = await admin.from("catalog_models").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Clean up storage in background
+  if (allUrls.length > 0) after(() => deleteStorageUrls(allUrls));
+
   return NextResponse.json({ ok: true });
 }
