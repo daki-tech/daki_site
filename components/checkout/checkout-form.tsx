@@ -12,7 +12,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 interface CheckoutFormProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (data?: { orderNumber: number; orderId: string; contactMe: boolean }) => void;
   /** Render inline (no modal wrapper) for embedding in drawers */
   inline?: boolean;
   /** Called when user wants to go back (inline mode only) */
@@ -309,8 +309,9 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
       }
 
       const data = await res.json();
-      setSuccess({ orderNumber: data.orderNumber, orderId: data.orderId, contactMe: form.contact_me });
-      onSuccess?.();
+      const successInfo = { orderNumber: data.orderNumber, orderId: data.orderId, contactMe: form.contact_me };
+      setSuccess(successInfo);
+      onSuccess?.(successInfo);
 
       // Save checkout data for next order pre-fill (guest users)
       try {
@@ -576,8 +577,10 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
   );
 
   // Inline mode: return content directly for embedding
+  // In inline mode, success is handled externally (drawer closes + popup), so don't render success here
   if (inline) {
-    return success ? successContent : formContent;
+    if (success) return null;
+    return formContent;
   }
 
   // Modal mode: wrap in overlay

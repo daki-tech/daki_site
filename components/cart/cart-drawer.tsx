@@ -12,11 +12,18 @@ import { CheckoutForm } from "@/components/checkout/checkout-form";
 
 type DrawerView = "cart" | "checkout";
 
+interface OrderSuccess {
+  orderNumber: number;
+  orderId: string;
+  contactMe: boolean;
+}
+
 export function CartDrawer() {
   const { t } = useLanguage();
   const { items, totalItems, totalAmount, removeFromCart, updateCartItemSize, clearCart } = useCart();
   const { open, closeCartDrawer } = useCartDrawer();
   const [view, setView] = useState<DrawerView>("cart");
+  const [successData, setSuccessData] = useState<OrderSuccess | null>(null);
 
   // Animation states
   const [mounted, setMounted] = useState(false);
@@ -267,12 +274,93 @@ export function CartDrawer() {
               inline
               onBack={() => setView("cart")}
               onClose={handleClose}
-              onSuccess={() => {
-                // success screen is rendered inline by CheckoutForm
+              onSuccess={(data) => {
+                setSuccessData(data ?? null);
+                closeCartDrawer();
               }}
             />
           </div>
         )}
+      </div>
+
+      {/* Success popup — centered overlay after drawer closes */}
+      {successData && <SuccessPopup data={successData} onClose={() => setSuccessData(null)} />}
+    </>
+  );
+}
+
+function SuccessPopup({ data, onClose }: { data: OrderSuccess; onClose: () => void }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Delay appearance so drawer has time to slide out
+    const timer = setTimeout(() => setVisible(true), 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 300);
+  };
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[9998]"
+        style={{
+          backgroundColor: visible ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0)",
+          transition: "background-color 300ms ease",
+        }}
+        onClick={handleClose}
+      />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto relative mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "scale(1) translateY(0)" : "scale(0.95) translateY(12px)",
+            transition: "opacity 300ms ease, transform 300ms ease",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 text-neutral-400 hover:text-neutral-700 transition"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+              <svg className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-xl font-semibold">Замовлення оформлено!</h2>
+            <p className="mt-2 text-sm text-neutral-500">
+              Номер замовлення: <span className="font-bold text-neutral-900">#{data.orderNumber}</span>
+            </p>
+            <p className="mt-2 text-sm text-neutral-500">
+              {data.contactMe
+                ? "Менеджер зв\u2019яжеться з вами найближчим часом для уточнення замовлення."
+                : "Ми зв\u2019яжемося з вами найближчим часом для підтвердження."}
+            </p>
+            <p className="mt-1 text-xs text-neutral-400">
+              Підтвердження надіслано на вашу пошту.
+            </p>
+            <button
+              onClick={handleClose}
+              className="mt-6 w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+            >
+              Закрити
+            </button>
+          </div>
+        </div>
       </div>
     </>
   );
