@@ -1,6 +1,7 @@
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { FooterWrapper } from "@/components/marketing/footer-wrapper";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   // Force Ukrainian locale — geo-detection disabled for now
@@ -12,6 +13,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <MarketingHeader />
         <main className="flex-1">{children}</main>
         <FooterWrapper />
+        <CartDrawer />
       </div>
     </LanguageProvider>
   );

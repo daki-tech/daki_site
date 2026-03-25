@@ -28,6 +28,38 @@ let state: CartState = { items: [] };
 let hydrated = false;
 const listeners = new Set<() => void>();
 
+// Cart drawer visibility state
+let drawerOpen = false;
+const drawerListeners = new Set<() => void>();
+
+function emitDrawer() {
+  drawerListeners.forEach((l) => l());
+}
+
+export function openCartDrawer() {
+  drawerOpen = true;
+  emitDrawer();
+}
+
+export function closeCartDrawer() {
+  drawerOpen = false;
+  emitDrawer();
+}
+
+export function getDrawerOpen() {
+  return drawerOpen;
+}
+
+function subscribeDrawer(listener: () => void) {
+  drawerListeners.add(listener);
+  return () => drawerListeners.delete(listener);
+}
+
+export function useCartDrawer() {
+  const open = useSyncExternalStore(subscribeDrawer, () => drawerOpen, () => false);
+  return { open, openCartDrawer, closeCartDrawer };
+}
+
 function emit() {
   listeners.forEach((l) => l());
 }
@@ -82,6 +114,7 @@ export function addToCart(item: CartItem) {
   state = { ...state, items: [...state.items] };
   persist();
   emit();
+  openCartDrawer();
 }
 
 export function removeFromCart(modelId: string) {

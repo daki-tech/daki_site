@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/components/providers/language-provider";
 import { MODEL_SEASONS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { useCart } from "@/lib/cart-store";
+import { useCart, openCartDrawer } from "@/lib/cart-store";
 import { useWishlist } from "@/lib/wishlist-store";
 import { createClient } from "@/lib/supabase/client";
 
@@ -221,8 +221,8 @@ export function MarketingHeader() {
             )}
 
             {/* Cart */}
-            <Link
-              href="/cart"
+            <button
+              onClick={openCartDrawer}
               className="group relative inline-flex h-10 w-10 items-center justify-center"
               aria-label={t("nav.cart")}
             >
@@ -233,7 +233,7 @@ export function MarketingHeader() {
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
-            </Link>
+            </button>
           </div>
         </div>
 
