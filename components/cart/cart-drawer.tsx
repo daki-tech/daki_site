@@ -86,7 +86,7 @@ export function CartDrawer() {
 
       {/* Drawer panel */}
       <div
-        className="fixed right-0 top-0 z-[9999] flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl"
+        className="fixed right-0 top-0 z-[9999] flex h-full w-full max-w-[528px] flex-col bg-white shadow-2xl"
         style={{
           transform: visible ? "translateX(0)" : "translateX(100%)",
           transition: "transform 350ms cubic-bezier(0.4, 0, 0.2, 1)",
