@@ -13,6 +13,10 @@ interface CheckoutFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Render inline (no modal wrapper) for embedding in drawers */
+  inline?: boolean;
+  /** Called when user wants to go back (inline mode only) */
+  onBack?: () => void;
 }
 
 interface FormData {
@@ -48,7 +52,7 @@ const PAYMENT_METHODS = [
   { value: "invoice", label: "Рахунок для юридичних осіб" },
 ];
 
-export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
+export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: CheckoutFormProps) {
   const { items, totalItems, totalAmount, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ orderNumber: number; orderId: string; contactMe: boolean } | null>(null);
@@ -330,60 +334,50 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
 
   if (!open) return null;
 
-  // Success screen
-  if (success) {
-    return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
-        <div className="relative mx-4 w-full max-w-md rounded-2xl bg-background p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
-          <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-          <div className="flex flex-col items-center text-center">
-            <CheckCircle className="h-16 w-16 text-green-500" />
-            <h2 className="mt-4 text-xl font-medium">Замовлення оформлено!</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Номер замовлення: <span className="font-bold text-foreground">#{success.orderNumber}</span>
-            </p>
-            {success.contactMe ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Менеджер зв&apos;яжеться з вами найближчим часом для уточнення замовлення.
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Ми зв&apos;яжемося з вами найближчим часом для підтвердження.
-              </p>
-            )}
-            <p className="mt-1 text-xs text-muted-foreground">
-              Підтвердження надіслано на вашу пошту.
-            </p>
-            <button
-              onClick={onClose}
-              className="mt-6 w-full rounded-xl bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800"
-            >
-              Закрити
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div
-        className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+  // Success content
+  const successContent = success ? (
+    <div className="flex flex-col items-center text-center py-8 px-4">
+      <CheckCircle className="h-16 w-16 text-green-500" />
+      <h2 className="mt-4 text-xl font-medium">Замовлення оформлено!</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Номер замовлення: <span className="font-bold text-foreground">#{success.orderNumber}</span>
+      </p>
+      {success.contactMe ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Менеджер зв&apos;яжеться з вами найближчим часом для уточнення замовлення.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Ми зв&apos;яжемося з вами найближчим часом для підтвердження.
+        </p>
+      )}
+      <p className="mt-1 text-xs text-muted-foreground">
+        Підтвердження надіслано на вашу пошту.
+      </p>
+      <button
+        onClick={onClose}
+        className="mt-6 w-full rounded-xl bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800"
       >
+        Закрити
+      </button>
+    </div>
+  ) : null;
+
+  // Form content (shared between modal and inline)
+  const formContent = (
+    <>
+      {!inline && (
         <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
           <X className="h-5 w-5" />
         </button>
+      )}
 
-        <h2 className="text-lg font-medium uppercase tracking-wider">Оформлення замовлення</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {totalItems} од. на суму {formatCurrency(totalAmount)}
-        </p>
+      <h2 className="text-lg font-medium uppercase tracking-wider">Оформлення замовлення</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {totalItems} од. на суму {formatCurrency(totalAmount)}
+      </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {/* Name */}
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -578,6 +572,35 @@ export function CheckoutForm({ open, onClose, onSuccess }: CheckoutFormProps) {
             )}
           </button>
         </form>
+    </>
+  );
+
+  // Inline mode: return content directly for embedding
+  if (inline) {
+    return success ? successContent : formContent;
+  }
+
+  // Modal mode: wrap in overlay
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
+        <div className="relative mx-4 w-full max-w-md rounded-2xl bg-background p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+          {successContent}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {formContent}
       </div>
     </div>
   );
