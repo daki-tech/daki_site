@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Scissors, Truck, Shield, Sparkles, Heart, Factory } from "lucide-react";
 
 const stats = [
-  { value: "з 2000", label: "року на ринку" },
+  { value: "25+", label: "років на ринку" },
   { value: "50+", label: "моделей у колекції" },
   { value: "10 000+", label: "задоволених клієнтів" },
   { value: "100%", label: "власне виробництво" },

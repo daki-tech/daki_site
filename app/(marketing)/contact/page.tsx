@@ -1,4 +1,4 @@
-import { Instagram, Mail, MapPin, Clock, Phone } from "lucide-react";
+import { Instagram, Mail, Clock, Phone } from "lucide-react";
 import { getHomepageSettings } from "@/lib/data";
 import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { TelegramIcon } from "@/components/icons/telegram";
@@ -26,16 +26,13 @@ export default async function ContactPage() {
   const whatsapp = settings.contact_whatsapp || CONTACTS.whatsapp;
   const tiktok = settings.contact_tiktok || "";
 
-  const messengers = [
+  const allLinks = [
     telegram && { href: telegram.startsWith("http") ? telegram : `https://t.me/${telegram}`, icon: TelegramIcon, label: "Telegram", color: "#229ED9" },
     viber && { href: buildViberUrl(viber), icon: ViberIcon, label: "Viber", color: "#7360F2", note: "з мобільного" },
     whatsapp && { href: whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^+\d]/g, "")}`, icon: WhatsAppIcon, label: "WhatsApp", color: "#25D366" },
-  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string; note?: string }[];
-
-  const socialNetworks = [
     instagram && { href: instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram}`, icon: Instagram, label: "Instagram", color: "#E4405F" },
     tiktok && { href: tiktok.startsWith("http") ? tiktok : `https://tiktok.com/@${tiktok}`, icon: TikTokIcon, label: "TikTok", color: "#000000" },
-  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string }[];
+  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string; note?: string }[];
 
   return (
     <div>
@@ -57,11 +54,11 @@ export default async function ContactPage() {
               Напишіть нам
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-              Найшвидший спосіб зв&apos;язатися — через месенджер
+              Оберіть зручний спосіб зв&apos;язку
             </p>
           </div>
           <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-4">
-            {messengers.map(({ href, icon: Icon, label, color, note }) => (
+            {allLinks.map(({ href, icon: Icon, label, color, note }) => (
               <a
                 key={label}
                 href={href}
@@ -149,39 +146,6 @@ export default async function ContactPage() {
           </div>
         </div>
       </section>
-
-      {/* Social Networks */}
-      {socialNetworks.length > 0 && (
-        <section className="border-t border-neutral-200 py-16 md:py-20">
-          <div className="mx-auto max-w-[1600px] px-4 text-center lg:px-6">
-            <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
-              Ми в соцмережах
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-              Підписуйтесь, щоб бути в курсі новинок та акцій
-            </p>
-            <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-5">
-              {socialNetworks.map(({ href, icon: Icon, label, color }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-2xl border border-neutral-200 px-8 py-5 transition-all hover:border-neutral-400 hover:shadow-md"
-                >
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110"
-                    style={{ backgroundColor: color }}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-medium">{label}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }
