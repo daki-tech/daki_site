@@ -1,135 +1,74 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
-interface FaqItem {
-  question: string;
-  answer: string;
-}
+/* ── Small FAQ accordion (question → answer) ── */
 
-interface FaqCategory {
-  title: string;
-  items: FaqItem[];
-}
-
-const faqData: FaqCategory[] = [
-  {
-    title: "Замовлення",
-    items: [
-      {
-        question: "Як оформити замовлення?",
-        answer:
-          "Оберіть потрібний товар, вкажіть розмір та колір, додайте його до кошика та оформіть замовлення. Після підтвердження наш менеджер зв\u2019яжеться з вами для уточнення деталей.",
-      },
-      {
-        question: "Які способи оплати доступні?",
-        answer:
-          "Ми приймаємо оплату на карту ПриватБанку, а також накладений платіж при отриманні на Новій Пошті. Оплата можлива у гривнях.",
-      },
-      {
-        question: "Чи можу я змінити або скасувати замовлення?",
-        answer:
-          "Так, ви можете змінити або скасувати замовлення до моменту його відправлення. Для цього зв\u2019яжіться з нами через месенджер або за телефоном якнайшвидше.",
-      },
-    ],
-  },
-  {
-    title: "Доставка",
-    items: [
-      {
-        question: "Які терміни доставки?",
-        answer:
-          "Доставка по Україні здійснюється протягом 1\u20133 робочих днів після відправлення. Час обробки замовлення \u2014 1\u20132 робочих дні.",
-      },
-      {
-        question: "Скільки коштує доставка?",
-        answer:
-          "Вартість доставки розраховується за тарифами Нової Пошти та залежить від ваги та габаритів посилки. Орієнтовна вартість \u2014 від 70 грн.",
-      },
-      {
-        question: "Чи є безкоштовна доставка?",
-        answer:
-          "Так, безкоштовна доставка діє при замовленні від певної суми. Деталі уточнюйте у нашого менеджера або слідкуйте за акціями на сайті.",
-      },
-    ],
-  },
-  {
-    title: "Повернення та обмін",
-    items: [
-      {
-        question: "Як повернути товар?",
-        answer:
-          "Для повернення зв\u2019яжіться з нами, вкажіть номер замовлення та причину повернення. Товар потрібно надіслати у первісному стані з усіма бірками.",
-      },
-      {
-        question: "Протягом якого терміну можна повернути товар?",
-        answer:
-          "Повернення приймається протягом 14 днів з моменту отримання замовлення, відповідно до Закону України про захист прав споживачів.",
-      },
-      {
-        question: "Які умови обміну?",
-        answer:
-          "Обмін можливий на інший розмір або колір за наявності. Товар має бути у первісному стані, без слідів носіння та з усіма етикетками.",
-      },
-    ],
-  },
-  {
-    title: "Товар",
-    items: [
-      {
-        question: "Як підібрати розмір?",
-        answer:
-          "На сторінці кожного товару є розмірна сітка з детальними вимірами. Рекомендуємо зняти свої мірки та порівняти їх із таблицею розмірів.",
-      },
-      {
-        question: "Як доглядати за виробом?",
-        answer:
-          "Рекомендації по догляду вказані на етикетці кожного виробу та в описі товару на сайті. Загалом, радимо делікатне прання при 30\u00b0C та уникати прямого прасування декоративних елементів.",
-      },
-      {
-        question: "Чи відповідає колір на фото реальному?",
-        answer:
-          "Ми намагаємося передати колір максимально точно, проте відтінок може незначно відрізнятися залежно від налаштувань вашого екрану. Якщо у вас є сумніви \u2014 напишіть нам, і ми надішлемо додаткові фото.",
-      },
-    ],
-  },
-];
-
-function AccordionItem({ question, answer }: FaqItem) {
-  const [isOpen, setIsOpen] = useState(false);
-
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-neutral-200">
+    <div className="border-b border-neutral-100 last:border-b-0">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-4 text-left transition-colors hover:text-neutral-600"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-3.5 text-left text-sm font-medium transition-colors hover:text-neutral-600"
       >
-        <span className="text-sm font-medium md:text-base">{question}</span>
-        <svg
-          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        {q}
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
       </button>
       <div
         className={`grid transition-all duration-300 ease-in-out ${
-          isOpen ? "grid-rows-[1fr] opacity-100 pb-4" : "grid-rows-[0fr] opacity-0"
+          open ? "grid-rows-[1fr] opacity-100 pb-4" : "grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div className="overflow-hidden">
-          <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
+        <div className="overflow-hidden text-sm leading-relaxed text-muted-foreground">
+          {a}
         </div>
       </div>
     </div>
   );
 }
+
+/* ── Big section accordion (title → rich content) ── */
+
+function Section({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-neutral-200">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-6 text-left"
+      >
+        <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+          {title}
+        </h2>
+        <ChevronDown
+          className={`h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        className={`grid transition-all duration-500 ease-in-out ${
+          open ? "grid-rows-[1fr] opacity-100 pb-8" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ── */
 
 export default function FaqPage() {
   return (
@@ -148,174 +87,168 @@ export default function FaqPage() {
           Часті запитання
         </h1>
         <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
-          Відповіді на найпопулярніші питання про замовлення, доставку та повернення.
+          Все про замовлення, доставку, оплату та повернення
         </p>
       </div>
 
-      <div className="mx-auto mt-12 max-w-3xl space-y-12">
-        {/* Доставка та оплата */}
-        <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
-            Доставка та оплата
-          </h2>
-          <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
-            <div className="rounded-2xl border border-neutral-200 p-6">
-              <h3 className="font-medium text-foreground">Meest ПОШТА</h3>
-              <p className="mt-1">
-                Доставка у відділення Meest ПОШТА по всій Україні.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 p-6">
-              <h3 className="font-medium text-foreground">Нова ПОШТА</h3>
-              <p className="mt-1">
-                Доставка у відділення або поштомат Нової ПОШТИ по всій Україні.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 p-6">
-              <h3 className="font-medium text-foreground">
-                Кур&apos;єрська доставка
+      <div className="mx-auto mt-12 max-w-3xl">
+        {/* ─── 1. Доставка та оплата ─── */}
+        <Section title="Доставка та оплата">
+          <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
+            {/* Способи доставки */}
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                Способи доставки
               </h3>
-              <p className="mt-1">
-                Доставка кур&apos;єром за вказаною адресою.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              Середній термін доставки складає{" "}
-              <span className="font-medium text-foreground">7-11 робочих днів</span>{" "}
-              з моменту оформлення замовлення.
-            </p>
-            <p>
-              Доставка{" "}
-              <span className="font-medium text-foreground">безкоштовна</span> при
-              замовленні від{" "}
-              <span className="font-medium text-foreground">1600 грн</span>.
-            </p>
-          </div>
-
-          <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
-            <div className="rounded-2xl border border-neutral-200 p-6">
-              <h3 className="font-medium text-foreground">Оплата при отриманні</h3>
-              <p className="mt-1">
-                Оплатіть замовлення накладним платежем при отриманні у відділенні пошти.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 p-6">
-              <h3 className="font-medium text-foreground">Передоплата на картку</h3>
-              <p className="mt-1">
-                Переказ на банківську картку. Реквізити надсилаються після оформлення замовлення.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Обмін та повернення */}
-        <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
-            Обмін та повернення
-          </h2>
-          <div className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              Ви можете повернути товар протягом{" "}
-              <span className="font-medium text-foreground">14 днів</span> з
-              моменту отримання замовлення за умови, що товар перебуває у
-              належному стані.
-            </p>
-            <ul className="mt-4 list-inside list-disc space-y-2">
-              <li>Товар не був у використанні</li>
-              <li>Збережено товарний вигляд та споживчі властивості</li>
-              <li>Наявні всі бірки та ярлики</li>
-              <li>Наявний документ, що підтверджує покупку</li>
-            </ul>
-          </div>
-
-          <div className="mt-6 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              Обмін товару можливий на інший розмір або колір за наявності на
-              складі. Доставка обміну здійснюється за рахунок покупця.
-            </p>
-          </div>
-
-          <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
-            <div className="flex gap-4 rounded-2xl border border-neutral-200 p-6">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-medium text-white">
-                1
-              </span>
-              <p>
-                Зв&apos;яжіться з нами через месенджер або телефон та повідомте
-                про бажання повернути товар.
-              </p>
-            </div>
-            <div className="flex gap-4 rounded-2xl border border-neutral-200 p-6">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-medium text-white">
-                2
-              </span>
-              <p>
-                Отримайте підтвердження та інструкції щодо відправки товару.
-              </p>
-            </div>
-            <div className="flex gap-4 rounded-2xl border border-neutral-200 p-6">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-medium text-white">
-                3
-              </span>
-              <p>
-                Надішліть товар поштовою службою за вказаною адресою.
-              </p>
-            </div>
-            <div className="flex gap-4 rounded-2xl border border-neutral-200 p-6">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-medium text-white">
-                4
-              </span>
-              <p>
-                Після отримання та перевірки товару кошти повертаються протягом
-                3-5 робочих днів.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-muted-foreground">
-            <ul className="list-inside list-disc space-y-2">
-              <li>
-                Поверненню та обміну не підлягають товари, виготовлені на
-                індивідуальне замовлення
-              </li>
-              <li>
-                Вартість доставки при поверненні сплачується покупцем
-              </li>
-              <li>
-                Повернення коштів здійснюється тим самим способом, яким була
-                проведена оплата
-              </li>
-              <li>
-                У разі виявлення браку, зверніться до нас протягом 14 днів з
-                моменту отримання для безкоштовного обміну або повернення
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        {/* FAQ accordion sections */}
-        <section>
-          <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
-            Запитання та відповіді
-          </h2>
-          <div className="mt-6 space-y-10">
-            {faqData.map((category) => (
-              <div key={category.title}>
-                <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em]">
-                  {category.title}
-                </h3>
-                <div>
-                  {category.items.map((item) => (
-                    <AccordionItem key={item.question} {...item} />
-                  ))}
+              <div className="space-y-2">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <span className="font-medium text-foreground">Нова Пошта</span>
+                  <span className="ml-2">— відділення або поштомат по всій Україні</span>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <span className="font-medium text-foreground">Meest Пошта</span>
+                  <span className="ml-2">— відділення по всій Україні</span>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <span className="font-medium text-foreground">Кур&apos;єрська доставка</span>
+                  <span className="ml-2">— за вказаною адресою</span>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Терміни і вартість */}
+            <div className="rounded-xl bg-neutral-50 p-5 space-y-2">
+              <p>
+                Термін доставки:{" "}
+                <span className="font-medium text-foreground">7–11 робочих днів</span>
+              </p>
+              <p>
+                Безкоштовна доставка при замовленні від{" "}
+                <span className="font-medium text-foreground">1 600 грн</span>
+              </p>
+            </div>
+
+            {/* Способи оплати */}
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                Способи оплати
+              </h3>
+              <div className="space-y-2">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <span className="font-medium text-foreground">Оплата при отриманні</span>
+                  <span className="ml-2">— накладний платіж у відділенні пошти</span>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <span className="font-medium text-foreground">Передоплата на картку</span>
+                  <span className="ml-2">— реквізити надсилаються після оформлення</span>
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ по доставці */}
+            <div className="mt-2">
+              <FaqItem q="Які терміни доставки?" a="Доставка по Україні здійснюється протягом 1–3 робочих днів після відправлення. Час обробки замовлення — 1–2 робочих дні." />
+              <FaqItem q="Скільки коштує доставка?" a="Вартість доставки розраховується за тарифами обраної поштової служби та залежить від ваги посилки. Орієнтовна вартість — від 70 грн." />
+              <FaqItem q="Чи є безкоштовна доставка?" a="Так, безкоштовна доставка діє при замовленні від 1 600 грн." />
+            </div>
           </div>
-        </section>
+        </Section>
+
+        {/* ─── 2. Обмін та повернення ─── */}
+        <Section title="Обмін та повернення">
+          <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
+            {/* Умови повернення */}
+            <div>
+              <p>
+                Ви можете повернути товар протягом{" "}
+                <span className="font-medium text-foreground">14 днів</span> з
+                моменту отримання, якщо товар у належному стані:
+              </p>
+              <ul className="mt-3 list-inside list-disc space-y-1.5">
+                <li>Не був у використанні</li>
+                <li>Збережено товарний вигляд та споживчі властивості</li>
+                <li>Наявні всі бірки та ярлики</li>
+                <li>Наявний документ, що підтверджує покупку</li>
+              </ul>
+            </div>
+
+            {/* Обмін */}
+            <div className="rounded-xl bg-neutral-50 p-5">
+              <p>
+                <span className="font-medium text-foreground">Обмін</span> можливий
+                на інший розмір або колір за наявності на складі. Доставка обміну —
+                за рахунок покупця.
+              </p>
+            </div>
+
+            {/* Кроки */}
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                Як оформити повернення
+              </h3>
+              <div className="space-y-2">
+                {[
+                  "Зв'яжіться з нами через месенджер або телефон",
+                  "Отримайте підтвердження та інструкції щодо відправки",
+                  "Надішліть товар поштовою службою за вказаною адресою",
+                  "Кошти повертаються протягом 3–5 робочих днів після перевірки",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl border border-neutral-200 p-4">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-medium text-white">
+                      {i + 1}
+                    </span>
+                    <p>{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Важливо */}
+            <div className="rounded-xl border border-neutral-200 p-5">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                Важливо
+              </h3>
+              <ul className="list-inside list-disc space-y-1.5">
+                <li>Товари на індивідуальне замовлення не підлягають поверненню</li>
+                <li>Доставка при поверненні — за рахунок покупця</li>
+                <li>Кошти повертаються тим самим способом оплати</li>
+                <li>При виявленні браку — безкоштовний обмін протягом 14 днів</li>
+              </ul>
+            </div>
+
+            {/* FAQ по обміну */}
+            <div className="mt-2">
+              <FaqItem q="Як повернути товар?" a="Зв'яжіться з нами, вкажіть номер замовлення та причину повернення. Товар потрібно надіслати у первісному стані з усіма бірками." />
+              <FaqItem q="Протягом якого терміну можна повернути?" a="Повернення приймається протягом 14 днів з моменту отримання замовлення, відповідно до Закону України про захист прав споживачів." />
+              <FaqItem q="Які умови обміну?" a="Обмін можливий на інший розмір або колір за наявності. Товар має бути у первісному стані, без слідів носіння та з усіма етикетками." />
+            </div>
+          </div>
+        </Section>
+
+        {/* ─── 3. Часті запитання ─── */}
+        <Section title="Часті запитання">
+          <div className="space-y-8">
+            {/* Замовлення */}
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em]">
+                Замовлення
+              </h3>
+              <FaqItem q="Як оформити замовлення?" a="Оберіть потрібний товар, вкажіть розмір та колір, додайте його до кошика та оформіть замовлення. Після підтвердження наш менеджер зв'яжеться з вами для уточнення деталей." />
+              <FaqItem q="Які способи оплати доступні?" a="Ми приймаємо оплату на карту ПриватБанку, а також накладений платіж при отриманні на Новій Пошті. Оплата можлива у гривнях." />
+              <FaqItem q="Чи можу я змінити або скасувати замовлення?" a="Так, ви можете змінити або скасувати замовлення до моменту його відправлення. Зв'яжіться з нами через месенджер або за телефоном якнайшвидше." />
+            </div>
+
+            {/* Товар */}
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em]">
+                Товар
+              </h3>
+              <FaqItem q="Як підібрати розмір?" a="На сторінці кожного товару є розмірна сітка з детальними вимірами. Рекомендуємо зняти свої мірки та порівняти їх із таблицею розмірів." />
+              <FaqItem q="Як доглядати за виробом?" a="Рекомендації по догляду вказані на етикетці кожного виробу та в описі товару на сайті. Загалом, радимо делікатне прання при 30°C та уникати прямого прасування декоративних елементів." />
+              <FaqItem q="Чи відповідає колір на фото реальному?" a="Ми намагаємося передати колір максимально точно, проте відтінок може незначно відрізнятися залежно від налаштувань вашого екрану. Якщо є сумніви — напишіть нам, і ми надішлемо додаткові фото." />
+            </div>
+          </div>
+        </Section>
       </div>
     </div>
   );
