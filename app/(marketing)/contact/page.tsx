@@ -1,4 +1,4 @@
-import { Instagram, Mail, Clock, Phone } from "lucide-react";
+import { Instagram, Mail, Phone } from "lucide-react";
 import { getHomepageSettings } from "@/lib/data";
 import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { TelegramIcon } from "@/components/icons/telegram";
@@ -75,7 +75,7 @@ export default async function ContactPage() {
 
       {/* Contact details */}
       <div className="mx-auto max-w-3xl">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-10 sm:grid-cols-2">
           {/* Phones */}
           {phones.length > 0 && (
             <div className="flex flex-col items-center text-center">
@@ -113,17 +113,6 @@ export default async function ContactPage() {
             </div>
           )}
 
-          {/* Schedule */}
-          <div className="flex flex-col items-center text-center">
-            <Clock className="h-5 w-5 text-neutral-400" />
-            <h3 className="mt-3 text-xs font-semibold uppercase tracking-[0.15em]">
-              Графік роботи
-            </h3>
-            <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-              <p>Пн — Пт: 09:00 — 18:00</p>
-              <p>Сб — Нд: вихідний</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
