@@ -1,4 +1,4 @@
-import { Instagram, Mail, MessageCircle, Phone } from "lucide-react";
+import { Instagram, Mail, MapPin, Clock, Phone } from "lucide-react";
 import { getHomepageSettings } from "@/lib/data";
 import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { TelegramIcon } from "@/components/icons/telegram";
@@ -27,137 +27,161 @@ export default async function ContactPage() {
   const tiktok = settings.contact_tiktok || "";
 
   const messengers = [
-    telegram && { href: telegram.startsWith("http") ? telegram : `https://t.me/${telegram}`, icon: TelegramIcon, label: "Telegram" },
-    viber && { href: buildViberUrl(viber), icon: ViberIcon, label: "Viber" },
-    whatsapp && { href: whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^+\d]/g, "")}`, icon: WhatsAppIcon, label: "WhatsApp" },
-  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string }[];
+    telegram && { href: telegram.startsWith("http") ? telegram : `https://t.me/${telegram}`, icon: TelegramIcon, label: "Telegram", color: "#229ED9" },
+    viber && { href: buildViberUrl(viber), icon: ViberIcon, label: "Viber", color: "#7360F2", note: "з мобільного" },
+    whatsapp && { href: whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^+\d]/g, "")}`, icon: WhatsAppIcon, label: "WhatsApp", color: "#25D366" },
+  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string; note?: string }[];
 
   const socialNetworks = [
-    instagram && { href: instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram}`, icon: Instagram, label: "Instagram" },
-    tiktok && { href: tiktok.startsWith("http") ? tiktok : `https://tiktok.com/@${tiktok}`, icon: TikTokIcon, label: "TikTok" },
-  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string }[];
+    instagram && { href: instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram}`, icon: Instagram, label: "Instagram", color: "#E4405F" },
+    tiktok && { href: tiktok.startsWith("http") ? tiktok : `https://tiktok.com/@${tiktok}`, icon: TikTokIcon, label: "TikTok", color: "#000000" },
+  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string }[];
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
+    <div>
       {/* Header */}
-      <div className="text-center">
-        <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
-          Зв&apos;яжіться з нами
-        </p>
-        <h1 className="mt-3 text-2xl font-light tracking-wide md:text-3xl">
+      <div className="pt-12 pb-12 text-center px-4">
+        <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
           Контакти
         </h1>
-        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground md:text-base">
           Ми завжди на зв&apos;язку. Оберіть зручний спосіб комунікації.
         </p>
       </div>
 
-      {/* Four sections: Phones, Email, Messengers, Social Networks */}
-      <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
-        {/* Phones */}
-        {phones.length > 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-              <Phone className="h-5 w-5" />
-            </div>
-            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
-              Телефон
+      {/* Messengers — main CTA */}
+      <section className="bg-neutral-50 py-16 md:py-20">
+        <div className="mx-auto max-w-[1600px] px-4 lg:px-6">
+          <div className="text-center">
+            <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+              Напишіть нам
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+              Найшвидший спосіб зв&apos;язатися — через месенджер
             </p>
-            <div className="flex flex-col items-center gap-1.5">
-              {phones.map((phone, idx) => (
-                <a
-                  key={idx}
-                  href={`tel:${phone.replace(/\s/g, "")}`}
-                  className="text-sm font-medium transition hover:text-neutral-600"
-                >
-                  {phone}
-                </a>
-              ))}
-            </div>
           </div>
-        )}
-
-        {/* Email */}
-        {email && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
-            <a
-              href={`mailto:${email}`}
-              className="flex flex-col items-center gap-3 transition hover:opacity-80"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-                <Mail className="h-5 w-5" />
-              </div>
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
-                Email
-              </p>
-              <p className="text-sm font-medium">{email}</p>
-            </a>
-          </div>
-        )}
-
-        {/* Messengers */}
-        {messengers.length > 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-              <MessageCircle className="h-5 w-5" />
-            </div>
-            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
-              Месенджери
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-              {messengers.map(({ href, icon: Icon, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex flex-col items-center gap-1.5"
+          <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-4">
+            {messengers.map(({ href, icon: Icon, label, color, note }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={note ? `${label} (${note})` : label}
+                className="group flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-6 py-4 transition-all hover:border-neutral-400 hover:shadow-md"
+              >
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110"
+                  style={{ backgroundColor: color }}
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="text-[9px] font-medium tracking-wide text-muted-foreground">
-                    {label}
-                  </span>
-                  {label === "Viber" && (
-                    <span className="text-[8px] text-muted-foreground/60">з мобільного</span>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium">{label}</span>
+                  {note && (
+                    <p className="text-[10px] text-muted-foreground">{note}</p>
                   )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact details grid */}
+      <section className="py-16 md:py-20">
+        <div className="mx-auto max-w-4xl px-4 lg:px-6">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Phones */}
+            {phones.length > 0 && (
+              <div className="flex flex-col items-center text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-200">
+                  <Phone className="h-5 w-5 text-neutral-400" />
+                </div>
+                <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.15em]">
+                  Телефон
+                </h3>
+                <div className="mt-3 flex flex-col gap-1">
+                  {phones.map((phone, idx) => (
+                    <a
+                      key={idx}
+                      href={`tel:${phone.replace(/\s/g, "")}`}
+                      className="text-sm text-muted-foreground transition hover:text-foreground"
+                    >
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            {email && (
+              <div className="flex flex-col items-center text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-200">
+                  <Mail className="h-5 w-5 text-neutral-400" />
+                </div>
+                <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.15em]">
+                  Email
+                </h3>
+                <a
+                  href={`mailto:${email}`}
+                  className="mt-3 text-sm text-muted-foreground transition hover:text-foreground"
+                >
+                  {email}
                 </a>
-              ))}
+              </div>
+            )}
+
+            {/* Schedule */}
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-200">
+                <Clock className="h-5 w-5 text-neutral-400" />
+              </div>
+              <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.15em]">
+                Графік роботи
+              </h3>
+              <div className="mt-3 space-y-0.5 text-sm text-muted-foreground">
+                <p>Пн — Пт: 09:00 — 18:00</p>
+                <p>Сб — Нд: вихідний</p>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {/* Social Networks */}
-        {socialNetworks.length > 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 p-8 transition-all hover:border-neutral-400 hover:shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-              <Instagram className="h-5 w-5" />
-            </div>
-            <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
-              Соцмережі
+      {/* Social Networks */}
+      {socialNetworks.length > 0 && (
+        <section className="border-t border-neutral-200 py-16 md:py-20">
+          <div className="mx-auto max-w-[1600px] px-4 text-center lg:px-6">
+            <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
+              Ми в соцмережах
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+              Підписуйтесь, щоб бути в курсі новинок та акцій
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-              {socialNetworks.map(({ href, icon: Icon, label }) => (
+            <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-5">
+              {socialNetworks.map(({ href, icon: Icon, label, color }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex flex-col items-center gap-1.5"
+                  className="group flex items-center gap-3 rounded-2xl border border-neutral-200 px-8 py-5 transition-all hover:border-neutral-400 hover:shadow-md"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-all group-hover:border-neutral-900 group-hover:bg-neutral-900 group-hover:text-white">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: color }}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="text-[9px] font-medium tracking-wide text-muted-foreground">
-                    {label}
-                  </span>
+                  <span className="text-sm font-medium">{label}</span>
                 </a>
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </section>
+      )}
     </div>
   );
 }

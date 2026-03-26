@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { ArrowRight, Scissors, Truck, Shield, Sparkles, Heart, Factory } from "lucide-react";
 
-import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-
 const stats = [
-  { value: "10+", label: "років досвіду" },
+  { value: "з 2000", label: "року на ринку" },
   { value: "50+", label: "моделей у колекції" },
-  { value: "1000+", label: "задоволених клієнтів" },
+  { value: "10 000+", label: "задоволених клієнтів" },
   { value: "100%", label: "власне виробництво" },
 ];
 
@@ -55,19 +53,8 @@ const process = [
 export default function AboutPage() {
   return (
     <div>
-      {/* Breadcrumbs */}
-      <div className="mx-auto max-w-[1600px] px-4 pt-12 lg:px-6">
-        <Breadcrumbs
-          items={[
-            { label: "Головна", href: "/" },
-            { label: "Про нас" },
-          ]}
-          className="mb-8"
-        />
-      </div>
-
       {/* Header */}
-      <div className="text-center px-4">
+      <div className="text-center px-4 pt-12">
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
           Про компанію DaKi
         </h1>
@@ -98,7 +85,7 @@ export default function AboutPage() {
           </h2>
           <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
             <p>
-              DaKi — це сімейна компанія, яка вже понад 10 років створює верхній жіночий одяг.
+              DaKi — це сімейна компанія, яка з 2000 року створює верхній жіночий одяг.
               Ми почали з невеликої майстерні, а сьогодні маємо повноцінне виробництво,
               де кожен виріб проходить шлях від ідеї до готового продукту.
             </p>

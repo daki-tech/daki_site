@@ -47,7 +47,7 @@ export function HeroParallax({ title, subtitle, bgUrl }: HeroParallaxProps) {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[10px] font-medium uppercase tracking-[0.5em] text-white/60 sm:text-xs"
+          className="text-[11px] font-semibold uppercase tracking-[0.5em] text-white/70 sm:text-sm"
         >
           {subtitle || "Spring — 2026"}
         </motion.p>
@@ -56,7 +56,7 @@ export function HeroParallax({ title, subtitle, bgUrl }: HeroParallaxProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-5 text-center font-sans text-3xl font-extralight uppercase tracking-[0.2em] text-white sm:text-4xl md:text-5xl lg:text-[3.5rem]"
+          className="mt-5 text-center font-sans text-3xl font-semibold uppercase tracking-[0.2em] text-white sm:text-4xl md:text-5xl lg:text-[3.5rem]"
         >
           {title || "Нова весняна колекція"}
         </motion.h1>

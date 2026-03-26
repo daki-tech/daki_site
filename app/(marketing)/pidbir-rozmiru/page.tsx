@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Підбір розміру | DaKi",
@@ -37,14 +36,6 @@ const measurements = [
 export default function SizeGuidePage() {
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
-      <Breadcrumbs
-        items={[
-          { label: "Головна", href: "/" },
-          { label: "Підбір розміру" },
-        ]}
-        className="mb-8"
-      />
-
       {/* Header */}
       <div className="text-center">
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">

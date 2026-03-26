@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 /* ── Small FAQ accordion (question → answer) ── */
 
@@ -77,14 +76,6 @@ export default function FaqPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
-      <Breadcrumbs
-        items={[
-          { label: "Головна", href: "/" },
-          { label: "Часті запитання" },
-        ]}
-        className="mb-8"
-      />
-
       {/* Header */}
       <div className="text-center">
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
