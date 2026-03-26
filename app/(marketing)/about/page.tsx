@@ -54,7 +54,7 @@ export default function AboutPage() {
   return (
     <div>
       {/* Header */}
-      <div className="text-center px-4 pt-12">
+      <div className="text-center px-4 pt-12 lg:pt-20">
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
           Про компанію DaKi
         </h1>
