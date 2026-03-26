@@ -117,7 +117,7 @@ export function Footer({ contacts }: FooterProps) {
                 </a>
               )}
               {viber && (
-                <a href={buildViberUrl(viber)} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber">
+                <a href={buildViberUrl(viber)} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber" title="Viber (з мобільного)">
                   <ViberIcon className="h-4 w-4" />
                 </a>
               )}

@@ -249,6 +249,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
                 >
                   <span style={{ color: link.color }}>{link.icon}</span>
                   {link.name}
+                  {link.name === "Viber" && <span className="text-[10px] text-neutral-400 ml-0.5">(з мобільного)</span>}
                 </a>
               ))}
             </div>

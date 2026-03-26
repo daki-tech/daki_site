@@ -119,6 +119,9 @@ export default async function ContactPage() {
                   <span className="text-[9px] font-medium tracking-wide text-muted-foreground">
                     {label}
                   </span>
+                  {label === "Viber" && (
+                    <span className="text-[8px] text-muted-foreground/60">з мобільного</span>
+                  )}
                 </a>
               ))}
             </div>

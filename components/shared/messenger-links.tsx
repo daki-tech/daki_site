@@ -68,7 +68,12 @@ export function MessengerLinks({
           )}
         >
           <link.icon className={iconSize} />
-          {showLabels && <span className="text-sm font-medium">{link.label}</span>}
+          {showLabels && (
+            <span className="text-sm font-medium">
+              {link.label}
+              {link.label === "Viber" && <span className="ml-1 text-[10px] text-muted-foreground font-normal">(з мобільного)</span>}
+            </span>
+          )}
         </a>
       ))}
     </div>

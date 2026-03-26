@@ -131,6 +131,7 @@ export function MobileDrawer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/50 transition hover:bg-[#7360F2]/10 hover:text-[#7360F2]"
+                  title="Viber (з мобільного)"
                 >
                   <ViberIcon className="h-4 w-4" />
                 </a>
