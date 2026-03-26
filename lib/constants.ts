@@ -50,9 +50,8 @@ export const CONTACTS = {
   instagram: "https://instagram.com/daki.ua",
 };
 
-/** Build Viber link via viber.me — works in browser, redirects to app */
+/** Build Viber deep link — opens Viber app directly (no web fallback) */
 export function buildViberUrl(phone: string, text?: string): string {
-  const num = phone.replace(/[^+\d]/g, "");
-  const base = `https://viber.me/${num}`;
-  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
+  const num = phone.replace(/[^\d]/g, "");
+  return `viber://chat?number=${num}`;
 }
