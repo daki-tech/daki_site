@@ -75,7 +75,7 @@ export default function FaqPage() {
   const toggle = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-10">
+    <div className="mx-auto max-w-[1600px] px-4 pt-4 pb-10 lg:px-6 lg:pt-6 lg:pb-16">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
