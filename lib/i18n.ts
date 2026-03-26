@@ -42,9 +42,7 @@ const ru: Dictionary = {
   "nav.orders": "Заказы",
   "nav.settings": "Настройки",
   "nav.admin": "Админ",
-  "nav.faq": "FAQ",
-  "nav.delivery": "Доставка",
-  "nav.returns": "Обмін",
+  "nav.faq": "Часті запитання",
   "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Производитель верхней одежды",
@@ -279,9 +277,7 @@ const uk: Dictionary = {
   "nav.orders": "Замовлення",
   "nav.settings": "Налаштування",
   "nav.admin": "Адмін",
-  "nav.faq": "FAQ",
-  "nav.delivery": "Доставка",
-  "nav.returns": "Обмін",
+  "nav.faq": "Часті запитання",
   "nav.sizeGuide": "Підбір розміру",
 
   "hero.badge": "Виробник верхнього одягу",
@@ -517,8 +513,6 @@ const en: Dictionary = {
   "nav.settings": "Settings",
   "nav.admin": "Admin",
   "nav.faq": "FAQ",
-  "nav.delivery": "Shipping & Payment",
-  "nav.returns": "Exchange & Returns",
   "nav.sizeGuide": "Size Guide",
 
   "hero.badge": "Outerwear manufacturer",
