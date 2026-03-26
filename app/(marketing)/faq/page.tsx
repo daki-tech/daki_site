@@ -37,17 +37,18 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 function Section({
   title,
   children,
-  defaultOpen = false,
+  open,
+  onToggle,
 }: {
   title: string;
   children: React.ReactNode;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-neutral-200">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
         className="flex w-full items-center justify-between py-6 text-left"
       >
         <h2 className="text-lg font-medium uppercase tracking-[0.1em] md:text-xl">
@@ -71,6 +72,9 @@ function Section({
 /* ── Page ── */
 
 export default function FaqPage() {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const toggle = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
+
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-6 lg:py-20">
       <Breadcrumbs
@@ -93,7 +97,7 @@ export default function FaqPage() {
 
       <div className="mx-auto mt-12 max-w-3xl">
         {/* ─── 1. Доставка та оплата ─── */}
-        <Section title="Доставка та оплата">
+        <Section title="Доставка та оплата" open={openSection === "delivery"} onToggle={() => toggle("delivery")}>
           <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
             {/* Способи доставки */}
             <div>
@@ -155,7 +159,7 @@ export default function FaqPage() {
         </Section>
 
         {/* ─── 2. Обмін та повернення ─── */}
-        <Section title="Обмін та повернення">
+        <Section title="Обмін та повернення" open={openSection === "exchange"} onToggle={() => toggle("exchange")}>
           <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
             {/* Умови повернення */}
             <div>
@@ -226,7 +230,7 @@ export default function FaqPage() {
         </Section>
 
         {/* ─── 3. Часті запитання ─── */}
-        <Section title="Часті запитання">
+        <Section title="Часті запитання" open={openSection === "faq"} onToggle={() => toggle("faq")}>
           <div className="space-y-8">
             {/* Замовлення */}
             <div>
