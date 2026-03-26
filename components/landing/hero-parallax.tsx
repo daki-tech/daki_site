@@ -56,7 +56,7 @@ export function HeroParallax({ title, subtitle, bgUrl }: HeroParallaxProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-6 text-[13px] font-semibold uppercase tracking-[0.5em] text-white/70 sm:text-base"
+          className="mt-6 text-base font-semibold uppercase tracking-[0.5em] text-white/70 sm:text-lg"
         >
           {subtitle || "Spring — 2026"}
         </motion.p>
