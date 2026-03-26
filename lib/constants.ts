@@ -49,3 +49,10 @@ export const CONTACTS = {
   whatsapp: "",
   instagram: "https://instagram.com/daki.ua",
 };
+
+/** Build viber://chat deep-link from a phone number (works on mobile + desktop with Viber installed) */
+export function buildViberUrl(phone: string, text?: string): string {
+  const num = encodeURIComponent(phone.replace(/[^+\d]/g, ""));
+  const base = `viber://chat?number=${num}`;
+  return text ? `${base}&text=${encodeURIComponent(text)}` : base;
+}

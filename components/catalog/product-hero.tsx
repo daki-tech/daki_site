@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
 import { addToCart } from "@/lib/cart-store";
 import { useWishlist, toggleWishlist } from "@/lib/wishlist-store";
-import { CONTACTS } from "@/lib/constants";
+import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { ProductAccordion } from "@/components/catalog/product-accordion";
 import { ProductShare } from "@/components/catalog/product-share";
 
@@ -78,10 +78,9 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
 
     // Viber second
     if (vb) {
-      const viberNum = vb.replace(/[^+\d]/g, "");
       links.push({
         name: "Viber",
-        href: `https://viber.click/${viberNum}`,
+        href: buildViberUrl(vb, message),
         color: "#7360F2",
         icon: <ViberIcon />,
       });

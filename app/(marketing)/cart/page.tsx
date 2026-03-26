@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { TelegramIcon } from "@/components/icons/telegram";
 import { ViberIcon } from "@/components/icons/viber";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
-import { CONTACTS } from "@/lib/constants";
+import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { useCart, updateCartItemColor, replaceCartItemSizes } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
@@ -329,7 +329,7 @@ export default function CartPage() {
               const encoded = encodeURIComponent(orderMessage);
               const links = [
                 (supportId || CONTACTS.telegram) && { Icon: TelegramIcon, href: supportId ? `https://t.me/${supportId}?text=${encoded}` : `${CONTACTS.telegram}?text=${encoded}`, label: "Telegram" },
-                CONTACTS.viber && { Icon: ViberIcon, href: `${CONTACTS.viber}&text=${encoded}`, label: "Viber" },
+                CONTACTS.viber && { Icon: ViberIcon, href: buildViberUrl(CONTACTS.viber, orderMessage), label: "Viber" },
                 CONTACTS.whatsapp && { Icon: WhatsAppIcon, href: `${CONTACTS.whatsapp}?text=${encoded}`, label: "WhatsApp" },
               ].filter(Boolean) as { Icon: React.ComponentType<{ className?: string }>; href: string; label: string }[];
               if (links.length === 0) return null;

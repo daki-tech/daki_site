@@ -5,7 +5,7 @@ import { Phone } from "lucide-react";
 import { TelegramIcon } from "@/components/icons/telegram";
 import { ViberIcon } from "@/components/icons/viber";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
-import { CONTACTS } from "@/lib/constants";
+import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface MessengerLinksProps {
@@ -32,7 +32,7 @@ export function MessengerLinks({
     },
     {
       label: "Viber",
-      href: encoded ? `${CONTACTS.viber}&text=${encoded}` : CONTACTS.viber,
+      href: buildViberUrl(CONTACTS.viber, message),
       icon: ViberIcon,
       color: "hover:bg-[#7360F2]/10 hover:text-[#7360F2]",
     },

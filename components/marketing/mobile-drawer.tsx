@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useLanguage } from "@/components/providers/language-provider";
-import { NAV_LINKS, CONTACTS } from "@/lib/constants";
+import { NAV_LINKS, CONTACTS, buildViberUrl } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart-store";
 import { TelegramIcon } from "@/components/icons/telegram";
@@ -127,7 +127,7 @@ export function MobileDrawer() {
                   <TelegramIcon className="h-4 w-4" />
                 </a>
                 <a
-                  href={CONTACTS.viber}
+                  href={buildViberUrl(CONTACTS.viber)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/50 transition hover:bg-[#7360F2]/10 hover:text-[#7360F2]"

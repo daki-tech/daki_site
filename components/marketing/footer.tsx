@@ -8,7 +8,7 @@ import { TelegramIcon } from "@/components/icons/telegram";
 import { ViberIcon } from "@/components/icons/viber";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { TikTokIcon } from "@/components/icons/tiktok";
-import { CONTACTS, NAV_LINKS, APP_NAME } from "@/lib/constants";
+import { CONTACTS, NAV_LINKS, APP_NAME, buildViberUrl } from "@/lib/constants";
 
 interface FooterContacts {
   phones: string[];
@@ -117,7 +117,7 @@ export function Footer({ contacts }: FooterProps) {
                 </a>
               )}
               {viber && (
-                <a href={`https://viber.click/${viber.replace(/[^+\d]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber">
+                <a href={buildViberUrl(viber)} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition hover:text-foreground" aria-label="Viber">
                   <ViberIcon className="h-4 w-4" />
                 </a>
               )}

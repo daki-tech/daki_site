@@ -1,6 +1,6 @@
 import { Instagram, Mail, MessageCircle, Phone } from "lucide-react";
 import { getHomepageSettings } from "@/lib/data";
-import { CONTACTS } from "@/lib/constants";
+import { CONTACTS, buildViberUrl } from "@/lib/constants";
 import { TelegramIcon } from "@/components/icons/telegram";
 import { ViberIcon } from "@/components/icons/viber";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
@@ -28,7 +28,7 @@ export default async function ContactPage() {
 
   const messengers = [
     telegram && { href: telegram.startsWith("http") ? telegram : `https://t.me/${telegram}`, icon: TelegramIcon, label: "Telegram" },
-    viber && { href: viber.startsWith("viber") ? viber : `viber://chat?number=${viber.replace(/[^+\d]/g, "")}`, icon: ViberIcon, label: "Viber" },
+    viber && { href: buildViberUrl(viber), icon: ViberIcon, label: "Viber" },
     whatsapp && { href: whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^+\d]/g, "")}`, icon: WhatsAppIcon, label: "WhatsApp" },
   ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string }[];
 
