@@ -48,7 +48,7 @@ interface WarehouseOption {
 
 const PAYMENT_METHODS = [
   { value: "cash_on_delivery", label: "Накладений платіж (Нова Пошта)" },
-  { value: "card", label: "Оплата на картку (передоплата)" },
+  { value: "card", label: "Оплата картою онлайн" },
   { value: "invoice", label: "Рахунок для юридичних осіб" },
 ];
 
@@ -309,9 +309,6 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
       }
 
       const data = await res.json();
-      const successInfo = { orderNumber: data.orderNumber, orderId: data.orderId, contactMe: form.contact_me };
-      setSuccess(successInfo);
-      onSuccess?.(successInfo);
 
       // Save checkout data for next order pre-fill (guest users)
       try {
@@ -325,6 +322,44 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
         }));
       } catch { /* ignore */ }
 
+      // If card payment — try LiqPay redirect
+      if (form.payment_method === "card" && data.orderId) {
+        try {
+          const payRes = await fetch("/api/payment/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: data.orderId }),
+          });
+          if (payRes.ok) {
+            const payData = await payRes.json();
+            // Create hidden form and submit to LiqPay
+            const liqpayForm = document.createElement("form");
+            liqpayForm.method = "POST";
+            liqpayForm.action = "https://www.liqpay.ua/api/3/checkout";
+            liqpayForm.target = "_self";
+            const dataInput = document.createElement("input");
+            dataInput.type = "hidden";
+            dataInput.name = "data";
+            dataInput.value = payData.data;
+            const sigInput = document.createElement("input");
+            sigInput.type = "hidden";
+            sigInput.name = "signature";
+            sigInput.value = payData.signature;
+            liqpayForm.appendChild(dataInput);
+            liqpayForm.appendChild(sigInput);
+            document.body.appendChild(liqpayForm);
+            clearCart();
+            liqpayForm.submit();
+            return;
+          }
+        } catch {
+          // LiqPay not available — fall through to normal success
+        }
+      }
+
+      const successInfo = { orderNumber: data.orderNumber, orderId: data.orderId, contactMe: form.contact_me };
+      setSuccess(successInfo);
+      onSuccess?.(successInfo);
       clearCart();
     } catch {
       toast.error("Помилка з'єднання. Спробуйте ще раз.");
