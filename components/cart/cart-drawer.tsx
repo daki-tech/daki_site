@@ -2,13 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useCart, useCartDrawer } from "@/lib/cart-store";
+import { useCart, useCartDrawer, updateCartItemColor, replaceCartItemSizes } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { createClient } from "@/lib/supabase/client";
+
+interface ModelMeta {
+  colors: { id: string; name: string; hex: string; image_urls: string[] }[];
+  sizes: { size_label: string; available: number }[];
+}
 
 type DrawerView = "cart" | "checkout";
 
@@ -65,6 +71,50 @@ export function CartDrawer() {
     }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  const hasIncompleteItems = useMemo(
+    () => items.some((item) => !item.color || item.sizes.length === 0),
+    [items],
+  );
+
+  // Fetch color/size metadata for items without color
+  const [modelMeta, setModelMeta] = useState<Record<string, ModelMeta>>({});
+
+  useEffect(() => {
+    const needsMeta = items.filter((item) => !item.color && !modelMeta[item.modelId]);
+    if (needsMeta.length === 0) return;
+
+    const supabase = createClient();
+    const ids = needsMeta.map((i) => i.modelId);
+
+    (async () => {
+      const { data: models } = await supabase
+        .from("catalog_models")
+        .select("id, model_colors(id, name, hex, image_urls), model_sizes(size_label, total_stock, sold_stock, reserved_stock)")
+        .in("id", ids);
+
+      if (!models) return;
+
+      const meta: Record<string, ModelMeta> = {};
+      for (const m of models) {
+        meta[m.id] = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          colors: (m.model_colors ?? []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            hex: c.hex,
+            image_urls: c.image_urls ?? [],
+          })),
+          sizes: (m.model_sizes ?? []).map((s: { size_label: string; total_stock: number; sold_stock: number; reserved_stock: number }) => ({
+            size_label: s.size_label,
+            available: s.total_stock - s.sold_stock - s.reserved_stock,
+          })),
+        };
+      }
+      setModelMeta((prev) => ({ ...prev, ...meta }));
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
 
   if (!mounted) return null;
 
@@ -150,85 +200,169 @@ export function CartDrawer() {
                     {items.map((item) => {
                       const finalPrice = item.basePrice * (1 - item.discountPercent / 100);
                       const itemQty = item.sizes.reduce((s, sz) => s + sz.quantity, 0);
+                      const itemIncomplete = !item.color || item.sizes.length === 0;
+                      const meta = modelMeta[item.modelId];
 
                       return (
-                        <div key={item.modelId} className="flex gap-3 py-4">
-                          {/* Image */}
-                          <Link
-                            href={`/catalog/${item.modelId}`}
-                            onClick={handleClose}
-                            className="relative h-24 w-[68px] shrink-0 overflow-hidden bg-neutral-50"
-                          >
-                            {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt={item.modelName} fill unoptimized className="object-cover" />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-[9px] text-neutral-300">
-                                Фото
-                              </div>
-                            )}
-                          </Link>
-
-                          {/* Info */}
-                          <div className="flex flex-1 flex-col justify-between min-w-0">
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="text-[10px] text-neutral-400">Артикул: {item.sku}</p>
-                                  <p className="truncate text-sm font-medium">{item.modelName}</p>
-                                  {item.color && (
-                                    <p className="text-[11px] text-neutral-400">Колір: {item.color}</p>
-                                  )}
+                        <div key={item.modelId} className={`py-4 ${itemIncomplete ? "rounded-lg border border-red-200 bg-red-50/50 px-3 -mx-1" : ""}`}>
+                          <div className="flex gap-3">
+                            {/* Image */}
+                            <Link
+                              href={`/catalog/${item.modelId}`}
+                              onClick={handleClose}
+                              className="relative h-24 w-[68px] shrink-0 overflow-hidden bg-neutral-50"
+                            >
+                              {item.imageUrl ? (
+                                <Image src={item.imageUrl} alt={item.modelName} fill unoptimized className="object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[9px] text-neutral-300">
+                                  Фото
                                 </div>
-                                <button
-                                  onClick={() => removeFromCart(item.modelId)}
-                                  className="shrink-0 p-0.5 text-neutral-300 transition hover:text-neutral-600"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Sizes with quantity controls */}
-                            <div className="mt-1.5 flex flex-wrap gap-1.5">
-                              {item.sizes.map((sz) => (
-                                <div
-                                  key={sz.sizeLabel}
-                                  className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5"
-                                >
-                                  <span className="text-[11px] font-medium text-neutral-600">
-                                    {sz.sizeLabel}
-                                  </span>
-                                  <button
-                                    onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity - 1)}
-                                    className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                                  >
-                                    <Minus className="h-2.5 w-2.5" />
-                                  </button>
-                                  <span className="w-4 text-center text-[11px] font-semibold">
-                                    {sz.quantity}
-                                  </span>
-                                  <button
-                                    onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity + 1)}
-                                    className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                                  >
-                                    <Plus className="h-2.5 w-2.5" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Price */}
-                            <div className="mt-1 flex items-baseline gap-2">
-                              {item.discountPercent > 0 && (
-                                <span className="text-[11px] text-neutral-300 line-through">
-                                  {formatCurrency(item.basePrice)}
-                                </span>
                               )}
-                              <span className="text-sm font-semibold">
-                                {formatCurrency(finalPrice * itemQty)}
-                              </span>
+                            </Link>
+
+                            {/* Info */}
+                            <div className="flex flex-1 flex-col justify-between min-w-0">
+                              <div>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-neutral-400">Артикул: {item.sku}</p>
+                                    <p className="truncate text-sm font-medium">{item.modelName}</p>
+                                    {item.color && (
+                                      <p className="text-[11px] text-neutral-400">Колір: {item.color}</p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => removeFromCart(item.modelId)}
+                                    className="shrink-0 p-0.5 text-neutral-300 transition hover:text-neutral-600"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Sizes with quantity controls */}
+                              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                {item.sizes.map((sz) => (
+                                  <div
+                                    key={sz.sizeLabel}
+                                    className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5"
+                                  >
+                                    <span className="text-[11px] font-medium text-neutral-600">
+                                      {sz.sizeLabel}
+                                    </span>
+                                    <button
+                                      onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity - 1)}
+                                      className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
+                                    >
+                                      <Minus className="h-2.5 w-2.5" />
+                                    </button>
+                                    <span className="w-4 text-center text-[11px] font-semibold">
+                                      {sz.quantity}
+                                    </span>
+                                    <button
+                                      onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity + 1)}
+                                      className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
+                                    >
+                                      <Plus className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Price */}
+                              <div className="mt-1 flex items-baseline gap-2">
+                                {item.discountPercent > 0 && (
+                                  <span className="text-[11px] text-neutral-300 line-through">
+                                    {formatCurrency(item.basePrice)}
+                                  </span>
+                                )}
+                                <span className="text-sm font-semibold">
+                                  {formatCurrency(finalPrice * itemQty)}
+                                </span>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Inline color/size selector for incomplete items */}
+                          {itemIncomplete && meta && (
+                            <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-3">
+                              <div className="flex items-center gap-1.5 mb-2.5">
+                                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                                <span className="text-[11px] font-medium text-neutral-600">Оберіть колір та розмір</span>
+                              </div>
+
+                              {/* Color selector */}
+                              {meta.colors.length > 0 && (
+                                <div className="mb-2.5">
+                                  <p className="text-[10px] font-medium text-neutral-400 mb-1.5">Колір</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {meta.colors.map((color) => {
+                                      const isActive = item.color === color.name;
+                                      return (
+                                        <button
+                                          key={color.id}
+                                          onClick={() => {
+                                            updateCartItemColor(
+                                              item.modelId,
+                                              color.name,
+                                              color.image_urls[0] || item.imageUrl
+                                            );
+                                          }}
+                                          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition ${
+                                            isActive
+                                              ? "border-neutral-900 bg-neutral-900 text-white"
+                                              : "border-neutral-200 bg-white hover:border-neutral-400"
+                                          }`}
+                                        >
+                                          <span className="h-3 w-3 rounded-full border border-neutral-200" style={{ backgroundColor: color.hex }} />
+                                          <span className={`text-[11px] font-medium ${isActive ? "text-white" : "text-neutral-700"}`}>{color.name}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Size selector */}
+                              {meta.sizes.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-medium text-neutral-400 mb-1.5">Розмір</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {meta.sizes.map((size) => {
+                                      const isSelected = item.sizes.some((s) => s.sizeLabel === size.size_label);
+                                      const isAvailable = size.available > 0;
+                                      return (
+                                        <button
+                                          key={size.size_label}
+                                          disabled={!isAvailable}
+                                          onClick={() => {
+                                            if (isSelected) {
+                                              const newSizes = item.sizes.filter((s) => s.sizeLabel !== size.size_label);
+                                              if (newSizes.length === 0) newSizes.push({ sizeLabel: size.size_label, quantity: 1 });
+                                              replaceCartItemSizes(item.modelId, newSizes);
+                                            } else {
+                                              const newSizes = [...item.sizes.filter((s) => s.sizeLabel !== "ONE" && s.sizeLabel !== ""), { sizeLabel: size.size_label, quantity: 1 }];
+                                              replaceCartItemSizes(item.modelId, newSizes);
+                                            }
+                                          }}
+                                          className={`flex h-8 min-w-[36px] items-center justify-center rounded-lg border px-2 text-[11px] font-medium transition ${
+                                            isSelected
+                                              ? "border-neutral-900 bg-neutral-900 text-white"
+                                              : isAvailable
+                                                ? "border-neutral-200 bg-white hover:border-neutral-400"
+                                                : "border-neutral-100 bg-neutral-100 text-neutral-300 cursor-not-allowed"
+                                          }`}
+                                        >
+                                          {size.size_label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -248,10 +382,15 @@ export function CartDrawer() {
                   </div>
 
                   <button
-                    onClick={() => setView("checkout")}
-                    className="w-full rounded-xl bg-black py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800 active:scale-[0.98]"
+                    onClick={() => !hasIncompleteItems && setView("checkout")}
+                    disabled={hasIncompleteItems}
+                    className={`w-full rounded-xl py-3.5 text-sm font-medium transition ${
+                      hasIncompleteItems
+                        ? "cursor-not-allowed bg-neutral-200 text-neutral-400"
+                        : "bg-black text-white hover:bg-neutral-800 active:scale-[0.98]"
+                    }`}
                   >
-                    {t("cart.submitOrder").toUpperCase()}
+                    {hasIncompleteItems ? "Оберіть колір та розмір" : t("cart.submitOrder").toUpperCase()}
                   </button>
 
                   <button
@@ -269,6 +408,14 @@ export function CartDrawer() {
         {/* Checkout view — form rendered inline inside the drawer */}
         {view === "checkout" && (
           <div className="flex-1 overflow-y-auto px-5 py-4">
+            {hasIncompleteItems && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                <p className="text-sm font-medium text-red-600">
+                  Оберіть колір та розмір для кожного товару в кошику
+                </p>
+              </div>
+            )}
             <CheckoutForm
               open={true}
               inline
