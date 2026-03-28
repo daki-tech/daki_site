@@ -30,7 +30,7 @@ export async function getCatalogModels(filters: CatalogFilterInput = {}): Promis
       .from("catalog_models")
       .select("id, name, sku, category, style, season, year, base_price, discount_percent, image_urls, is_active, is_out_of_stock, created_at, model_sizes(id, size_label, total_stock, sold_stock, reserved_stock), model_colors(id, name, hex, image_urls, is_default, stock_per_size)")
       .eq("is_active", true)
-      .order("created_at", { ascending: false });
+      .order("sort_order", { ascending: true });
 
     if (filters.category) query = query.eq("category", filters.category);
     if (filters.style) query = query.eq("style", filters.style);
@@ -271,7 +271,7 @@ export async function getAdminModels(): Promise<CatalogModel[]> {
     const { data, error } = await supabase
       .from("catalog_models")
       .select("*, model_sizes(*), model_colors(*)")
-      .order("created_at", { ascending: false });
+      .order("sort_order", { ascending: true });
 
     if (error) throw error;
 

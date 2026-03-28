@@ -384,8 +384,8 @@ function SortableModelRow({ id, children }: { id: string; children: React.ReactN
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
   return (
     <tr ref={setNodeRef} style={style} className={`border-b transition-colors hover:bg-muted/50 ${isDragging ? "bg-neutral-50 shadow-md" : ""}`}>
-      <td className="w-6 px-2 py-2 cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 transition-colors" {...attributes} {...listeners}>
-        <GripVertical className="h-4 w-4" />
+      <td className="w-4 px-1 py-2 cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 transition-colors" {...attributes} {...listeners}>
+        <GripVertical className="h-3.5 w-3.5" />
       </td>
       {children}
     </tr>
@@ -1022,7 +1022,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-6" /><TableHead>Артикул</TableHead><TableHead>Название</TableHead><TableHead>Цена</TableHead>
+                    <TableHead className="w-4 px-1" /><TableHead>Артикул</TableHead><TableHead>Название</TableHead><TableHead>Цена</TableHead>
                     <TableHead>Скидка</TableHead><TableHead>Остаток</TableHead><TableHead>Продано</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead className="text-right">Действия</TableHead>
