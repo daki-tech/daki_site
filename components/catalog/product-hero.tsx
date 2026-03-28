@@ -52,7 +52,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
         ? (colorStock[s.size_label] ?? 0)
         : s.total_stock - s.sold_stock - s.reserved_stock;
       return { ...s, available };
-    });
+    }).sort((a, b) => parseInt(a.size_label) - parseInt(b.size_label));
   }, [model.model_sizes, selectedColor]);
 
   const totalUnits = Object.values(selectedSizes).reduce((a, b) => a + b, 0);

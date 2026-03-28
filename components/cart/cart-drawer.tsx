@@ -73,7 +73,8 @@ function CartItemCard({
           : s.total_stock - s.sold_stock - s.reserved_stock;
         return { label: s.size_label, available };
       })
-      .filter((s) => s.available > 0);
+      .filter((s) => s.available > 0)
+      .sort((a, b) => parseInt(a.label) - parseInt(b.label));
   }, [meta, colors, item.color]);
 
   return (
