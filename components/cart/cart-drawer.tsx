@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useCart, useCartDrawer } from "@/lib/cart-store";
+import { useCart, useCartDrawer, updateCartItemColor, replaceCartItemSizes } from "@/lib/cart-store";
+import type { CartItem } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { createClient } from "@/lib/supabase/client";
 
 type DrawerView = "cart" | "checkout";
 
@@ -18,21 +20,237 @@ interface OrderSuccess {
   contactMe: boolean;
 }
 
+interface ModelMeta {
+  colors: { id: string; name: string; hex: string; image_urls: string[]; stock_per_size?: Record<string, number> }[];
+  sizes: { size_label: string; total_stock: number; sold_stock: number; reserved_stock: number }[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  CartItemCard — individual item with inline color/size selectors    */
+/* ------------------------------------------------------------------ */
+
+function CartItemCard({
+  item,
+  meta,
+  onClose,
+}: {
+  item: CartItem;
+  meta: ModelMeta | null;
+  onClose: () => void;
+}) {
+  const { removeFromCart, updateCartItemSize } = useCart();
+  const finalPrice = item.basePrice * (1 - item.discountPercent / 100);
+  const itemQty = item.sizes.reduce((s, sz) => s + sz.quantity, 0);
+  const needsSelection = !item.color;
+  const colors = meta?.colors ?? [];
+
+  const handleColorSelect = (color: typeof colors[number]) => {
+    updateCartItemColor(item.modelId, color.name, color.image_urls?.[0]);
+    // Reset sizes when color changes — user must pick size for this color
+    replaceCartItemSizes(item.modelId, []);
+  };
+
+  const handleSizeToggle = (sizeLabel: string) => {
+    const existing = item.sizes.find((s) => s.sizeLabel === sizeLabel);
+    if (existing) {
+      // Remove this size
+      updateCartItemSize(item.modelId, sizeLabel, 0);
+    } else {
+      // Add with quantity 1
+      replaceCartItemSizes(item.modelId, [...item.sizes, { sizeLabel, quantity: 1 }]);
+    }
+  };
+
+  // Get available sizes for the selected color
+  const availableSizes = useMemo(() => {
+    if (!meta) return [];
+    const selectedColorMeta = item.color ? colors.find((c) => c.name === item.color) : null;
+    return meta.sizes
+      .map((s) => {
+        const colorStock = selectedColorMeta?.stock_per_size;
+        const available = colorStock
+          ? (colorStock[s.size_label] ?? 0)
+          : s.total_stock - s.sold_stock - s.reserved_stock;
+        return { label: s.size_label, available };
+      })
+      .filter((s) => s.available > 0);
+  }, [meta, colors, item.color]);
+
+  return (
+    <div className="flex gap-3 py-4">
+      {/* Image */}
+      <Link
+        href={`/catalog/${item.modelId}`}
+        onClick={onClose}
+        className="relative h-24 w-[68px] shrink-0 overflow-hidden bg-neutral-50"
+      >
+        {item.imageUrl ? (
+          <Image src={item.imageUrl} alt={item.modelName} fill unoptimized className="object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[9px] text-neutral-300">
+            Фото
+          </div>
+        )}
+      </Link>
+
+      {/* Info */}
+      <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] text-neutral-400">Артикул: {item.sku}</p>
+            <p className="truncate text-sm font-medium">{item.modelName}</p>
+          </div>
+          <button
+            onClick={() => removeFromCart(item.modelId)}
+            className="shrink-0 p-0.5 text-neutral-300 transition hover:text-neutral-600"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Color selector or display */}
+        {needsSelection && colors.length > 0 ? (
+          <div className="mt-1.5">
+            <p className="text-[10px] text-amber-600 font-medium mb-1">Оберіть колір:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {colors.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleColorSelect(c)}
+                  className="h-5 w-5 rounded-full border-2 border-neutral-200 transition-all hover:scale-110"
+                  style={{ backgroundColor: c.hex || "#ccc" }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        ) : item.color ? (
+          <p className="text-[11px] text-neutral-400 mt-0.5">Колір: {item.color}</p>
+        ) : null}
+
+        {/* Size selector (when color is selected but no sizes chosen) */}
+        {item.color && item.sizes.length === 0 && availableSizes.length > 0 && (
+          <div className="mt-1.5">
+            <p className="text-[10px] text-amber-600 font-medium mb-1">Оберіть розмір:</p>
+            <div className="flex flex-wrap gap-1">
+              {availableSizes.map((s) => (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => handleSizeToggle(s.label)}
+                  className="rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-600 transition hover:border-black hover:bg-neutral-50"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Selected sizes with quantity controls */}
+        {item.sizes.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {item.sizes.map((sz) => (
+              <div
+                key={sz.sizeLabel}
+                className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5"
+              >
+                <span className="text-[11px] font-medium text-neutral-600">
+                  {sz.sizeLabel}
+                </span>
+                <button
+                  onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity - 1)}
+                  className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
+                >
+                  <Minus className="h-2.5 w-2.5" />
+                </button>
+                <span className="w-4 text-center text-[11px] font-semibold">
+                  {sz.quantity}
+                </span>
+                <button
+                  onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity + 1)}
+                  className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
+                >
+                  <Plus className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mt-1 flex items-baseline gap-2">
+          {item.discountPercent > 0 && (
+            <span className="text-[11px] text-neutral-300 line-through">
+              {formatCurrency(item.basePrice)}
+            </span>
+          )}
+          <span className="text-sm font-semibold">
+            {formatCurrency(finalPrice * Math.max(itemQty, 1))}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  CartDrawer                                                         */
+/* ------------------------------------------------------------------ */
+
 export function CartDrawer() {
   const { t } = useLanguage();
-  const { items, totalItems, totalAmount, removeFromCart, updateCartItemSize, clearCart } = useCart();
+  const { items, totalItems, totalAmount, clearCart } = useCart();
   const { open, closeCartDrawer } = useCartDrawer();
   const [view, setView] = useState<DrawerView>("cart");
   const [successData, setSuccessData] = useState<OrderSuccess | null>(null);
+  const [modelMetas, setModelMetas] = useState<Record<string, ModelMeta>>({});
 
   // Animation states
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
+  // Fetch model metadata for items that need color/size selection
+  const fetchedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!open) return;
+    const incompleteIds = items
+      .filter((item) => !item.color || item.sizes.length === 0)
+      .map((item) => item.modelId)
+      .filter((id) => !fetchedRef.current.has(id));
+
+    if (incompleteIds.length === 0) return;
+
+    incompleteIds.forEach((id) => fetchedRef.current.add(id));
+
+    const supabase = createClient();
+    Promise.all(
+      incompleteIds.map(async (id) => {
+        const { data } = await supabase
+          .from("catalog_models")
+          .select("model_colors(id, name, hex, image_urls, stock_per_size), model_sizes(size_label, total_stock, sold_stock, reserved_stock)")
+          .eq("id", id)
+          .single();
+        if (data) {
+          return [id, { colors: data.model_colors ?? [], sizes: data.model_sizes ?? [] }] as const;
+        }
+        return null;
+      })
+    ).then((results) => {
+      const newMetas: Record<string, ModelMeta> = {};
+      for (const r of results) {
+        if (r) newMetas[r[0]] = r[1] as ModelMeta;
+      }
+      if (Object.keys(newMetas).length > 0) {
+        setModelMetas((prev) => ({ ...prev, ...newMetas }));
+      }
+    });
+  }, [open, items]);
+
   useEffect(() => {
     if (open) {
       setMounted(true);
-      // Double-rAF ensures the browser has painted the initial (off-screen) state
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setVisible(true));
       });
@@ -40,7 +258,7 @@ export function CartDrawer() {
       setVisible(false);
       const timer = setTimeout(() => {
         setMounted(false);
-        setView("cart"); // reset view when fully closed
+        setView("cart");
       }, 350);
       return () => clearTimeout(timer);
     }
@@ -66,13 +284,14 @@ export function CartDrawer() {
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  const hasIncompleteItems = useMemo(() => items.some((item) => !item.color), [items]);
+  const hasIncompleteItems = useMemo(
+    () => items.some((item) => !item.color || item.sizes.length === 0),
+    [items]
+  );
+
+  const handleClose = useCallback(() => closeCartDrawer(), [closeCartDrawer]);
 
   if (!mounted) return null;
-
-  const handleClose = () => {
-    closeCartDrawer();
-  };
 
   return (
     <>
@@ -149,101 +368,14 @@ export function CartDrawer() {
                 {/* Scrollable items */}
                 <div className="flex-1 overflow-y-auto px-5">
                   <div className="divide-y divide-neutral-100">
-                    {items.map((item) => {
-                      const finalPrice = item.basePrice * (1 - item.discountPercent / 100);
-                      const itemQty = item.sizes.reduce((s, sz) => s + sz.quantity, 0);
-
-                      return (
-                        <div key={item.modelId} className="flex gap-3 py-4">
-                          {/* Image */}
-                          <Link
-                            href={`/catalog/${item.modelId}`}
-                            onClick={handleClose}
-                            className="relative h-24 w-[68px] shrink-0 overflow-hidden bg-neutral-50"
-                          >
-                            {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt={item.modelName} fill unoptimized className="object-cover" />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-[9px] text-neutral-300">
-                                Фото
-                              </div>
-                            )}
-                          </Link>
-
-                          {/* Info */}
-                          <div className="flex flex-1 flex-col justify-between min-w-0">
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="text-[10px] text-neutral-400">Артикул: {item.sku}</p>
-                                  <p className="truncate text-sm font-medium">{item.modelName}</p>
-                                  {item.color && (
-                                    <p className="text-[11px] text-neutral-400">Колір: {item.color}</p>
-                                  )}
-                                  {!item.color && (
-                                    <Link
-                                      href={`/catalog/${item.modelId}`}
-                                      onClick={handleClose}
-                                      className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 hover:text-amber-700 transition"
-                                    >
-                                      <AlertTriangle className="h-3 w-3 shrink-0" />
-                                      <span>Оберіть колір та розмір</span>
-                                    </Link>
-                                  )}
-                                </div>
-                                <button
-                                  onClick={() => removeFromCart(item.modelId)}
-                                  className="shrink-0 p-0.5 text-neutral-300 transition hover:text-neutral-600"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Sizes with quantity controls */}
-                            <div className="mt-1.5 flex flex-wrap gap-1.5">
-                              {item.sizes.map((sz) => (
-                                <div
-                                  key={sz.sizeLabel}
-                                  className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5"
-                                >
-                                  <span className="text-[11px] font-medium text-neutral-600">
-                                    {sz.sizeLabel}
-                                  </span>
-                                  <button
-                                    onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity - 1)}
-                                    className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                                  >
-                                    <Minus className="h-2.5 w-2.5" />
-                                  </button>
-                                  <span className="w-4 text-center text-[11px] font-semibold">
-                                    {sz.quantity}
-                                  </span>
-                                  <button
-                                    onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity + 1)}
-                                    className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                                  >
-                                    <Plus className="h-2.5 w-2.5" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Price */}
-                            <div className="mt-1 flex items-baseline gap-2">
-                              {item.discountPercent > 0 && (
-                                <span className="text-[11px] text-neutral-300 line-through">
-                                  {formatCurrency(item.basePrice)}
-                                </span>
-                              )}
-                              <span className="text-sm font-semibold">
-                                {formatCurrency(finalPrice * itemQty)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {items.map((item) => (
+                      <CartItemCard
+                        key={item.modelId}
+                        item={item}
+                        meta={modelMetas[item.modelId] ?? null}
+                        onClose={handleClose}
+                      />
+                    ))}
                   </div>
                 </div>
 
@@ -270,11 +402,6 @@ export function CartDrawer() {
                   >
                     {t("cart.submitOrder").toUpperCase()}
                   </button>
-                  {hasIncompleteItems && (
-                    <p className="text-center text-[11px] text-amber-600">
-                      Оберіть колір та розмір для кожного товару
-                    </p>
-                  )}
 
                   <button
                     onClick={handleClose}
@@ -315,7 +442,6 @@ function SuccessPopup({ data, onClose }: { data: OrderSuccess; onClose: () => vo
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Delay appearance so drawer has time to slide out
     const timer = setTimeout(() => setVisible(true), 400);
     return () => clearTimeout(timer);
   }, []);
