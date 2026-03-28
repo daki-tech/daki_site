@@ -28,7 +28,7 @@ export async function getCatalogModels(filters: CatalogFilterInput = {}): Promis
 
     let query = supabase
       .from("catalog_models")
-      .select("id, name, sku, category, style, season, year, base_price, discount_percent, image_urls, is_active, is_out_of_stock, created_at, model_sizes(id, size_label, total_stock, sold_stock, reserved_stock), model_colors(id, name, hex, image_urls, is_default)")
+      .select("id, name, sku, category, style, season, year, base_price, discount_percent, image_urls, is_active, is_out_of_stock, created_at, model_sizes(id, size_label, total_stock, sold_stock, reserved_stock), model_colors(id, name, hex, image_urls, is_default, stock_per_size)")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 

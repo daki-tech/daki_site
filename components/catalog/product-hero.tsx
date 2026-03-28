@@ -45,11 +45,15 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   const finalPrice = model.base_price * (1 - model.discount_percent / 100);
 
   const sizes = useMemo(() => {
-    return (model.model_sizes ?? []).map((s) => ({
-      ...s,
-      available: s.total_stock - s.sold_stock - s.reserved_stock,
-    }));
-  }, [model.model_sizes]);
+    return (model.model_sizes ?? []).map((s) => {
+      // If a color is selected and has stock_per_size, use that color's stock
+      const colorStock = selectedColor?.stock_per_size;
+      const available = colorStock && colorStock[s.size_label] !== undefined
+        ? colorStock[s.size_label]
+        : s.total_stock - s.sold_stock - s.reserved_stock;
+      return { ...s, available };
+    });
+  }, [model.model_sizes, selectedColor]);
 
   const totalUnits = Object.values(selectedSizes).reduce((a, b) => a + b, 0);
 
@@ -93,6 +97,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   function handleColorChange(color: ModelColor) {
     setSelectedColor(color);
     setMainImageIdx(0);
+    setSelectedSizes({});
     onColorChange?.(color);
   }
 

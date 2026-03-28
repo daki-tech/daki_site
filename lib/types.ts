@@ -29,6 +29,7 @@ export interface ModelColor {
   description_image?: string | null;  // "Опис.png" — photo for description section
   delivery_image?: string | null;     // "Правила доставки.png" — photo for delivery section
   is_default: boolean;
+  stock_per_size?: Record<string, number>;
 }
 
 export interface CatalogModel {
