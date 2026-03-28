@@ -37,7 +37,6 @@ export async function POST(req: Request) {
         customer_phone: null,
         customer_email: null,
         delivery_city: city || null,
-        order_type: "retail",
         source,
       })
       .select("id, order_number")

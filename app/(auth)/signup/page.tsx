@@ -51,7 +51,6 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
             newsletter_subscribed: newsletter,
-            customer_type: "retail",
           },
         },
       });

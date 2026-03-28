@@ -47,7 +47,6 @@ async function sendTelegramNotification(order: {
   totalAmount: number;
   notes?: string;
   contactMe?: boolean;
-  orderType?: string;
 }) {
   const botToken = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
   if (!botToken) {
@@ -113,7 +112,7 @@ async function sendTelegramNotification(order: {
     : "Не указано";
 
   const text = [
-    `${order.orderType === "wholesale" ? "🏢 ОПТ" : "🛍 Розница"} | Заказ #${order.orderNumber || order.id.slice(0, 8)}`,
+    `🛍 Заказ #${order.orderNumber || order.id.slice(0, 8)}`,
     `👤 ${order.customerName}`,
     `📞 ${order.customerPhone}`,
     order.customerEmail ? `📧 ${order.customerEmail}` : "",
@@ -196,7 +195,6 @@ async function appendToGoogleSheets(order: {
   createdAt: string;
   notes?: string;
   contactMe?: boolean;
-  orderType?: string;
 }) {
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -327,7 +325,7 @@ async function sendOrderConfirmationEmail(order: {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, customerName, customerPhone, customerEmail, delivery, paymentMethod, notes, contactMe, orderType } = body as {
+    const { items, customerName, customerPhone, customerEmail, delivery, paymentMethod, notes, contactMe } = body as {
       items: {
         modelId: string;
         modelName: string;
@@ -344,7 +342,6 @@ export async function POST(req: Request) {
       paymentMethod?: string;
       notes?: string;
       contactMe?: boolean;
-      orderType?: "retail" | "wholesale";
     };
 
     if (!items || items.length === 0) {
@@ -427,7 +424,6 @@ export async function POST(req: Request) {
           delivery_branch: delivery?.branch || null,
           payment_method: paymentMethod || null,
           notes: notes || null,
-          order_type: orderType || "retail",
           source: "Сайт",
         })
         .select("id, order_number")
@@ -505,7 +501,6 @@ export async function POST(req: Request) {
       createdAt,
       notes,
       contactMe,
-      orderType: orderType || "retail",
     };
 
     // Send notifications AFTER response — user doesn't wait for Telegram/Sheets/Email

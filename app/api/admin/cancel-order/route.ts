@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // 1. Get order
     const { data: order, error: orderError } = await admin
       .from("orders")
-      .select("id, status, order_type, order_number")
+      .select("id, status, order_number")
       .eq("id", orderId)
       .single();
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     // 5. Delete from Google Sheets
     const orderNumber = order.order_number || orderId.slice(0, 8);
-    deleteOrderFromGoogleSheets(order.order_type, orderNumber);
+    deleteOrderFromGoogleSheets(orderNumber);
 
     // 6. Sync stock to Google Sheets
     try {
@@ -131,20 +131,14 @@ async function returnStockBatched(
 /**
  * Delete order rows from Google Sheets (fire-and-forget)
  */
-function deleteOrderFromGoogleSheets(orderType: string | null, orderNumber: string) {
-  const isWholesale = orderType === "wholesale";
-  const webhookUrl = isWholesale
-    ? process.env.GOOGLE_WHOLESALE_WEBHOOK_URL
-    : process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-
+function deleteOrderFromGoogleSheets(orderNumber: string) {
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
   if (!webhookUrl) return;
-
-  const action = isWholesale ? "deleteWholesaleOrder" : "deleteOrder";
 
   fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, orderNumber }),
+    body: JSON.stringify({ action: "deleteOrder", orderNumber }),
   }).catch((err) => {
     console.error(`[Google Sheets] Failed to delete order ${orderNumber}:`, err);
   });

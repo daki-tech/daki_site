@@ -1,7 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { CatalogModel, DashboardStats, DiscountRule, Profile, WholesaleOrder } from "@/lib/types";
+import type { CatalogModel, DashboardStats, DiscountRule, Order, Profile } from "@/lib/types";
 import { mockDiscounts, mockModels, mockOrders } from "@/lib/mock-data";
 
 function hasSupabaseEnv() {
@@ -111,7 +111,7 @@ export async function getCatalogModelsByIds(ids: string[]): Promise<CatalogModel
   }
 }
 
-export async function getUserOrders(userId: string): Promise<WholesaleOrder[]> {
+export async function getUserOrders(userId: string): Promise<Order[]> {
   if (!hasSupabaseEnv()) {
     return mockOrders;
   }
@@ -125,7 +125,7 @@ export async function getUserOrders(userId: string): Promise<WholesaleOrder[]> {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return (data ?? []) as WholesaleOrder[];
+    return (data ?? []) as Order[];
   } catch {
     return mockOrders;
   }
@@ -229,7 +229,7 @@ export async function getHomepageSettings(): Promise<Record<string, string>> {
   }
 }
 
-export async function getAdminOrders(): Promise<WholesaleOrder[]> {
+export async function getAdminOrders(): Promise<Order[]> {
   if (!hasSupabaseEnv()) return mockOrders;
 
   try {
@@ -240,7 +240,7 @@ export async function getAdminOrders(): Promise<WholesaleOrder[]> {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return (data ?? []) as WholesaleOrder[];
+    return (data ?? []) as Order[];
   } catch {
     return mockOrders;
   }

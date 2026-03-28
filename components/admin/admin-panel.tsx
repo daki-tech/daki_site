@@ -80,11 +80,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CATALOG_CATEGORIES, MODEL_SEASONS } from "@/lib/constants";
-import type { CatalogModel, DashboardStats, Profile, WholesaleOrder } from "@/lib/types";
+import type { CatalogModel, DashboardStats, Order, Profile } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
 import { RetailOrdersTab } from "@/components/admin/retail-orders-tab";
-import { WholesaleOrdersTab } from "@/components/admin/wholesale-orders-tab";
 import { useConfirmDialog } from "@/components/admin/confirm-dialog";
 
 // useConfirmDialog imported from ./confirm-dialog
@@ -113,7 +112,7 @@ const S = {
 
 interface AdminPanelProps {
   initialModels: CatalogModel[];
-  orders: WholesaleOrder[];
+  orders: Order[];
   stats: DashboardStats;
   users: Profile[];
 }
@@ -129,8 +128,6 @@ interface ModelFormData {
   season: string;
   base_price: string;
   discount_percent: string;
-  wholesale_price: string;
-  min_wholesale_qty: string;
   description: string;
   care_instructions: string;
   delivery_info: string;
@@ -145,7 +142,7 @@ interface ModelFormData {
 
 const emptyForm: ModelFormData = {
   sku: "", name: "", category: "puhovik", season: "Зима",
-  base_price: "0", discount_percent: "0", wholesale_price: "0", min_wholesale_qty: "1", description: "",
+  base_price: "0", discount_percent: "0", description: "",
   care_instructions: "", delivery_info: "", return_info: "",
   care_media_url: "", delivery_media_url: "",
   selected_sizes: [],
@@ -160,7 +157,6 @@ function modelToForm(m: CatalogModel): ModelFormData {
   return {
     sku: m.sku, name: m.name, category: m.category, season: m.season,
     base_price: String(m.base_price), discount_percent: String(m.discount_percent),
-    wholesale_price: String(m.wholesale_price ?? 0), min_wholesale_qty: String(m.min_wholesale_qty ?? 1),
     description: m.description ?? "",
     care_instructions: m.care_instructions ?? "", delivery_info: m.delivery_info ?? "",
     return_info: m.return_info ?? "",
@@ -531,7 +527,7 @@ function SingleMediaUpload({ value, onChange, label, aspect, targetSize }: { val
 export function AdminPanel({ initialModels, orders: initialOrders, stats, users: initialUsers }: AdminPanelProps) {
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const [models, setModels] = useState<CatalogModel[]>(initialModels);
-  const [orders, setOrders] = useState<WholesaleOrder[]>(initialOrders);
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [users] = useState<Profile[]>(initialUsers);
 
   // Products state
@@ -547,8 +543,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
   const [orderSort, setOrderSort] = useState<"date_desc"|"date_asc"|"amount_desc"|"amount_asc">("date_desc");
   const [orderMonthFilter, setOrderMonthFilter] = useState("all");
   const [orderYearFilter, setOrderYearFilter] = useState(String(new Date().getFullYear()));
-  const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all");
-  const [selectedOrder, setSelectedOrder] = useState<WholesaleOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
 
   // Revenue state
@@ -727,7 +722,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: editForm.sku, name: editForm.name, category: editForm.category,
       season: editForm.season,
       base_price: Number(editForm.base_price), discount_percent: Number(editForm.discount_percent),
-      wholesale_price: 0, min_wholesale_qty: 0,
       description: editForm.description || null,
       image_urls: editForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: editForm.care_instructions || null,
@@ -754,7 +748,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
       sku: createForm.sku, name: createForm.name, category: createForm.category,
       season: createForm.season,
       base_price: Number(createForm.base_price), discount_percent: Number(createForm.discount_percent),
-      wholesale_price: 0, min_wholesale_qty: 0,
       description: createForm.description || null,
       image_urls: createForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
       care_instructions: createForm.care_instructions || null,
@@ -790,7 +783,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     let list = orders.filter((o) => (o.source ?? "Сайт") === "Сайт");
     if (orderYearFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getFullYear()) === orderYearFilter);
     if (orderMonthFilter !== "all") list = list.filter((o) => String(new Date(o.created_at).getMonth() + 1) === orderMonthFilter);
-    if (orderTypeFilter !== "all") list = list.filter((o) => o.order_type === orderTypeFilter);
     if (orderSearch.trim()) {
       const q = orderSearch.toLowerCase();
       list = list.filter((o) => (o.customer_name ?? "").toLowerCase().includes(q) || String(o.order_number ?? "").includes(q));
@@ -800,9 +792,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     else if (orderSort === "amount_desc") list = [...list].sort((a, b) => b.total_amount - a.total_amount);
     else if (orderSort === "amount_asc") list = [...list].sort((a, b) => a.total_amount - b.total_amount);
     return list;
-  }, [orders, orderSearch, orderSort, orderMonthFilter, orderYearFilter, orderTypeFilter]);
+  }, [orders, orderSearch, orderSort, orderMonthFilter, orderYearFilter]);
 
-  const handleSetOrderStatus = async (order: WholesaleOrder, targetStatus: string) => {
+  const handleSetOrderStatus = async (order: Order, targetStatus: string) => {
     // Toggle: if already at this status, go back to previous
     const statusFlow = ["draft", "confirmed", "shipped", "completed"];
     const currentIdx = statusFlow.indexOf(order.status);
@@ -985,10 +977,9 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               <TabsTrigger value="contacts" className={tabTriggerCls}><Phone className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Контакты</span></TabsTrigger>
               <TabsTrigger value="newsletter" className={tabTriggerCls}><Mail className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Рассылка</span></TabsTrigger>
             </TabsList>
-            {/* Вне сайта — розница и опт */}
+            {/* Вне сайта */}
             <TabsList className="inline-flex h-11 items-center gap-0.5 rounded-2xl bg-neutral-100 p-1">
-              <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Розница</span><span className="sm:hidden">Розн.</span></TabsTrigger>
-              <TabsTrigger value="wholesale" className={tabTriggerCls}><Package className="h-3.5 w-3.5" /> Опт</TabsTrigger>
+              <TabsTrigger value="retail" className={tabTriggerCls}><ShoppingCart className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Вне сайта</span><span className="sm:hidden">Вне</span></TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -1140,14 +1131,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
-                <SelectTrigger className={`w-[110px] sm:w-[130px] ${S.select}`}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все типы</SelectItem>
-                  <SelectItem value="retail">Розница</SelectItem>
-                  <SelectItem value="wholesale">Опт</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={orderYearFilter} onValueChange={setOrderYearFilter}>
                 <SelectTrigger className={`w-[90px] sm:w-[100px] ${S.select}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -1335,10 +1318,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           <RetailOrdersTab models={models} />
         </TabsContent>
 
-        {/* ====================== ОПТ ====================== */}
-        <TabsContent value="wholesale" className="space-y-4">
-          <WholesaleOrdersTab models={models} />
-        </TabsContent>
 
         {/* ====================== ВЫРУЧКА ====================== */}
         <TabsContent value="revenue" className="space-y-4">
@@ -1412,7 +1391,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                 <TableHeader>
                   <TableRow>
                     <TableHead>Имя</TableHead><TableHead>Email</TableHead><TableHead>Телефон</TableHead>
-                    <TableHead>Тип</TableHead><TableHead>Заказов</TableHead><TableHead>Регистрация</TableHead>
+                    <TableHead>Заказов</TableHead><TableHead>Регистрация</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1421,12 +1400,11 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                       <TableCell className="font-medium">{user.full_name ?? "-"}</TableCell>
                       <TableCell className="text-sm">{user.email ?? "-"}</TableCell>
                       <TableCell className="text-sm">{user.phone ?? "-"}</TableCell>
-                      <TableCell><Badge variant={user.customer_type === "wholesale" ? "default" : "secondary"}>{user.customer_type === "wholesale" ? "Опт" : "Розница"}</Badge></TableCell>
                       <TableCell>{userOrderCounts[user.id] ?? 0}</TableCell>
                       <TableCell className="text-sm">{format(new Date(user.created_at), "dd.MM.yyyy")}</TableCell>
                     </TableRow>
                   ))}
-                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Не найдено</TableCell></TableRow>}
+                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Не найдено</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1442,9 +1420,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                       <DialogTitle className="text-lg sm:text-xl font-bold">
                         {selectedUser.full_name ?? "Пользователь"}
                       </DialogTitle>
-                      <Badge variant={selectedUser.customer_type === "wholesale" ? "default" : "secondary"} className="text-xs">
-                        {selectedUser.customer_type === "wholesale" ? "Оптовый" : "Розничный"}
-                      </Badge>
                     </div>
                     <DialogDescription className="text-sm text-gray-400">Карточка пользователя</DialogDescription>
                   </DialogHeader>
@@ -1463,12 +1438,6 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     </div>
                   </div>
 
-                  {selectedUser.customer_type === "wholesale" && (
-                    <div className="bg-gray-50/50 rounded-2xl p-5 space-y-3">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Компания</p>
-                      <p className="text-sm font-semibold">{selectedUser.company_name ?? "-"}</p>
-                    </div>
-                  )}
 
                   <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 space-y-4">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Доставка</p>

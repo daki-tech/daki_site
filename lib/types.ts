@@ -11,9 +11,7 @@ export interface Profile {
   theme: ThemeMode;
   is_admin: boolean;
   newsletter_subscribed: boolean;
-  customer_type: "retail" | "wholesale";
   phone: string | null;
-  company_name: string | null;
   delivery_city: string | null;
   delivery_branch: string | null;
   created_at: string;
@@ -42,8 +40,6 @@ export interface CatalogModel {
   year: number;
   description: string | null;
   base_price: number;
-  wholesale_price: number;
-  min_wholesale_qty: number;
   discount_percent: number;
   image_urls: string[];
   is_active: boolean;
@@ -70,7 +66,7 @@ export interface ModelSize {
   reserved_stock: number;
 }
 
-export interface WholesaleOrder {
+export interface Order {
   id: string;
   user_id: string;
   order_number: number | null;
@@ -86,7 +82,6 @@ export interface WholesaleOrder {
   payment_method: string | null;
   created_at: string;
   notes: string | null;
-  order_type: "retail" | "wholesale";
   source?: string;
   order_items?: OrderItem[];
 }

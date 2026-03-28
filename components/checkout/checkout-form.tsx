@@ -298,7 +298,6 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
           paymentMethod: form.payment_method === "cash_on_delivery" ? "cod" : form.payment_method === "card" ? "online" : form.payment_method,
           notes: form.notes,
           contactMe: form.contact_me,
-          orderType: "retail",
         }),
       });
 

@@ -55,7 +55,6 @@ interface Order {
   delivery_branch: string | null;
   payment_method: string | null;
   notes: string | null;
-  order_type: "retail" | "wholesale";
   source: string;
   created_at: string;
   order_items: {
@@ -125,7 +124,7 @@ export function RetailOrdersTab({ models }: RetailOrdersTabProps) {
       if (res.ok) {
         const data: Order[] = await res.json();
         if (id === fetchRef.current) {
-          setOrders(data.filter(o => o.order_type === "retail"));
+          setOrders(data);
         }
       }
     } catch { /* ignore */ } finally {

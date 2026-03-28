@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeTable } from "@/hooks/use-realtime";
-import type { Profile, WholesaleOrder } from "@/lib/types";
+import type { Order, Profile } from "@/lib/types";
 
 type Tab = "orders" | "profile";
 
@@ -41,7 +41,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("orders");
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [orders, setOrders] = useState<WholesaleOrder[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Profile form state
@@ -92,7 +92,7 @@ export default function ProfilePage() {
         const res = await fetch("/api/orders");
         if (res.ok) {
           const ordersData = await res.json();
-          setOrders(ordersData as WholesaleOrder[]);
+          setOrders(ordersData as Order[]);
         }
       } catch (e) {
         console.error("Failed to load orders:", e);
@@ -202,7 +202,7 @@ export default function ProfilePage() {
 
 /* ─── Orders Tab ─── */
 
-function OrdersTab({ orders }: { orders: WholesaleOrder[] }) {
+function OrdersTab({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center py-16 text-center">
@@ -229,7 +229,7 @@ function OrdersTab({ orders }: { orders: WholesaleOrder[] }) {
   );
 }
 
-function OrderCard({ order }: { order: WholesaleOrder }) {
+function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
   const items = order.order_items ?? [];
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);

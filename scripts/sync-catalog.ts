@@ -88,8 +88,6 @@ interface ParsedInfo {
   sku: string;
   name: string;
   price: number;
-  wholesalePrice: number;
-  minWholesaleQty: number;
   colors: { name: string; hex: string }[];
   sizes: string[];
   description: string[];
@@ -106,7 +104,6 @@ const SECTION_PATTERNS: [RegExp, string][] = [
   [/^Артикул:\s*/i, "sku"],
   [/^(Название|Назва):\s*/i, "name"],
   [/^(Цена|Ціна):\s*/i, "price"],
-  [/^(Оптова ціна|Оптовая цена):\s*/i, "wholesale_price"],
   [/^(Цвета|Кольори|Цвіти)\s*:/i, "colors"],
   [/^(розміри|Размеры)\s*:/i, "sizes"],
   [/^(Опис|Описание)\s*:/i, "description"],
@@ -122,8 +119,6 @@ function parseInfoFile(content: string): ParsedInfo {
     sku: "",
     name: "",
     price: 0,
-    wholesalePrice: 0,
-    minWholesaleQty: 1,
     colors: [],
     sizes: [],
     description: [],
@@ -151,8 +146,6 @@ function parseInfoFile(content: string): ParsedInfo {
           result.name = trimmed.replace(/^(Название|Назва):\s*/i, "").trim();
         } else if (sectionName === "price") {
           result.price = parseInt(trimmed.replace(/^(Цена|Ціна):\s*/i, "").trim(), 10) || 0;
-        } else if (sectionName === "wholesale_price") {
-          result.wholesalePrice = parseInt(trimmed.replace(/^(Оптова ціна|Оптовая цена):\s*/i, "").trim(), 10) || 0;
         }
         section = sectionName;
         isHeader = true;
@@ -359,9 +352,6 @@ async function syncCatalog() {
         year: new Date().getFullYear(),
         description: descriptionText,
         base_price: info.price || 0,
-
-        wholesale_price: info.wholesalePrice || 0,
-        min_wholesale_qty: info.minWholesaleQty || 1,
         discount_percent: 0,
         image_urls: mainImageUrls,
         detail_images: [],
