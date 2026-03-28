@@ -26,14 +26,22 @@ export function ProductCard({ model }: ProductCardProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Colors with at least one image
+  const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
+  // When a color is selected, use its images; otherwise use model.image_urls
+  const activeImages = selectedColorIdx !== null && colors[selectedColorIdx]
+    ? colors[selectedColorIdx].image_urls
+    : images;
+
   const startCarousel = useCallback(() => {
-    if (!hasMultipleImages) return;
+    if (activeImages.length <= 1) return;
     intervalRef.current = setInterval(() => {
-      setCurrentIdx((prev) => (prev + 1) % images.length);
+      setCurrentIdx((prev) => (prev + 1) % activeImages.length);
     }, 1500);
-  }, [hasMultipleImages, images.length]);
+  }, [activeImages.length]);
 
   const stopCarousel = useCallback(() => {
     if (intervalRef.current) {
@@ -93,11 +101,11 @@ export function ProductCard({ model }: ProductCardProps) {
       <Wrapper {...wrapperProps}>
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-          {images.length > 0 ? (
+          {activeImages.length > 0 ? (
             <>
-              {images.map((url, idx) => (
+              {activeImages.map((url, idx) => (
                 <SmartImage
-                  key={idx}
+                  key={`${selectedColorIdx}-${idx}`}
                   src={url}
                   alt={idx === 0 ? model.name : ""}
                   fill
@@ -180,12 +188,38 @@ export function ProductCard({ model }: ProductCardProps) {
             <p className="text-xs text-muted-foreground">Немає в наявності</p>
           ) : (
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium">{formatCurrency(displayPrice)}</span>
+              <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(displayPrice)}</span>
               {model.discount_percent > 0 && (
                 <span className="text-xs text-muted-foreground line-through">
                   {formatCurrency(model.base_price)}
                 </span>
               )}
+            </div>
+          )}
+
+          {/* Color swatches */}
+          {colors.length > 1 && !outOfStock && (
+            <div className="mt-2 flex items-center gap-1.5">
+              {colors.map((color, idx) => (
+                <button
+                  key={color.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedColorIdx(idx === selectedColorIdx ? null : idx);
+                    setCurrentIdx(0);
+                    stopCarousel();
+                  }}
+                  className={`h-4 w-4 rounded-full border transition-all ${
+                    idx === selectedColorIdx
+                      ? "ring-1 ring-offset-1 ring-black scale-110"
+                      : "border-neutral-300 hover:scale-110"
+                  }`}
+                  style={{ backgroundColor: color.hex || "#ccc" }}
+                  title={color.name}
+                />
+              ))}
             </div>
           )}
         </div>

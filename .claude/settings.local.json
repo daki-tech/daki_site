@@ -224,7 +224,8 @@
       "Bash(grep -A 30 \"CREATE TABLE.*model_colors\" /d/DaKi/supabase/*.sql)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
       "Bash(node --env-file=.env.local -e \":*)",
-      "Bash(du -h /d/DaKi/style/catalog/*)"
+      "Bash(du -h /d/DaKi/style/catalog/*)",
+      "Bash(vercel --prod)"
     ]
   }
 }
