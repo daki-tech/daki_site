@@ -1,58 +1,72 @@
 import { NextResponse } from "next/server";
-import { verifySignature, decodeData } from "@/lib/liqpay";
+import { verifyWebhookSignature } from "@/lib/checkbox";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/**
+ * Checkbox.ua webhook callback
+ *
+ * Receives notifications when invoices are paid and receipts fiscalized.
+ * Must return HTTP 200, otherwise Checkbox retries with exponential backoff.
+ */
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const data = formData.get("data") as string;
-    const signature = formData.get("signature") as string;
+    const body = await req.text();
+    const signature = req.headers.get("x-signature") || "";
 
-    if (!data || !signature) {
-      return NextResponse.json({ error: "Missing data or signature" }, { status: 400 });
+    // Verify signature if secret is configured
+    if (process.env.CHECKBOX_WEBHOOK_SECRET) {
+      if (!verifyWebhookSignature(body, signature)) {
+        console.error("[Checkbox Webhook] Invalid signature");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+      }
     }
 
-    if (!verifySignature(data, signature)) {
-      console.error("[LiqPay Callback] Invalid signature");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    const payload = JSON.parse(body);
+    console.log("[Checkbox Webhook] Event:", JSON.stringify(payload).slice(0, 500));
+
+    // Checkbox sends different event types — we care about receipt/invoice events
+    // The payload structure varies; look for receipt with status DONE
+    const receiptStatus = payload?.status;
+    const invoiceId = payload?.id || payload?.invoice_id;
+
+    if (!invoiceId) {
+      // Not an invoice event — acknowledge and ignore
+      return NextResponse.json({ ok: true });
     }
-
-    const payload = decodeData(data) as {
-      order_id: string;
-      status: string;
-      amount: number;
-      currency: string;
-      payment_id: number;
-      transaction_id: number;
-      err_code?: string;
-      err_description?: string;
-    };
-
-    console.log(`[LiqPay Callback] Order: ${payload.order_id}, Status: ${payload.status}, Amount: ${payload.amount} ${payload.currency}`);
 
     const admin = createAdminClient();
 
-    // LiqPay statuses: success, failure, error, reversed, sandbox, subscribed, unsubscribed
-    if (payload.status === "success" || payload.status === "sandbox") {
-      // Payment successful — confirm order
-      await admin
+    if (receiptStatus === "DONE" || receiptStatus === "CREATED") {
+      // Find the order by matching the invoice ID stored in notes
+      const { data: orders } = await admin
         .from("orders")
-        .update({
-          status: "confirmed",
-          payment_method: "liqpay",
-          notes: `LiqPay payment #${payload.payment_id} confirmed`,
-        })
-        .eq("id", payload.order_id)
-        .eq("status", "draft"); // Only update if still draft
+        .select("id, status, notes, payment_method")
+        .or(`notes.ilike.%${invoiceId}%`)
+        .eq("status", "draft");
 
-      console.log(`[LiqPay] Order ${payload.order_id} confirmed`);
-    } else if (payload.status === "failure" || payload.status === "error") {
-      console.log(`[LiqPay] Payment failed for order ${payload.order_id}: ${payload.err_description || payload.status}`);
+      if (orders && orders.length > 0) {
+        const order = orders[0];
+        const isPrepayment = order.notes?.includes("prepayment");
+
+        await admin
+          .from("orders")
+          .update({
+            status: "confirmed",
+            payment_method: isPrepayment ? "cod_prepaid" : "online",
+            notes: isPrepayment
+              ? `${order.notes} | Передплата 200 UAH сплачена`
+              : `${order.notes} | Оплата підтверджена`,
+          })
+          .eq("id", order.id);
+
+        console.log(`[Checkbox] Order ${order.id} confirmed (${isPrepayment ? "prepayment" : "full payment"})`);
+      }
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[LiqPay Callback] Error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    console.error("[Checkbox Webhook] Error:", err);
+    // Return 200 to prevent retries on parse errors
+    return NextResponse.json({ ok: true });
   }
 }

@@ -47,9 +47,8 @@ interface WarehouseOption {
 }
 
 const PAYMENT_METHODS = [
-  { value: "cash_on_delivery", label: "Накладений платіж (Нова Пошта)" },
+  { value: "cash_on_delivery", label: "Накладений платіж (Нова Пошта)", sublabel: "Передплата 200 ₴ онлайн" },
   { value: "card", label: "Оплата картою онлайн" },
-  { value: "invoice", label: "Рахунок для юридичних осіб" },
 ];
 
 export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: CheckoutFormProps) {
@@ -321,38 +320,26 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
         }));
       } catch { /* ignore */ }
 
-      // If card payment — try LiqPay redirect
-      if (form.payment_method === "card" && data.orderId) {
+      // Online payment or COD prepayment — redirect to Checkbox payment page
+      const needsPayment = form.payment_method === "card" || form.payment_method === "cash_on_delivery";
+      if (needsPayment && data.orderId) {
         try {
           const payRes = await fetch("/api/payment/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: data.orderId }),
+            body: JSON.stringify({
+              orderId: data.orderId,
+              prepayment: form.payment_method === "cash_on_delivery",
+            }),
           });
           if (payRes.ok) {
             const payData = await payRes.json();
-            // Create hidden form and submit to LiqPay
-            const liqpayForm = document.createElement("form");
-            liqpayForm.method = "POST";
-            liqpayForm.action = "https://www.liqpay.ua/api/3/checkout";
-            liqpayForm.target = "_self";
-            const dataInput = document.createElement("input");
-            dataInput.type = "hidden";
-            dataInput.name = "data";
-            dataInput.value = payData.data;
-            const sigInput = document.createElement("input");
-            sigInput.type = "hidden";
-            sigInput.name = "signature";
-            sigInput.value = payData.signature;
-            liqpayForm.appendChild(dataInput);
-            liqpayForm.appendChild(sigInput);
-            document.body.appendChild(liqpayForm);
             clearCart();
-            liqpayForm.submit();
+            window.location.href = payData.pageUrl;
             return;
           }
         } catch {
-          // LiqPay not available — fall through to normal success
+          // Payment service not available — fall through to normal success
         }
       }
 
@@ -550,17 +537,36 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Спосіб оплати *
             </label>
-            <select
-              required
-              value={form.payment_method}
-              onChange={(e) => handleChange("payment_method", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
-            >
-              <option value="" disabled>Оберіть спосіб оплати...</option>
+            <div className="mt-2 space-y-2">
               {PAYMENT_METHODS.map((pm) => (
-                <option key={pm.value} value={pm.value}>{pm.label}</option>
+                <button
+                  key={pm.value}
+                  type="button"
+                  onClick={() => handleChange("payment_method", pm.value)}
+                  className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    form.payment_method === pm.value
+                      ? "border-black bg-black/[0.03]"
+                      : "border-neutral-200 hover:border-neutral-400"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                      form.payment_method === pm.value ? "border-black" : "border-neutral-300"
+                    }`}>
+                      {form.payment_method === pm.value && (
+                        <div className="h-2 w-2 rounded-full bg-black" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">{pm.label}</span>
+                      {pm.sublabel && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{pm.sublabel}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           {/* Contact me checkbox */}
