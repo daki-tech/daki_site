@@ -225,7 +225,20 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
       "Bash(node --env-file=.env.local -e \":*)",
       "Bash(du -h /d/DaKi/style/catalog/*)",
-      "Bash(vercel --prod)"
-    ]
+      "Bash(vercel --prod)",
+      "Bash(ls -la \"D:/DaKi/app/\\(marketing\\)/catalog/[id]/\")",
+      "Bash(grep -n \"CREATE TABLE.*model_colors\" /d/DaKi/supabase/*.sql)",
+      "Bash(grep -n \"CREATE TABLE\" /d/DaKi/supabase/*.sql)",
+      "Bash(grep -n \"model_colors\" /d/DaKi/supabase/*.sql)",
+      "Bash(grep -r 'CREATE TABLE' /d/DaKi --include=*.ts --include=*.tsx)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(node -e \"const s = require\\(''./DaKi/.claude/settings.local.json''\\); console.log\\(s.permissions.defaultMode\\)\")",
+      "Bash(node -e \"const s = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''D:/DaKi/.claude/settings.local.json'',''utf8''\\)\\); console.log\\(s.permissions.defaultMode\\)\")",
+      "mcp__5dd035e6-00ab-4abe-8c8d-e404c8b489be__restore_project",
+      "Bash(vercel --prod --yes)",
+      "Bash(git push:*)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }

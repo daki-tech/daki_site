@@ -12,7 +12,7 @@ const headerLabels: Record<string, string> = {
   size: "Розмір",
   chest: "Обхват грудей (см)",
   waist: "Обхват талії (см)",
-  hips: "Обхват стегон",
+  hips: "Обхват стегон (см)",
 };
 
 // Columns hidden from customers (admin-only data)
