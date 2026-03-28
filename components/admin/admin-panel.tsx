@@ -1186,8 +1186,8 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"><RoundCheck checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAllOrders} /></TableHead>
-                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead><TableHead>Тип</TableHead><TableHead>Источник</TableHead>
-                      <TableHead>Телефон</TableHead><TableHead>Сумма</TableHead><TableHead>Позиции</TableHead>
+                      <TableHead>№</TableHead><TableHead>Дата</TableHead><TableHead>Клиент</TableHead>
+                      <TableHead>Телефон</TableHead><TableHead>Модель</TableHead><TableHead>Колір</TableHead><TableHead>Розмір</TableHead><TableHead>Кількість</TableHead><TableHead>Сума</TableHead>
                       <TableHead className="text-center text-blue-500 text-[10px] w-14">Подтв.</TableHead>
                       <TableHead className="text-center text-amber-500 text-[10px] w-14">Отпр.</TableHead>
                       <TableHead className="text-center text-green-500 text-[10px] w-14">Дост.</TableHead>
@@ -1206,22 +1206,28 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                           <TableCell className="font-mono text-xs">{order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)}</TableCell>
                           <TableCell className="text-sm">{format(new Date(order.created_at), "dd.MM.yyyy HH:mm")}</TableCell>
                           <TableCell className="text-sm">{order.customer_name ?? "-"}</TableCell>
-                          <TableCell>
-                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${order.order_type === "wholesale" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"}`}>
-                              {order.order_type === "wholesale" ? "Опт" : "Розн."}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-500">{order.source ?? "Сайт"}</TableCell>
                           <TableCell className="text-sm">{order.customer_phone ?? "-"}</TableCell>
-                          <TableCell className="font-medium">{formatCurrency(order.total_amount)}</TableCell>
-                          <TableCell>
-                            <div className="space-y-0.5 text-xs text-muted-foreground">
-                              {(order.order_items ?? []).slice(0, 2).map((item) => (
-                                <p key={item.id}>{item.catalog_models?.sku ?? "?"} / {item.size_label}: {item.quantity} шт.</p>
-                              ))}
-                              {(order.order_items?.length ?? 0) > 2 && <p className="text-muted-foreground/60">+{(order.order_items?.length ?? 0) - 2} ещё</p>}
-                            </div>
+                          <TableCell className="text-xs">
+                            {(order.order_items ?? []).map((item) => (
+                              <p key={item.id}>{item.catalog_models?.sku ?? item.model_id.slice(0, 6)}</p>
+                            ))}
                           </TableCell>
+                          <TableCell className="text-xs">
+                            {(order.order_items ?? []).map((item) => (
+                              <p key={item.id}>{item.color ?? "-"}</p>
+                            ))}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order.order_items ?? []).map((item) => (
+                              <p key={item.id}>{item.size_label}</p>
+                            ))}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order.order_items ?? []).map((item) => (
+                              <p key={item.id}>{item.quantity} шт.</p>
+                            ))}
+                          </TableCell>
+                          <TableCell className="font-medium">{formatCurrency(order.total_amount)}</TableCell>
                           <TableCell className="text-center">
                             <RoundCheck checked={isConfirmed} onChange={() => handleSetOrderStatus(order, "confirmed")} accent="blue" />
                           </TableCell>
