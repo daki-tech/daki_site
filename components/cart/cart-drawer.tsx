@@ -108,47 +108,55 @@ function CartItemCard({
           </button>
         </div>
 
-        {/* Color selector or display */}
-        {needsSelection && colors.length > 0 ? (
+        {/* Color selector — always visible */}
+        {colors.length > 0 && (
           <div className="mt-1.5">
-            <p className="text-[10px] text-amber-600 font-medium mb-1">Оберіть колір:</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               {colors.map((c) => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => handleColorSelect(c)}
-                  className="h-5 w-5 rounded-full border-2 border-neutral-200 transition-all hover:scale-110"
+                  className={`h-5 w-5 rounded-full border-2 transition-all hover:scale-110 ${
+                    item.color === c.name
+                      ? "border-neutral-900 scale-110"
+                      : "border-neutral-200"
+                  }`}
                   style={{ backgroundColor: c.hex || "#ccc" }}
                   title={c.name}
                 />
               ))}
             </div>
           </div>
-        ) : item.color ? (
-          <p className="text-[11px] text-neutral-400 mt-0.5">Колір: {item.color}</p>
-        ) : null}
+        )}
 
-        {/* Size selector (when color is selected but no sizes chosen) */}
-        {item.color && item.sizes.length === 0 && availableSizes.length > 0 && (
+        {/* Size selector — always visible when color is selected */}
+        {item.color && availableSizes.length > 0 && (
           <div className="mt-1.5">
-            <p className="text-[10px] text-amber-600 font-medium mb-1">Оберіть розмір:</p>
             <div className="flex flex-wrap gap-1">
-              {availableSizes.map((s) => (
-                <button
-                  key={s.label}
-                  type="button"
-                  onClick={() => handleSizeToggle(s.label)}
-                  className="rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-600 transition hover:border-black hover:bg-neutral-50"
-                >
-                  {s.label}
-                </button>
-              ))}
+              {availableSizes.map((s) => {
+                const selected = item.sizes.find((sz) => sz.sizeLabel === s.label);
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => handleSizeToggle(s.label)}
+                    className={`rounded-md border px-2 py-0.5 text-[11px] font-medium transition ${
+                      selected
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 bg-white text-neutral-600 hover:border-black"
+                    }`}
+                  >
+                    {s.label}
+                    {selected && selected.quantity > 1 ? ` ×${selected.quantity}` : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Selected sizes with quantity controls */}
+        {/* Quantity controls for selected sizes */}
         {item.sizes.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {item.sizes.map((sz) => (
@@ -216,7 +224,6 @@ export function CartDrawer() {
   useEffect(() => {
     if (!open) return;
     const incompleteIds = items
-      .filter((item) => !item.color || item.sizes.length === 0)
       .map((item) => item.modelId)
       .filter((id) => !fetchedRef.current.has(id));
 
