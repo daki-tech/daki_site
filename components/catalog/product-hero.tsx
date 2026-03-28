@@ -142,7 +142,7 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
 
         {/* Price */}
         <div className="mt-3 flex items-baseline gap-3">
-          <span className="text-xl font-normal">{formatCurrency(finalPrice)}</span>
+          <span className={`text-xl font-normal ${model.discount_percent > 0 ? "text-red-600" : ""}`}>{formatCurrency(finalPrice)}</span>
           {model.discount_percent > 0 && (
             <span className="text-sm text-neutral-400 line-through">
               {formatCurrency(model.base_price)}

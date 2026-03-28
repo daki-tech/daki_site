@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ArrowRight, Heart, ShoppingBag } from "lucide-react";
 
 import { useLanguage } from "@/components/providers/language-provider";
@@ -14,17 +15,144 @@ interface FeaturedCollectionProps {
   models: CatalogModel[];
 }
 
-export function FeaturedCollection({ models }: FeaturedCollectionProps) {
-  const { t } = useLanguage();
+function FeaturedCard({ model }: { model: CatalogModel }) {
   const { toggle, has } = useWishlist();
   const { addToCart } = useCart();
+  const outOfStock = model.is_out_of_stock;
+  const finalPrice = model.base_price * (1 - model.discount_percent / 100);
+  const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
+  const images = model.image_urls?.length ? model.image_urls : [];
+
+  const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
+
+  const activeImage =
+    selectedColorIdx !== null && colors[selectedColorIdx]?.image_urls?.[0]
+      ? colors[selectedColorIdx].image_urls[0]
+      : images[0] || colors[0]?.image_urls?.[0];
+
+  return (
+    <div className="group relative">
+      <Link href={`/catalog/${model.id}`} className="block">
+        <div className={`relative aspect-[3/4] overflow-hidden bg-muted ${outOfStock ? "opacity-50 grayscale" : ""}`}>
+          {activeImage ? (
+            <SmartImage
+              key={`${selectedColorIdx}`}
+              src={activeImage}
+              alt={model.name}
+              fill
+              className="object-cover transition-all duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+              No image
+            </div>
+          )}
+          {model.discount_percent > 0 && !outOfStock && (
+            <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-400 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+              -{model.discount_percent}%
+            </span>
+          )}
+
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+              <span className="rounded-full bg-neutral-900/70 px-4 py-1.5 text-xs font-medium text-white">
+                Немає в наявності
+              </span>
+            </div>
+          )}
+
+          {!outOfStock && (
+            <div className={`absolute right-3 top-3 flex flex-row gap-2 transition-opacity duration-300 ${has(model.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggle(model.id);
+                }}
+                aria-label="Додати в список бажань"
+              >
+                <Heart className={`h-4 w-4 transition ${has(model.id) ? "fill-red-500 text-red-500" : "text-black"}`} strokeWidth={1.5} />
+              </button>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const sizes = model.model_sizes ?? [];
+                  const availableSize = sizes.find((s) => s.total_stock - s.sold_stock - s.reserved_stock > 0);
+                  const sizeLabel = availableSize?.size_label || sizes[0]?.size_label || "";
+                  if (!sizeLabel) return;
+                  addToCart({
+                    modelId: model.id,
+                    modelName: model.name,
+                    sku: model.sku,
+                    imageUrl: model.image_urls?.[0] ?? "",
+                    basePrice: model.base_price,
+                    discountPercent: model.discount_percent,
+                    sizes: [{ sizeLabel, quantity: 1 }],
+                  });
+                }}
+                aria-label="Додати в кошик"
+              >
+                <ShoppingBag className="h-4 w-4 text-black" strokeWidth={1.5} />
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="mt-3 space-y-1.5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            {model.sku}
+          </p>
+          <h3 className="text-sm font-normal leading-tight">{model.name}</h3>
+          {outOfStock ? (
+            <p className="text-xs text-muted-foreground">Немає в наявності</p>
+          ) : (
+            <div className="flex items-baseline gap-2">
+              <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
+              {model.discount_percent > 0 && (
+                <span className="text-xs text-muted-foreground line-through">
+                  {formatCurrency(model.base_price)}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </Link>
+
+      {/* Color swatches — outside Link so they don't navigate */}
+      {colors.length > 1 && !outOfStock && (
+        <div className="mt-2 flex items-center gap-1.5">
+          {colors.map((color, idx) => (
+            <button
+              key={color.id}
+              type="button"
+              onClick={() => {
+                setSelectedColorIdx(idx === selectedColorIdx ? null : idx);
+              }}
+              className={`h-4 w-4 rounded-full border transition-all ${
+                idx === selectedColorIdx
+                  ? "ring-1 ring-offset-1 ring-black scale-110"
+                  : "border-neutral-300 hover:scale-110"
+              }`}
+              style={{ backgroundColor: color.hex || "#ccc" }}
+              title={color.name}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function FeaturedCollection({ models }: FeaturedCollectionProps) {
+  const { t } = useLanguage();
 
   if (models.length === 0) return null;
 
   return (
     <section className="py-12 md:py-16">
       <div className="mx-auto max-w-[1600px] px-4 lg:px-6">
-        {/* Header */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
@@ -43,121 +171,12 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
           </Link>
         </div>
 
-        {/* Grid */}
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-          {models.slice(0, 4).map((model) => {
-            const finalPrice = model.base_price * (1 - model.discount_percent / 100);
-            const firstImage = model.image_urls?.[0] || model.model_colors?.[0]?.image_urls?.[0];
-            const outOfStock = model.is_out_of_stock;
-            const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
-
-            return (
-              <Link key={model.id} href={`/catalog/${model.id}`} className="group block">
-                <div className={`relative aspect-[3/4] overflow-hidden bg-muted ${outOfStock ? "opacity-50 grayscale" : ""}`}>
-                  {firstImage ? (
-                    <SmartImage
-                      src={firstImage}
-                      alt={model.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      No image
-                    </div>
-                  )}
-                  {model.discount_percent > 0 && !outOfStock && (
-                    <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-400 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
-                      -{model.discount_percent}%
-                    </span>
-                  )}
-
-                  {/* Out of stock overlay */}
-                  {outOfStock && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/40">
-                      <span className="rounded-full bg-neutral-900/70 px-4 py-1.5 text-xs font-medium text-white">
-                        Немає в наявності
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Action buttons — only when in stock */}
-                  {!outOfStock && (
-                    <div className={`absolute right-3 top-3 flex flex-row gap-2 transition-opacity duration-300 ${has(model.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                      <button
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggle(model.id);
-                        }}
-                        aria-label="Додати в список бажань"
-                      >
-                        <Heart className={`h-4 w-4 transition ${has(model.id) ? "fill-red-500 text-red-500" : "text-black"}`} strokeWidth={1.5} />
-                      </button>
-                      <button
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const sizes = model.model_sizes ?? [];
-                          const availableSize = sizes.find((s) => s.total_stock - s.sold_stock - s.reserved_stock > 0);
-                          const sizeLabel = availableSize?.size_label || sizes[0]?.size_label || "";
-                          if (!sizeLabel) return;
-                          addToCart({
-                            modelId: model.id,
-                            modelName: model.name,
-                            sku: model.sku,
-                            imageUrl: model.image_urls?.[0] ?? "",
-                            basePrice: model.base_price,
-                            discountPercent: model.discount_percent,
-                            sizes: [{ sizeLabel, quantity: 1 }],
-                          });
-                        }}
-                        aria-label="Додати в кошик"
-                      >
-                        <ShoppingBag className="h-4 w-4 text-black" strokeWidth={1.5} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-3 space-y-1.5">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
-                    {model.sku}
-                  </p>
-                  <h3 className="text-sm font-normal leading-tight">{model.name}</h3>
-                  {outOfStock ? (
-                    <p className="text-xs text-muted-foreground">Немає в наявності</p>
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
-                      {model.discount_percent > 0 && (
-                        <span className="text-xs text-muted-foreground line-through">
-                          {formatCurrency(model.base_price)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {/* Color swatches */}
-                  {colors.length > 1 && !outOfStock && (
-                    <div className="mt-2 flex items-center gap-1.5">
-                      {colors.map((color) => (
-                        <span
-                          key={color.id}
-                          className="h-4 w-4 rounded-full border border-neutral-300"
-                          style={{ backgroundColor: color.hex || "#ccc" }}
-                          title={color.name}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+          {models.slice(0, 4).map((model) => (
+            <FeaturedCard key={model.id} model={model} />
+          ))}
         </div>
 
-        {/* Mobile view all */}
         <div className="mt-10 text-center md:hidden">
           <Link
             href="/catalog"
