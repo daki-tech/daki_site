@@ -131,11 +131,7 @@ export function updateCartItemSize(modelId: string, sizeLabel: string, quantity:
     size.quantity = Math.max(0, quantity);
   }
   item.sizes = item.sizes.filter((s) => s.quantity > 0);
-  if (item.sizes.length === 0) {
-    state = { ...state, items: state.items.filter((i) => i.modelId !== modelId) };
-  } else {
-    state = { ...state, items: [...state.items] };
-  }
+  state = { ...state, items: [...state.items] };
   persist();
   emit();
 }
@@ -154,11 +150,7 @@ export function replaceCartItemSizes(modelId: string, sizes: CartSizeEntry[]) {
   const item = state.items.find((i) => i.modelId === modelId);
   if (!item) return;
   item.sizes = sizes.filter((s) => s.quantity > 0);
-  if (item.sizes.length === 0) {
-    state = { ...state, items: state.items.filter((i) => i.modelId !== modelId) };
-  } else {
-    state = { ...state, items: [...state.items] };
-  }
+  state = { ...state, items: [...state.items] };
   persist();
   emit();
 }
