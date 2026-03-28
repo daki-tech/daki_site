@@ -279,35 +279,35 @@ async function sendOrderConfirmationEmail(order: {
     ).join("");
   }).join("");
 
-  const paymentLabel = order.paymentMethod === "cod" ? "Наложенный платёж" : order.paymentMethod === "online" ? "Оплата на сайте" : "";
+  const paymentLabel = order.paymentMethod === "cod" ? "Накладений платіж" : order.paymentMethod === "online" ? "Оплата на сайті" : "";
   const deliveryStr = order.delivery?.city
     ? `${order.delivery.oblast}, ${order.delivery.city}, ${order.delivery.branch}`
     : "";
 
   const content = `
-    <h2 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#000">Заказ оформлен!</h2>
-    <p style="color:#666;margin:0 0 24px;font-size:14px">Номер заказа: <strong style="color:#000">#${order.orderNumber || order.id.slice(0, 8)}</strong></p>
+    <h2 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#000">Замовлення оформлено!</h2>
+    <p style="color:#666;margin:0 0 24px;font-size:14px">Номер замовлення: <strong style="color:#000">#${order.orderNumber || order.id.slice(0, 8)}</strong></p>
 
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
       <thead>
         <tr>
           <th style="padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Товар</th>
-          <th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Размер</th>
-          <th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Кол-во</th>
-          <th style="padding:10px 12px;text-align:right;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Сумма</th>
+          <th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Розмір</th>
+          <th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Кількість</th>
+          <th style="padding:10px 12px;text-align:right;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666;border-bottom:2px solid #000">Сума</th>
         </tr>
       </thead>
       <tbody>${itemRows}</tbody>
     </table>
 
     <div style="border:1px solid #e5e5e5;padding:20px;margin-bottom:24px">
-      <p style="margin:0 0 4px;font-size:18px;font-weight:600;color:#000">Итого: ${Math.round(order.totalAmount)} UAH</p>
+      <p style="margin:0 0 4px;font-size:18px;font-weight:600;color:#000">Разом: ${Math.round(order.totalAmount)} UAH</p>
       ${paymentLabel ? `<p style="margin:4px 0 0;color:#666;font-size:14px">Оплата: ${paymentLabel}</p>` : ""}
       ${deliveryStr ? `<p style="margin:4px 0 0;color:#666;font-size:14px">Доставка: ${deliveryStr}</p>` : ""}
     </div>
 
     <p style="color:#666;font-size:14px;line-height:1.6;margin:0">
-      Мы свяжемся с вами в ближайшее время для подтверждения заказа.
+      Ми зв'яжемося з вами найближчим часом для підтвердження замовлення.
     </p>
   `;
 
@@ -316,7 +316,7 @@ async function sendOrderConfirmationEmail(order: {
   try {
     await sendEmail({
       to: order.customerEmail,
-      subject: `DaKi — Заказ #${order.orderNumber || order.id.slice(0, 8)} оформлен`,
+      subject: `DaKi — Замовлення #${order.orderNumber || order.id.slice(0, 8)} оформлено`,
       html,
     });
   } catch (err) {
