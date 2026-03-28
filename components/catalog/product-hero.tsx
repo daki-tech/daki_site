@@ -48,8 +48,8 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
     return (model.model_sizes ?? []).map((s) => {
       // If a color is selected and has stock_per_size, use that color's stock
       const colorStock = selectedColor?.stock_per_size;
-      const available = colorStock && colorStock[s.size_label] !== undefined
-        ? colorStock[s.size_label]
+      const available = colorStock
+        ? (colorStock[s.size_label] ?? 0)
         : s.total_stock - s.sold_stock - s.reserved_stock;
       return { ...s, available };
     });
