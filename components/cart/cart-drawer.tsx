@@ -46,8 +46,11 @@ function CartItemCard({
 
   const handleColorSelect = (color: typeof colors[number]) => {
     updateCartItemColor(item.modelId, color.name, color.image_urls?.[0]);
-    // Reset sizes when color changes — user must pick size for this color
-    replaceCartItemSizes(item.modelId, []);
+    // Keep sizes that are still available for the new color, drop unavailable ones
+    if (color.stock_per_size && item.sizes.length > 0) {
+      const kept = item.sizes.filter((s) => (color.stock_per_size![s.sizeLabel] ?? 0) > 0);
+      replaceCartItemSizes(item.modelId, kept);
+    }
   };
 
   const handleSizeToggle = (sizeLabel: string) => {
@@ -112,6 +115,12 @@ function CartItemCard({
         {/* Color selector — always visible */}
         {colors.length > 0 && (
           <div className="mt-1.5">
+            {item.color && (
+              <p className="text-[10px] text-neutral-400 mb-0.5">Колір: {item.color}</p>
+            )}
+            {!item.color && (
+              <p className="text-[10px] text-amber-500 font-medium mb-0.5">Оберіть колір:</p>
+            )}
             <div className="flex flex-wrap items-center gap-1.5">
               {colors.map((c) => (
                 <button
@@ -134,6 +143,12 @@ function CartItemCard({
         {/* Size selector — always visible when color is selected */}
         {item.color && availableSizes.length > 0 && (
           <div className="mt-1.5">
+            {item.sizes.length === 0 && (
+              <p className="text-[10px] text-amber-500 font-medium mb-0.5">Оберіть розмір:</p>
+            )}
+            {item.sizes.length > 0 && (
+              <p className="text-[10px] text-neutral-400 mb-0.5">Розмір:</p>
+            )}
             <div className="flex flex-wrap gap-1">
               {availableSizes.map((s) => {
                 const selected = item.sizes.find((sz) => sz.sizeLabel === s.label);
