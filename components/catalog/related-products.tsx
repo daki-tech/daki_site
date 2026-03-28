@@ -65,7 +65,7 @@ export function RelatedProducts({ currentModelId, category }: RelatedProductsPro
                   <p className="text-xs text-neutral-400">{p.sku}</p>
                   <p className="mt-0.5 text-sm font-medium line-clamp-1">{p.name}</p>
                   <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
+                    <span className={`font-medium ${p.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
                     {p.discount_percent > 0 && (
                       <span className="text-xs text-neutral-400 line-through">
                         {formatCurrency(p.base_price)}

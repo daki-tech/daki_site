@@ -49,14 +49,10 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
             const finalPrice = model.base_price * (1 - model.discount_percent / 100);
             const firstImage = model.image_urls?.[0] || model.model_colors?.[0]?.image_urls?.[0];
             const outOfStock = model.is_out_of_stock;
-            const Wrapper = outOfStock ? "div" : Link;
-            const wrapperProps = outOfStock
-              ? { className: "group block cursor-default" }
-              : { href: `/catalog/${model.id}` as string, className: "group block" };
+            const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
 
             return (
-              // @ts-expect-error — dynamic wrapper
-              <Wrapper key={model.id} {...wrapperProps}>
+              <Link key={model.id} href={`/catalog/${model.id}`} className="group block">
                 <div className={`relative aspect-[3/4] overflow-hidden bg-muted ${outOfStock ? "opacity-50 grayscale" : ""}`}>
                   {firstImage ? (
                     <SmartImage
@@ -134,7 +130,7 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
                     <p className="text-xs text-muted-foreground">Немає в наявності</p>
                   ) : (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
+                      <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
                       {model.discount_percent > 0 && (
                         <span className="text-xs text-muted-foreground line-through">
                           {formatCurrency(model.base_price)}
@@ -142,8 +138,21 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
                       )}
                     </div>
                   )}
+                  {/* Color swatches */}
+                  {colors.length > 1 && !outOfStock && (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      {colors.map((color) => (
+                        <span
+                          key={color.id}
+                          className="h-4 w-4 rounded-full border border-neutral-300"
+                          style={{ backgroundColor: color.hex || "#ccc" }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </Wrapper>
+              </Link>
             );
           })}
         </div>
