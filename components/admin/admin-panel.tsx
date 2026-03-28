@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { SortableContext, useSortable, rectSortingStrategy, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
 import {
@@ -376,6 +376,23 @@ function SortableColorVariant({ id, children }: { id: string; children: React.Re
 }
 
 /* ------------------------------------------------------------------ */
+/*  SortableModelRow — draggable product table row                     */
+/* ------------------------------------------------------------------ */
+
+function SortableModelRow({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  return (
+    <tr ref={setNodeRef} style={style} className={`border-b transition-colors hover:bg-muted/50 ${isDragging ? "bg-neutral-50 shadow-md" : ""}`}>
+      <td className="w-6 px-2 py-2 cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 transition-colors" {...attributes} {...listeners}>
+        <GripVertical className="h-4 w-4" />
+      </td>
+      {children}
+    </tr>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  SingleMediaUpload — one image/video upload with preview            */
 /* ------------------------------------------------------------------ */
 
@@ -571,6 +588,23 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
 
   // Sensors for drag & drop (color variants)
   const colorDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleModelDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setModels((prev) => {
+        const oldIndex = prev.findIndex((m) => m.id === active.id);
+        const newIndex = prev.findIndex((m) => m.id === over.id);
+        const updated = arrayMove(prev, oldIndex, newIndex);
+        fetch("/api/admin/models", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ updates: updated.map((m, i) => ({ id: m.id, sort_order: i })) }),
+        });
+        return updated;
+      });
+    }
+  }, []);
 
   // Load homepage settings
   useEffect(() => {
@@ -983,10 +1017,12 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
           </div>
           <Card>
             <CardContent className="pt-4 overflow-x-auto">
+              <DndContext sensors={colorDndSensors} collisionDetection={closestCenter} onDragEnd={handleModelDragEnd}>
+              <SortableContext items={filteredModels.map((m) => m.id)} strategy={verticalListSortingStrategy}>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Артикул</TableHead><TableHead>Название</TableHead><TableHead>Цена</TableHead>
+                    <TableHead className="w-6" /><TableHead>Артикул</TableHead><TableHead>Название</TableHead><TableHead>Цена</TableHead>
                     <TableHead>Скидка</TableHead><TableHead>Остаток</TableHead><TableHead>Продано</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead className="text-right">Действия</TableHead>
@@ -997,7 +1033,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                     const stock = getStock(model);
                     const sold = getSold(model);
                     return (
-                      <TableRow key={model.id}>
+                      <SortableModelRow key={model.id} id={model.id}>
                         <TableCell className="font-mono text-xs">{model.sku}</TableCell>
                         <TableCell className="font-medium">{model.name}</TableCell>
                         <TableCell>{formatCurrency(model.base_price)}</TableCell>
@@ -1040,14 +1076,16 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={() => handleDeleteModel(model.id)} title="Удалить"><Trash2 className="h-3.5 w-3.5" /></Button>
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </SortableModelRow>
                     );
                   })}
                   {filteredModels.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">Товаров не найдено</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">Товаров не найдено</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
+              </SortableContext>
+              </DndContext>
             </CardContent>
           </Card>
 

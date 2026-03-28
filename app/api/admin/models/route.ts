@@ -12,7 +12,7 @@ export async function GET() {
   const { data, error } = await auth.supabase
     .from("catalog_models")
     .select("*, model_sizes(*), model_colors(*)")
-    .order("created_at", { ascending: false });
+    .order("sort_order", { ascending: true });
 
   if (error) return NextResponse.json(mockModels);
 
@@ -88,4 +88,21 @@ export async function POST(request: Request) {
   after(() => syncStockToGoogleSheets());
 
   return NextResponse.json({ ...model, model_sizes: createdSizes ?? [], model_colors: createdColors });
+}
+
+export async function PATCH(request: Request) {
+  const auth = await requireApiAdmin();
+  if (auth.error) return auth.error;
+
+  const { updates } = await request.json() as { updates: { id: string; sort_order: number }[] };
+
+  if (!Array.isArray(updates)) {
+    return NextResponse.json({ error: "updates array required" }, { status: 400 });
+  }
+
+  for (const u of updates) {
+    await auth.supabase.from("catalog_models").update({ sort_order: u.sort_order }).eq("id", u.id);
+  }
+
+  return NextResponse.json({ ok: true });
 }
