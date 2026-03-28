@@ -79,10 +79,8 @@ export function ProductCard({ model }: ProductCardProps) {
   };
 
   const outOfStock = model.is_out_of_stock;
-  const Wrapper = outOfStock ? "div" : Link;
-  const wrapperProps = outOfStock
-    ? { className: "block cursor-default" }
-    : { href: `/catalog/${model.id}`, className: "block" };
+  const Wrapper = Link;
+  const wrapperProps = { href: `/catalog/${model.id}`, className: "block" };
 
   return (
     <div
@@ -97,7 +95,6 @@ export function ProductCard({ model }: ProductCardProps) {
         stopCarousel();
       }}
     >
-      {/* @ts-expect-error — dynamic wrapper */}
       <Wrapper {...wrapperProps}>
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">

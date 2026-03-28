@@ -27,6 +27,7 @@ const ViberIcon = () => (
 );
 
 export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps) {
+  const outOfStock = model.is_out_of_stock;
   const colors = model.model_colors ?? [];
   const defaultColor = colors.find((c) => c.is_default) ?? colors[0] ?? null;
 
@@ -178,8 +179,8 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
           <p className="text-xs text-neutral-500 mb-2">Розмір — Обрати розмір</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((size) => {
-              const isSelected = selectedSizes[size.size_label] !== undefined;
-              const isAvailable = size.available > 0;
+              const isSelected = !outOfStock && selectedSizes[size.size_label] !== undefined;
+              const isAvailable = !outOfStock && size.available > 0;
               return (
                 <button
                   key={size.id}
@@ -202,17 +203,23 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
 
         {/* Add to cart + Wishlist — full width, aligned with sizes */}
         <div className="mt-8 flex items-center gap-3">
-          <button
-            onClick={handleAddToCart}
-            disabled={totalUnits === 0}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 py-3.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Додати у кошик
-            {totalUnits > 0 && (
-              <span className="ml-1 opacity-60">({totalUnits})</span>
-            )}
-          </button>
+          {outOfStock ? (
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-300 py-3.5 text-sm font-medium text-white cursor-not-allowed">
+              Немає в наявності
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={totalUnits === 0}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 py-3.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Додати у кошик
+              {totalUnits > 0 && (
+                <span className="ml-1 opacity-60">({totalUnits})</span>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => toggleWishlist(model.id)}
