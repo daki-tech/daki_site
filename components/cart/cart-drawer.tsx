@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCart, useCartDrawer } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/utils";
@@ -65,6 +65,8 @@ export function CartDrawer() {
     }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  const hasIncompleteItems = useMemo(() => items.some((item) => !item.color), [items]);
 
   if (!mounted) return null;
 
@@ -178,6 +180,16 @@ export function CartDrawer() {
                                   {item.color && (
                                     <p className="text-[11px] text-neutral-400">Колір: {item.color}</p>
                                   )}
+                                  {!item.color && (
+                                    <Link
+                                      href={`/catalog/${item.modelId}`}
+                                      onClick={handleClose}
+                                      className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 hover:text-amber-700 transition"
+                                    >
+                                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                                      <span>Оберіть колір та розмір</span>
+                                    </Link>
+                                  )}
                                 </div>
                                 <button
                                   onClick={() => removeFromCart(item.modelId)}
@@ -249,10 +261,20 @@ export function CartDrawer() {
 
                   <button
                     onClick={() => setView("checkout")}
-                    className="w-full rounded-xl bg-black py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800 active:scale-[0.98]"
+                    disabled={hasIncompleteItems}
+                    className={`w-full rounded-xl py-3.5 text-sm font-medium transition active:scale-[0.98] ${
+                      hasIncompleteItems
+                        ? "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                        : "bg-black text-white hover:bg-neutral-800"
+                    }`}
                   >
                     {t("cart.submitOrder").toUpperCase()}
                   </button>
+                  {hasIncompleteItems && (
+                    <p className="text-center text-[11px] text-amber-600">
+                      Оберіть колір та розмір для кожного товару
+                    </p>
+                  )}
 
                   <button
                     onClick={handleClose}
