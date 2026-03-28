@@ -299,10 +299,12 @@ export function CartDrawer() {
 
   const handleClose = useCallback(() => closeCartDrawer(), [closeCartDrawer]);
 
-  if (!mounted) return null;
+  if (!mounted && !successData) return null;
 
   return (
     <>
+      {mounted && (
+      <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[9998]"
@@ -439,6 +441,8 @@ export function CartDrawer() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Success popup — centered overlay after drawer closes */}
       {successData && <SuccessPopup data={successData} onClose={() => setSuccessData(null)} />}
