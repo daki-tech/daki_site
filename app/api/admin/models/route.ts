@@ -1,4 +1,5 @@
 ﻿import { NextResponse, after } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { mockModels } from "@/lib/mock-data";
 import { requireApiAdmin } from "@/lib/server-auth";
@@ -103,6 +104,8 @@ export async function PATCH(request: Request) {
   for (const u of updates) {
     await auth.supabase.from("catalog_models").update({ sort_order: u.sort_order }).eq("id", u.id);
   }
+
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ ok: true });
 }
