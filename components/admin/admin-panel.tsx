@@ -79,7 +79,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CATALOG_CATEGORIES, MODEL_SEASONS } from "@/lib/constants";
+import { CATALOG_CATEGORIES } from "@/lib/constants";
 import type { CatalogModel, DashboardStats, Order, Profile } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
@@ -1589,22 +1589,13 @@ function renderModelForm(form: ModelFormData, setForm: React.Dispatch<React.SetS
         </div>
       </div>
 
-      {/* Row 2: Category + Season */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className={S.label}>Категория</Label>
-          <Select value={form.category} onValueChange={(v) => update("category", v)}>
-            <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
-            <SelectContent>{CATALOG_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className={S.label}>Сезон</Label>
-          <Select value={form.season} onValueChange={(v) => update("season", v)}>
-            <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
-            <SelectContent>{MODEL_SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+      {/* Row 2: Category */}
+      <div>
+        <Label className={S.label}>Категория</Label>
+        <Select value={form.category} onValueChange={(v) => update("category", v)}>
+          <SelectTrigger className={S.select}><SelectValue /></SelectTrigger>
+          <SelectContent>{CATALOG_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
       </div>
 
       {/* Row 3: Price + Discount */}

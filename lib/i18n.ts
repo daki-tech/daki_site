@@ -33,7 +33,7 @@ const ru: Dictionary = {
 
   "nav.home": "Главная",
   "nav.catalog": "Каталог",
-  "nav.sale": "Спеціальна ціна",
+  "nav.sale": "Розпродаж",
   "nav.lookbook": "Лукбук",
   "nav.about": "О нас",
   "nav.contact": "Контакты",
@@ -268,7 +268,7 @@ const uk: Dictionary = {
 
   "nav.home": "Головна",
   "nav.catalog": "Каталог",
-  "nav.sale": "Спеціальна ціна",
+  "nav.sale": "Розпродаж",
   "nav.lookbook": "Лукбук",
   "nav.about": "Про нас",
   "nav.contact": "Контакти",
@@ -503,7 +503,7 @@ const en: Dictionary = {
 
   "nav.home": "Home",
   "nav.catalog": "Catalog",
-  "nav.sale": "Sale",
+  "nav.sale": "Clearance",
   "nav.lookbook": "Lookbook",
   "nav.about": "About",
   "nav.contact": "Contact",

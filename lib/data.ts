@@ -32,7 +32,12 @@ export async function getCatalogModels(filters: CatalogFilterInput = {}): Promis
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
-    if (filters.category) query = query.eq("category", filters.category);
+    if (filters.category) {
+      query = query.eq("category", filters.category);
+    } else {
+      // Hide "Розпродаж" items from general catalog — they only show via direct category filter
+      query = query.neq("category", "Розпродаж");
+    }
     if (filters.style) query = query.eq("style", filters.style);
     if (filters.season) query = query.eq("season", filters.season);
     if (filters.year) query = query.eq("year", filters.year);
@@ -55,6 +60,7 @@ export async function getCatalogModels(filters: CatalogFilterInput = {}): Promis
 function filterMockModels(filters: CatalogFilterInput): CatalogModel[] {
   return mockModels.filter((model) => {
     if (filters.category && model.category !== filters.category) return false;
+    if (!filters.category && model.category === "Розпродаж") return false;
     if (filters.style && model.style !== filters.style) return false;
     if (filters.season && model.season !== filters.season) return false;
     if (filters.year && model.year !== filters.year) return false;

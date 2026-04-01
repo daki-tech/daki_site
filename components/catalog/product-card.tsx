@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CatalogModel } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
 import { useWishlist } from "@/lib/wishlist-store";
 import { useCart } from "@/lib/cart-store";
-import { QuickView } from "@/components/catalog/quick-view";
+// import { QuickView } from "@/components/catalog/quick-view";
 
 interface ProductCardProps {
   model: CatalogModel;
@@ -25,7 +25,7 @@ export function ProductCard({ model }: ProductCardProps) {
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
-  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  // const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -138,19 +138,6 @@ export function ProductCard({ model }: ProductCardProps) {
           {/* Action buttons - only when in stock */}
           {!outOfStock && (
             <div className="absolute right-3 top-3 flex flex-row gap-2">
-              {/* Quick view */}
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setQuickViewOpen(true);
-                }}
-                aria-label="Швидкий перегляд"
-              >
-                <Eye className="h-4 w-4 text-black transition hover:scale-110" strokeWidth={1.5} />
-              </button>
-
               {/* Wishlist */}
               <button
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow transition hover:bg-white"
@@ -222,10 +209,11 @@ export function ProductCard({ model }: ProductCardProps) {
         </div>
       </Wrapper>
 
-      {/* Quick View Modal */}
+      {/* Quick View Modal — disabled
       {quickViewOpen && (
         <QuickView model={model} open={quickViewOpen} onClose={() => setQuickViewOpen(false)} />
       )}
+      */}
     </div>
   );
 }

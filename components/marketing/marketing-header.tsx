@@ -134,13 +134,18 @@ export function MarketingHeader() {
                 );
               }
 
+              const isSale = item.labelKey === "nav.sale";
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative text-[13px] font-semibold text-black transition-colors duration-200",
-                    "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
+                    "relative text-[13px] font-semibold transition-colors duration-200",
+                    isSale
+                      ? "text-red-600 after:bg-red-600"
+                      : "text-black after:bg-black",
+                    "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:transition-all after:duration-300 hover:after:w-full",
                     isActive && "after:w-full",
                   )}
                 >
@@ -318,7 +323,10 @@ export function MarketingHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-6 py-3 text-sm font-medium transition hover:bg-muted"
+                    className={cn(
+                      "px-6 py-3 text-sm font-medium transition hover:bg-muted",
+                      item.labelKey === "nav.sale" && "text-red-600",
+                    )}
                   >
                     {t(item.labelKey)}
                   </Link>
