@@ -134,18 +134,13 @@ export function MarketingHeader() {
                 );
               }
 
-              const isSale = item.labelKey === "nav.sale";
-
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative text-[13px] font-semibold transition-colors duration-200",
-                    isSale
-                      ? "text-red-600 after:bg-red-600"
-                      : "text-black after:bg-black",
-                    "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:transition-all after:duration-300 hover:after:w-full",
+                    "relative text-[13px] font-semibold text-black transition-colors duration-200",
+                    "after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full",
                     isActive && "after:w-full",
                   )}
                 >
@@ -261,6 +256,9 @@ export function MarketingHeader() {
                   {SEASON_LABELS[season] || season}
                 </Link>
               ))}
+              <Link href="/catalog?category=Розпродаж" className="text-sm font-semibold text-red-600 transition hover:text-red-700 hover:underline">
+                Розпродаж
+              </Link>
             </div>
           </div>
         </div>
@@ -313,6 +311,13 @@ export function MarketingHeader() {
                             {SEASON_LABELS[season] || season}
                           </Link>
                         ))}
+                        <Link
+                          href="/catalog?category=Розпродаж"
+                          onClick={() => setMobileOpen(false)}
+                          className="block px-10 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-muted"
+                        >
+                          Розпродаж
+                        </Link>
                       </div>
                     </div>
                   );
@@ -323,10 +328,7 @@ export function MarketingHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "px-6 py-3 text-sm font-medium transition hover:bg-muted",
-                      item.labelKey === "nav.sale" && "text-red-600",
-                    )}
+                    className="px-6 py-3 text-sm font-medium transition hover:bg-muted"
                   >
                     {t(item.labelKey)}
                   </Link>
