@@ -720,7 +720,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     const payload = {
       action: "update",
       sku: editForm.sku, name: editForm.name, category: editForm.category,
-      season: editForm.season,
+      season: editForm.category === "Розпродаж" ? "" : editForm.season,
       base_price: Number(editForm.base_price), discount_percent: Number(editForm.discount_percent),
       description: editForm.description || null,
       image_urls: editForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),
@@ -746,7 +746,7 @@ export function AdminPanel({ initialModels, orders: initialOrders, stats, users:
     const sizes = computeSizesFromColors(createForm);
     const payload = {
       sku: createForm.sku, name: createForm.name, category: createForm.category,
-      season: createForm.season,
+      season: createForm.category === "Розпродаж" ? "" : createForm.season,
       base_price: Number(createForm.base_price), discount_percent: Number(createForm.discount_percent),
       description: createForm.description || null,
       image_urls: createForm.color_variants.flatMap((v) => v.image_urls).filter(Boolean),

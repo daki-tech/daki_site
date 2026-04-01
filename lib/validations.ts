@@ -17,7 +17,7 @@ export const modelSchema = z.object({
   name: z.string().min(2).max(160),
   category: z.string().min(2).max(100),
   style: z.string().max(100).optional().default(""),
-  season: z.string().min(2).max(100),
+  season: z.string().max(100).optional().default(""),
   year: z.number().int().min(2000).max(2100).optional().default(new Date().getFullYear()),
   description: z.string().max(2000).nullable().optional(),
   base_price: z.number().positive(),

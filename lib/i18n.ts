@@ -93,6 +93,10 @@ const ru: Dictionary = {
   "catalog.allSeasons": "Все сезоны",
   "catalog.models": "моделей",
   "catalog.searchPlaceholder": "Поиск моделей, SKU...",
+  "catalog.sortDefault": "По умолчанию",
+  "catalog.sortPriceAsc": "Цена: по возрастанию",
+  "catalog.sortPriceDesc": "Цена: по убыванию",
+  "catalog.category": "Категория",
 
   "product.addToCart": "В корзину",
   "product.orderVia": "Заказать через",
@@ -328,6 +332,10 @@ const uk: Dictionary = {
   "catalog.allSeasons": "Усі сезони",
   "catalog.models": "моделей",
   "catalog.searchPlaceholder": "Пошук моделей, SKU...",
+  "catalog.sortDefault": "За замовчуванням",
+  "catalog.sortPriceAsc": "Ціна: за зростанням",
+  "catalog.sortPriceDesc": "Ціна: за спаданням",
+  "catalog.category": "Категорія",
 
   "product.addToCart": "Додати у кошик",
   "product.orderVia": "Замовити через",
@@ -563,6 +571,10 @@ const en: Dictionary = {
   "catalog.allSeasons": "All seasons",
   "catalog.models": "models",
   "catalog.searchPlaceholder": "Search models, SKU...",
+  "catalog.sortDefault": "Default",
+  "catalog.sortPriceAsc": "Price: low to high",
+  "catalog.sortPriceDesc": "Price: high to low",
+  "catalog.category": "Category",
 
   "product.addToCart": "Add to cart",
   "product.orderVia": "Order via",
