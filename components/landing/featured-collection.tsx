@@ -172,7 +172,7 @@ export function FeaturedCollection({ models }: FeaturedCollectionProps) {
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-          {models.slice(0, 4).map((model) => (
+          {models.map((model) => (
             <FeaturedCard key={model.id} model={model} />
           ))}
         </div>

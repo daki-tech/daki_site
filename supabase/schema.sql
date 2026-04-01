@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     CHECK (theme IN ('light','dark')),
   is_admin boolean NOT NULL DEFAULT false,
   newsletter_subscribed boolean NOT NULL DEFAULT false,
+  first_purchase_discount_used boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

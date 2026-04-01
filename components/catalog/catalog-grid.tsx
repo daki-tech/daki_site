@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDownUp, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import type { CatalogModel } from "@/lib/types";
 import { CATALOG_CATEGORIES } from "@/lib/constants";
@@ -12,15 +12,17 @@ type SortOption = "default" | "price_asc" | "price_desc";
 
 interface CatalogGridProps {
   models: CatalogModel[];
+  /** Hide category filter on season-specific or sale pages */
+  hideCategoryFilter?: boolean;
 }
 
-export function CatalogGrid({ models }: CatalogGridProps) {
+export function CatalogGrid({ models, hideCategoryFilter }: CatalogGridProps) {
   const { t } = useLanguage();
-  const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState<SortOption>("default");
+  const [catOpen, setCatOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
-  // Categories present in the current model set (exclude Розпродаж from filter chips — it's a separate tab)
   const availableCategories = useMemo(() => {
     const cats = new Set(models.map((m) => m.category));
     return CATALOG_CATEGORIES.filter((c) => c !== "Розпродаж" && cats.has(c));
@@ -31,16 +33,6 @@ export function CatalogGrid({ models }: CatalogGridProps) {
 
     if (categoryFilter) {
       result = result.filter((m) => m.category === categoryFilter);
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (m) =>
-          m.name.toLowerCase().includes(q) ||
-          m.sku.toLowerCase().includes(q) ||
-          m.category.toLowerCase().includes(q),
-      );
     }
 
     if (sort === "price_asc") {
@@ -58,67 +50,83 @@ export function CatalogGrid({ models }: CatalogGridProps) {
     }
 
     return result;
-  }, [models, categoryFilter, search, sort]);
+  }, [models, categoryFilter, sort]);
+
+  const sortLabels: Record<SortOption, string> = {
+    default: t("catalog.sortDefault"),
+    price_asc: t("catalog.sortPriceAsc"),
+    price_desc: t("catalog.sortPriceDesc"),
+  };
+
+  const showCategoryFilter = !hideCategoryFilter && availableCategories.length > 1;
 
   return (
     <div>
-      {/* Filters row */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search */}
-        <div className="relative max-w-md flex-1">
-          <Search className="absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("catalog.searchPlaceholder")}
-            className="w-full border-b border-neutral-300 bg-transparent py-2 pl-6 pr-4 text-sm outline-none transition-colors focus:border-neutral-900 placeholder:text-neutral-400"
-          />
-        </div>
+      {/* Filters row — two styled dropdowns */}
+      <div className="mb-6 flex items-center justify-end gap-3">
+        {/* Category dropdown */}
+        {showCategoryFilter && (
+          <div className="relative">
+            <button
+              onClick={() => { setCatOpen(!catOpen); setSortOpen(false); }}
+              className="flex items-center gap-2 border border-neutral-200 rounded-full px-5 py-2.5 text-sm transition-colors hover:border-neutral-400 bg-white"
+            >
+              <span className="text-neutral-500 text-xs uppercase tracking-wider mr-1">{t("catalog.category")}:</span>
+              <span className="font-medium">{categoryFilter || t("catalog.allCategories")}</span>
+              <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform ${catOpen ? "rotate-180" : ""}`} />
+            </button>
+            {catOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setCatOpen(false)} />
+                <div className="absolute left-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
+                  <button
+                    onClick={() => { setCategoryFilter(""); setCatOpen(false); }}
+                    className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-50 ${!categoryFilter ? "font-medium text-neutral-900" : "text-neutral-600"}`}
+                  >
+                    {t("catalog.allCategories")}
+                  </button>
+                  {availableCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategoryFilter(cat); setCatOpen(false); }}
+                      className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-50 ${categoryFilter === cat ? "font-medium text-neutral-900" : "text-neutral-600"}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
-        {/* Sort */}
-        <div className="flex items-center gap-2">
-          <ArrowDownUp className="h-4 w-4 text-neutral-400" />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="border-b border-neutral-300 bg-transparent py-1.5 text-sm outline-none transition-colors focus:border-neutral-900"
+        {/* Sort dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setSortOpen(!sortOpen); setCatOpen(false); }}
+            className="flex items-center gap-2 border border-neutral-200 rounded-full px-5 py-2.5 text-sm transition-colors hover:border-neutral-400 bg-white"
           >
-            <option value="default">{t("catalog.sortDefault")}</option>
-            <option value="price_asc">{t("catalog.sortPriceAsc")}</option>
-            <option value="price_desc">{t("catalog.sortPriceDesc")}</option>
-          </select>
+            <span className="font-medium">{sortLabels[sort]}</span>
+            <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+          </button>
+          {sortOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 z-20 min-w-[200px] rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
+                {(Object.entries(sortLabels) as [SortOption, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => { setSort(key); setSortOpen(false); }}
+                    className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-50 ${sort === key ? "font-medium text-neutral-900" : "text-neutral-600"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Category chips */}
-      {availableCategories.length > 1 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          <button
-            onClick={() => setCategoryFilter("")}
-            className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-              !categoryFilter
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 text-neutral-600 hover:border-neutral-500"
-            }`}
-          >
-            {t("catalog.allCategories")}
-          </button>
-          {availableCategories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilter(categoryFilter === cat ? "" : cat)}
-              className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                categoryFilter === cat
-                  ? "border-neutral-900 bg-neutral-900 text-white"
-                  : "border-neutral-300 text-neutral-600 hover:border-neutral-500"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
 
       {filtered.length === 0 ? (
         <div className="border border-dashed py-20 text-center text-sm text-muted-foreground">

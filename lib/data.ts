@@ -231,6 +231,62 @@ export async function getHomepageSettings(): Promise<Record<string, string>> {
   }
 }
 
+/**
+ * Check if a user is eligible for the welcome (first-purchase) discount.
+ * Returns discount percent (number) or 0 if not eligible.
+ */
+export async function getWelcomeDiscount(userId: string): Promise<number> {
+  if (!hasSupabaseEnv() || !userId) return 0;
+  try {
+    const supabase = createAdminClient();
+
+    // Check if user already used their first-purchase discount
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("first_purchase_discount_used")
+      .eq("id", userId)
+      .single();
+
+    if (!profile || profile.first_purchase_discount_used) return 0;
+
+    // Check if user has any completed orders
+    const { count } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .neq("status", "cancelled");
+
+    if ((count ?? 0) > 0) return 0;
+
+    // Get the welcome discount percent from admin settings
+    const { data: setting } = await supabase
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "welcome_discount_percent")
+      .single();
+
+    return setting?.value ? Number(setting.value) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Mark the welcome discount as used for a user.
+ */
+export async function markWelcomeDiscountUsed(userId: string): Promise<void> {
+  if (!hasSupabaseEnv() || !userId) return;
+  try {
+    const supabase = createAdminClient();
+    await supabase
+      .from("profiles")
+      .update({ first_purchase_discount_used: true })
+      .eq("id", userId);
+  } catch {
+    // silent fail
+  }
+}
+
 export async function getAdminOrders(): Promise<Order[]> {
   if (!hasSupabaseEnv()) return mockOrders;
 

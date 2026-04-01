@@ -20,7 +20,7 @@ export default async function LandingPage() {
         subtitle={settings.hero_subtitle}
         bgUrl={settings.hero_bg_url}
       />
-      <FeaturedCollection models={models.slice(0, 4)} />
+      <FeaturedCollection models={models} />
       <AboutPreview
         title={settings.about_title}
         subtitle={settings.about_subtitle}

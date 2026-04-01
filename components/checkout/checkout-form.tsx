@@ -55,6 +55,7 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
   const { items, totalItems, totalAmount, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ orderNumber: number; orderId: string; contactMe: boolean } | null>(null);
+  const [welcomeDiscount, setWelcomeDiscount] = useState(0);
   const [form, setForm] = useState<FormData>({
     customer_name: "",
     customer_phone: "",
@@ -91,6 +92,11 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user && !cancelled) {
+          // Check welcome discount eligibility
+          fetch(`/api/profile/welcome-discount`).then((r) => r.json()).then((d) => {
+            if (!cancelled && d.discount > 0) setWelcomeDiscount(d.discount);
+          }).catch(() => {});
+
           // Parallel queries for faster form load
           const [profileResult, lastOrderResult] = await Promise.all([
             supabase
@@ -297,6 +303,7 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
           paymentMethod: form.payment_method === "cash_on_delivery" ? "cod" : form.payment_method === "card" ? "online" : form.payment_method,
           notes: form.notes,
           contactMe: form.contact_me,
+          welcomeDiscount: welcomeDiscount > 0 ? welcomeDiscount : undefined,
         }),
       });
 
@@ -398,6 +405,14 @@ export function CheckoutForm({ open, onClose, onSuccess, inline, onBack }: Check
       <p className="mt-1 text-xs text-muted-foreground">
         {totalItems} од. на суму {formatCurrency(totalAmount)}
       </p>
+      {welcomeDiscount > 0 && (
+        <div className="mt-2 rounded-xl bg-green-50 border border-green-200 px-4 py-2.5 text-sm">
+          <span className="font-medium text-green-700">🎉 Знижка {welcomeDiscount}% на перше замовлення!</span>
+          <span className="block text-xs text-green-600 mt-0.5">
+            Підсумок: {formatCurrency(totalAmount * (1 - welcomeDiscount / 100))}
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {/* Name */}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { Heart, ShoppingBag } from "lucide-react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { Heart, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { CatalogModel, ModelColor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -17,8 +17,6 @@ interface ProductHeroProps {
   onColorChange?: (color: ModelColor | null) => void;
   contacts?: Record<string, string>;
 }
-
-
 
 const ViberIcon = () => (
   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -36,17 +34,17 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
   const [mainImageIdx, setMainImageIdx] = useState(0);
   const [isZooming, setIsZooming] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
 
   const currentImages = (selectedColor?.image_urls?.length
     ? selectedColor.image_urls
     : model.image_urls
-  );
+  ).filter(Boolean);
 
   const finalPrice = model.base_price * (1 - model.discount_percent / 100);
 
   const sizes = useMemo(() => {
     return (model.model_sizes ?? []).map((s) => {
-      // If a color is selected and has stock_per_size, use that color's stock
       const colorStock = selectedColor?.stock_per_size;
       const available = colorStock
         ? (colorStock[s.size_label] ?? 0)
@@ -69,7 +67,6 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
 
     const links: { name: string; href: string; color: string; icon: React.ReactNode }[] = [];
 
-    // Telegram first
     links.push({
       name: "Telegram",
       href: `https://t.me/${tgSupport}?text=${encoded}`,
@@ -81,7 +78,6 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
       ),
     });
 
-    // Viber second
     if (vb) {
       links.push({
         name: "Viber",
@@ -99,6 +95,10 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
     setMainImageIdx(0);
     setSelectedSizes({});
     onColorChange?.(color);
+    // Scroll mobile gallery to start
+    if (mobileScrollRef.current) {
+      mobileScrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+    }
   }
 
   function toggleSize(label: string) {
@@ -135,206 +135,291 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
     setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
   }, []);
 
+  // Track mobile scroll position for dots
+  const [mobileActiveIdx, setMobileActiveIdx] = useState(0);
+  useEffect(() => {
+    const el = mobileScrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.offsetWidth);
+      setMobileActiveIdx(idx);
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [currentImages]);
+
+  // Product info block (shared between mobile and desktop)
+  const infoBlock = (
+    <>
+      {/* SKU */}
+      <p className="text-xs tracking-widest text-neutral-400">{model.sku}</p>
+
+      {/* Name */}
+      <h1 className="mt-1 text-xl font-light tracking-wide lg:text-3xl">{model.name}</h1>
+
+      {/* Price */}
+      <div className="mt-2 flex items-baseline gap-3 lg:mt-3">
+        <span className={`text-lg font-normal lg:text-xl ${model.discount_percent > 0 ? "text-red-600" : ""}`}>{formatCurrency(finalPrice)}</span>
+        {model.discount_percent > 0 && (
+          <span className="text-sm text-neutral-400 line-through">
+            {formatCurrency(model.base_price)}
+          </span>
+        )}
+      </div>
+
+      {/* Color selector */}
+      {colors.length > 0 && (
+        <div className="mt-5 lg:mt-6">
+          <p className="text-xs text-neutral-500 mb-2">
+            Колір — {selectedColor?.name ?? "оберіть"}
+          </p>
+          <div className="flex gap-2">
+            {colors.map((color) => (
+              <button
+                key={color.id}
+                onClick={() => handleColorChange(color)}
+                className={`h-7 w-7 rounded-full border-2 transition-all ${
+                  selectedColor?.id === color.id
+                    ? "border-neutral-900 scale-110"
+                    : "border-neutral-300 hover:border-neutral-500"
+                }`}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Size selector */}
+      <div className="mt-5 lg:mt-6">
+        <p className="text-xs text-neutral-500 mb-2">Розмір — Обрати розмір</p>
+        <div className="flex flex-wrap gap-2">
+          {sizes.map((size) => {
+            const isSelected = !outOfStock && selectedSizes[size.size_label] !== undefined;
+            const isAvailable = !outOfStock && size.available > 0;
+            return (
+              <button
+                key={size.id}
+                disabled={!isAvailable}
+                onClick={() => toggleSize(size.size_label)}
+                className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-all ${
+                  isSelected
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : isAvailable
+                      ? "border-neutral-300 hover:border-neutral-900"
+                      : "border-neutral-200 text-neutral-300 cursor-not-allowed"
+                }`}
+              >
+                {size.size_label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Add to cart + Wishlist */}
+      <div className="mt-6 flex items-center gap-3 lg:mt-8">
+        {outOfStock ? (
+          <div className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-300 py-3 text-sm font-medium text-white cursor-not-allowed lg:py-3.5">
+            Немає в наявності
+          </div>
+        ) : (
+          <button
+            onClick={handleAddToCart}
+            disabled={totalUnits === 0}
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 lg:py-3.5"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Додати у кошик
+            {totalUnits > 0 && (
+              <span className="ml-1 opacity-60">({totalUnits})</span>
+            )}
+          </button>
+        )}
+
+        <button
+          onClick={() => toggleWishlist(model.id)}
+          className={`group flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-full border transition-colors lg:h-[46px] lg:w-[46px] ${
+            isWished
+              ? "border-red-200 bg-red-50"
+              : "border-neutral-200 hover:border-neutral-900"
+          }`}
+        >
+          <Heart
+            className={`h-5 w-5 transition-all ${
+              isWished
+                ? "fill-red-500 text-red-500"
+                : "text-neutral-500 group-hover:text-neutral-900"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Contact links */}
+      {contactLinks.length > 0 && (
+        <div className="mt-4 lg:mt-5">
+          <p className="mb-2 text-[10px] tracking-[0.15em] text-neutral-400 lg:mb-3">
+            Виникли запитання:
+          </p>
+          <div className="flex gap-2">
+            {contactLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs text-neutral-600 transition-all hover:border-neutral-700 hover:text-neutral-900 lg:px-4 lg:py-2.5"
+              >
+                <span style={{ color: link.color }}>{link.icon}</span>
+                {link.name}
+                {link.name === "Viber" && <span className="text-[10px] text-neutral-400 ml-0.5">(з мобільного)</span>}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Accordion sections */}
+      <ProductAccordion model={model} />
+
+      {/* Share */}
+      <ProductShare model={model} />
+    </>
+  );
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr] lg:gap-8 items-start">
-      {/* LEFT: Product info */}
-      <div className="flex flex-col justify-start pt-0 lg:pt-4">
-        {/* SKU */}
-        <p className="text-xs tracking-widest text-neutral-400">{model.sku}</p>
+    <>
+      {/* ===== MOBILE LAYOUT (< lg) ===== */}
+      <div className="lg:hidden">
+        {/* Mobile gallery — horizontal swipe */}
+        <div className="relative -mx-4">
+          <div
+            ref={mobileScrollRef}
+            className="flex snap-x snap-mandatory overflow-x-auto scrollbar-none"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {currentImages.map((url, idx) => (
+              <div
+                key={`mobile-${selectedColor?.id}-${idx}`}
+                className="relative aspect-[3/4] w-full flex-shrink-0 snap-center bg-neutral-100"
+              >
+                <SmartImage
+                  key={`mobile-img-${selectedColor?.id}-${idx}`}
+                  src={url}
+                  alt={`${model.name}${selectedColor ? ` — ${selectedColor.name}` : ""} ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="100vw"
+                  priority={idx === 0}
+                />
+              </div>
+            ))}
+          </div>
 
-        {/* Name */}
-        <h1 className="mt-1 text-2xl font-light tracking-wide lg:text-3xl">{model.name}</h1>
+          {/* Dots indicator */}
+          {currentImages.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {currentImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    mobileScrollRef.current?.scrollTo({ left: idx * (mobileScrollRef.current?.offsetWidth ?? 0), behavior: "smooth" });
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    idx === mobileActiveIdx
+                      ? "w-5 bg-white"
+                      : "w-1.5 bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Price */}
-        <div className="mt-3 flex items-baseline gap-3">
-          <span className={`text-xl font-normal ${model.discount_percent > 0 ? "text-red-600" : ""}`}>{formatCurrency(finalPrice)}</span>
+          {/* Discount badge */}
           {model.discount_percent > 0 && (
-            <span className="text-sm text-neutral-400 line-through">
-              {formatCurrency(model.base_price)}
+            <span className="absolute left-4 top-4 rounded-full bg-gradient-to-r from-red-500 to-rose-400 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+              -{model.discount_percent}%
             </span>
           )}
         </div>
 
-        {/* Color selector */}
-        {colors.length > 0 && (
-          <div className="mt-6">
-            <p className="text-xs text-neutral-500 mb-2">
-              Колір — {selectedColor?.name ?? "оберіть"}
-            </p>
-            <div className="flex gap-2">
-              {colors.map((color) => (
-                <button
-                  key={color.id}
-                  onClick={() => handleColorChange(color)}
-                  className={`h-7 w-7 rounded-full border-2 transition-all ${
-                    selectedColor?.id === color.id
-                      ? "border-neutral-900 scale-110"
-                      : "border-neutral-300 hover:border-neutral-500"
-                  }`}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Size selector */}
-        <div className="mt-6">
-          <p className="text-xs text-neutral-500 mb-2">Розмір — Обрати розмір</p>
-          <div className="flex flex-wrap gap-2">
-            {sizes.map((size) => {
-              const isSelected = !outOfStock && selectedSizes[size.size_label] !== undefined;
-              const isAvailable = !outOfStock && size.available > 0;
-              return (
-                <button
-                  key={size.id}
-                  disabled={!isAvailable}
-                  onClick={() => toggleSize(size.size_label)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-all ${
-                    isSelected
-                      ? "border-neutral-900 bg-neutral-900 text-white"
-                      : isAvailable
-                        ? "border-neutral-300 hover:border-neutral-900"
-                        : "border-neutral-200 text-neutral-300 cursor-not-allowed"
-                  }`}
-                >
-                  {size.size_label}
-                </button>
-              );
-            })}
-          </div>
+        {/* Mobile product info */}
+        <div className="px-0 pt-4 pb-2">
+          {infoBlock}
         </div>
-
-        {/* Add to cart + Wishlist — full width, aligned with sizes */}
-        <div className="mt-8 flex items-center gap-3">
-          {outOfStock ? (
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-300 py-3.5 text-sm font-medium text-white cursor-not-allowed">
-              Немає в наявності
-            </div>
-          ) : (
-            <button
-              onClick={handleAddToCart}
-              disabled={totalUnits === 0}
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 py-3.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              Додати у кошик
-              {totalUnits > 0 && (
-                <span className="ml-1 opacity-60">({totalUnits})</span>
-              )}
-            </button>
-          )}
-
-          <button
-            onClick={() => toggleWishlist(model.id)}
-            className={`group flex h-[46px] w-[46px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
-              isWished
-                ? "border-red-200 bg-red-50"
-                : "border-neutral-200 hover:border-neutral-900"
-            }`}
-          >
-            <Heart
-              className={`h-5 w-5 transition-all ${
-                isWished
-                  ? "fill-red-500 text-red-500"
-                  : "text-neutral-500 group-hover:text-neutral-900"
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Contact links */}
-        {contactLinks.length > 0 && (
-          <div className="mt-5">
-            <p className="mb-3 text-[10px] tracking-[0.15em] text-neutral-400">
-              Виникли запитання:
-            </p>
-            <div className="flex gap-2">
-              {contactLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-2.5 text-xs text-neutral-600 transition-all hover:border-neutral-700 hover:text-neutral-900"
-                >
-                  <span style={{ color: link.color }}>{link.icon}</span>
-                  {link.name}
-                  {link.name === "Viber" && <span className="text-[10px] text-neutral-400 ml-0.5">(з мобільного)</span>}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Accordion sections */}
-        <ProductAccordion model={model} />
-
-        {/* Share */}
-        <ProductShare model={model} />
       </div>
 
-      {/* RIGHT: Gallery */}
-      <div className="flex gap-3 h-[calc(100vh-140px)] ml-auto">
-        {/* Main image */}
-        <div
-          className="relative h-full aspect-[3/4] overflow-hidden bg-neutral-100 rounded-xl"
-          style={{ cursor: isZooming ? "zoom-in" : undefined }}
-          onMouseMove={handleZoomMove}
-          onMouseEnter={() => setIsZooming(true)}
-          onMouseLeave={() => setIsZooming(false)}
-        >
-          {currentImages[mainImageIdx] && (
-            <>
-              <SmartImage
-                src={currentImages[mainImageIdx]}
-                alt={`${model.name}${selectedColor ? ` — ${selectedColor.name}` : ""}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 55vw"
-                priority
-              />
-              {isZooming && (
-                <div
-                  className="absolute inset-0 z-10"
-                  style={{
-                    backgroundImage: `url(${currentImages[mainImageIdx]})`,
-                    backgroundSize: "250%",
-                    backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
-                    backgroundRepeat: "no-repeat",
-                  }}
-                />
-              )}
-            </>
-          )}
+      {/* ===== DESKTOP LAYOUT (>= lg) ===== */}
+      <div className="hidden lg:grid lg:grid-cols-[1fr_1.5fr] lg:gap-8 items-start">
+        {/* LEFT: Product info */}
+        <div className="flex flex-col justify-start pt-4">
+          {infoBlock}
         </div>
 
-        {/* Thumbnails column */}
-        {currentImages.length > 1 && (
-          <div className="flex flex-col gap-2 w-20 lg:w-24 overflow-y-auto">
-            {currentImages.slice(0, 6).map((url, idx) => (
-              <button
-                key={idx}
-                onClick={() => setMainImageIdx(idx)}
-                className={`relative aspect-[4/5] flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                  idx === mainImageIdx
-                    ? "border-neutral-900"
-                    : "border-transparent hover:border-neutral-400"
-                }`}
-              >
+        {/* RIGHT: Gallery */}
+        <div className="flex gap-3 h-[calc(100vh-140px)] ml-auto">
+          {/* Main image */}
+          <div
+            className="relative h-full aspect-[3/4] overflow-hidden bg-neutral-100 rounded-xl"
+            style={{ cursor: isZooming ? "zoom-in" : undefined }}
+            onMouseMove={handleZoomMove}
+            onMouseEnter={() => setIsZooming(true)}
+            onMouseLeave={() => setIsZooming(false)}
+          >
+            {currentImages[mainImageIdx] && (
+              <>
                 <SmartImage
-                  src={url}
-                  alt={`${model.name} фото ${idx + 1}`}
+                  key={`main-${selectedColor?.id}-${mainImageIdx}`}
+                  src={currentImages[mainImageIdx]}
+                  alt={`${model.name}${selectedColor ? ` — ${selectedColor.name}` : ""}`}
                   fill
                   className="object-cover"
-                  sizes="100px"
+                  sizes="55vw"
+                  priority
                 />
-              </button>
-            ))}
+                {isZooming && (
+                  <div
+                    className="absolute inset-0 z-10"
+                    style={{
+                      backgroundImage: `url(${currentImages[mainImageIdx]})`,
+                      backgroundSize: "250%",
+                      backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
-        )}
+
+          {/* Thumbnails column */}
+          {currentImages.length > 1 && (
+            <div className="flex flex-col gap-2 w-24 overflow-y-auto">
+              {currentImages.slice(0, 6).map((url, idx) => (
+                <button
+                  key={`${selectedColor?.id}-${idx}`}
+                  onClick={() => setMainImageIdx(idx)}
+                  className={`relative aspect-[4/5] flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                    idx === mainImageIdx
+                      ? "border-neutral-900"
+                      : "border-transparent hover:border-neutral-400"
+                  }`}
+                >
+                  <SmartImage
+                    key={`thumb-${selectedColor?.id}-${idx}`}
+                    src={url}
+                    alt={`${model.name} фото ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="100px"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

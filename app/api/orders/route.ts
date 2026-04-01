@@ -325,7 +325,7 @@ async function sendOrderConfirmationEmail(order: {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, customerName, customerPhone, customerEmail, delivery, paymentMethod, notes, contactMe } = body as {
+    const { items, customerName, customerPhone, customerEmail, delivery, paymentMethod, notes, contactMe, welcomeDiscount: clientWelcomeDiscount } = body as {
       items: {
         modelId: string;
         modelName: string;
@@ -342,6 +342,7 @@ export async function POST(req: Request) {
       paymentMethod?: string;
       notes?: string;
       contactMe?: boolean;
+      welcomeDiscount?: number;
     };
 
     if (!items || items.length === 0) {
@@ -400,6 +401,18 @@ export async function POST(req: Request) {
       userId = user?.id ?? null;
     } catch {
       // No auth — guest order
+    }
+
+    // Verify and apply welcome discount (server-side validation)
+    let appliedWelcomeDiscount = 0;
+    if (clientWelcomeDiscount && clientWelcomeDiscount > 0 && userId) {
+      const { getWelcomeDiscount, markWelcomeDiscountUsed } = await import("@/lib/data");
+      const serverDiscount = await getWelcomeDiscount(userId);
+      if (serverDiscount > 0 && serverDiscount === clientWelcomeDiscount) {
+        appliedWelcomeDiscount = serverDiscount;
+        totalAmount = Math.round(totalAmount * (1 - serverDiscount / 100) * 100) / 100;
+        await markWelcomeDiscountUsed(userId);
+      }
     }
 
     // Save to Supabase (use admin client to bypass RLS for guest orders)
