@@ -47,7 +47,8 @@ function CartItemCard({
   const handleColorSelect = (color: typeof colors[number]) => {
     updateCartItemColor(item.modelId, color.name, color.image_urls?.[0]);
     // Keep sizes that are still available for the new color, drop unavailable ones
-    if (color.stock_per_size && item.sizes.length > 0) {
+    const hasStockData = color.stock_per_size && Object.keys(color.stock_per_size).length > 0;
+    if (hasStockData && item.sizes.length > 0) {
       const kept = item.sizes.filter((s) => (color.stock_per_size![s.sizeLabel] ?? 0) > 0);
       replaceCartItemSizes(item.modelId, kept);
     }
@@ -68,10 +69,11 @@ function CartItemCard({
   const availableSizes = useMemo(() => {
     if (!meta) return [];
     const selectedColorMeta = item.color ? colors.find((c) => c.name === item.color) : null;
+    const colorStock = selectedColorMeta?.stock_per_size;
+    const hasColorStock = colorStock && Object.keys(colorStock).length > 0;
     return meta.sizes
       .map((s) => {
-        const colorStock = selectedColorMeta?.stock_per_size;
-        const available = colorStock
+        const available = hasColorStock
           ? (colorStock[s.size_label] ?? 0)
           : s.total_stock - s.sold_stock - s.reserved_stock;
         return { label: s.size_label, available };
