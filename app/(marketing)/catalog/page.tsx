@@ -35,12 +35,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const models = await getCatalogModels(filters);
 
-  // Hide category filter on season-specific or Розпродаж pages
-  const hideCategoryFilter = !!filters.season || filters.category === "Розпродаж" || isSale;
-
   return (
     <div className="mx-auto max-w-[1800px] px-2 py-6 lg:px-3 lg:py-8">
-      <CatalogGrid models={models} hideCategoryFilter={hideCategoryFilter} />
+      <CatalogGrid models={models} />
     </div>
   );
 }

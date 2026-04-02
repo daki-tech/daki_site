@@ -290,10 +290,10 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
 
   return (
     <>
-      {/* ===== MOBILE LAYOUT (< lg) ===== */}
+      {/* ===== MOBILE / TABLET LAYOUT (< lg) ===== */}
       <div className="lg:hidden">
         {/* Mobile gallery — horizontal swipe */}
-        <div className="relative -mx-4">
+        <div className="relative -mx-4 overflow-hidden">
           <div
             ref={mobileScrollRef}
             className="flex snap-x snap-mandatory overflow-x-auto scrollbar-none"
@@ -344,8 +344,8 @@ export function ProductHero({ model, onColorChange, contacts }: ProductHeroProps
           )}
         </div>
 
-        {/* Mobile product info */}
-        <div className="px-0 pt-4 pb-2">
+        {/* Mobile/Tablet product info */}
+        <div className="px-0 pt-4 pb-2 md:mx-auto md:max-w-xl">
           {infoBlock}
         </div>
       </div>

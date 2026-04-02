@@ -10,7 +10,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
   return (
     <LanguageProvider locale={locale} persistKey="marketing-locale">
-      <div className="flex min-h-[100dvh] flex-col bg-background">
+      <div className="flex min-h-[100dvh] flex-col bg-background overflow-x-hidden">
         <MarketingHeader />
         <main className="flex-1">{children}</main>
         <FooterWrapper />

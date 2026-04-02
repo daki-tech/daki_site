@@ -12,11 +12,9 @@ type SortOption = "default" | "price_asc" | "price_desc";
 
 interface CatalogGridProps {
   models: CatalogModel[];
-  /** Hide category filter on season-specific or sale pages */
-  hideCategoryFilter?: boolean;
 }
 
-export function CatalogGrid({ models, hideCategoryFilter }: CatalogGridProps) {
+export function CatalogGrid({ models }: CatalogGridProps) {
   const { t } = useLanguage();
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState<SortOption>("default");
@@ -58,7 +56,7 @@ export function CatalogGrid({ models, hideCategoryFilter }: CatalogGridProps) {
     price_desc: t("catalog.sortPriceDesc"),
   };
 
-  const showCategoryFilter = !hideCategoryFilter && availableCategories.length > 1;
+  const showCategoryFilter = true;
 
   return (
     <div>
