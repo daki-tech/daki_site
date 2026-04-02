@@ -136,18 +136,14 @@ export function ProductCard({ model }: ProductCardProps) {
           <p className="text-[11px] text-muted-foreground">{model.sku}</p>
           <h3 className="text-sm font-normal text-foreground">{model.name}</h3>
 
-          {outOfStock ? (
-            <p className="text-xs text-muted-foreground">Немає в наявності</p>
-          ) : (
-            <div className="flex items-baseline gap-2">
-              <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(displayPrice)}</span>
-              {model.discount_percent > 0 && (
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatCurrency(model.base_price)}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-baseline gap-2">
+            <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(displayPrice)}</span>
+            {model.discount_percent > 0 && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatCurrency(model.base_price)}
+              </span>
+            )}
+          </div>
 
           {/* Color swatches */}
           {colors.length > 1 && (

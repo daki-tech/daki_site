@@ -105,18 +105,14 @@ function FeaturedCard({ model }: { model: CatalogModel }) {
             {model.sku}
           </p>
           <h3 className="text-sm font-normal leading-tight">{model.name}</h3>
-          {outOfStock ? (
-            <p className="text-xs text-muted-foreground">Немає в наявності</p>
-          ) : (
-            <div className="flex items-baseline gap-2">
-              <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
-              {model.discount_percent > 0 && (
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatCurrency(model.base_price)}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-baseline gap-2">
+            <span className={`font-medium ${model.discount_percent > 0 ? "text-base text-red-600" : "text-sm"}`}>{formatCurrency(finalPrice)}</span>
+            {model.discount_percent > 0 && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatCurrency(model.base_price)}
+              </span>
+            )}
+          </div>
         </div>
       </Link>
 
