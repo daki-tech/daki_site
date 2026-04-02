@@ -17,13 +17,15 @@ export const CATALOG_CATEGORIES = [
   "Тренчі",
   "Парки",
   "Жилети",
+  "Піджаки",
+  "Плащі",
   "Розпродаж",
 ];
 
 
 export const MODEL_SEASONS = ["Осінньо-весняна", "Зимова", "Літо"];
 
-export const DEFAULT_SIZE_SCALE = ["42", "44", "46", "48", "50", "52", "54"];
+export const DEFAULT_SIZE_SCALE = ["42", "44", "46", "48", "50", "52", "54", "56", "58"];
 
 export const NAV_LINKS = {
   marketing: [
