@@ -30,7 +30,7 @@ export default async function ContactPage() {
     telegram && { href: telegram.startsWith("http") ? telegram : `https://t.me/${telegram}`, icon: TelegramIcon, label: "Telegram", color: "#229ED9" },
     viber && { href: buildViberUrl(viber), icon: ViberIcon, label: "Viber", color: "#7360F2", note: "з мобільного" },
     whatsapp && { href: whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/[^+\d]/g, "")}`, icon: WhatsAppIcon, label: "WhatsApp", color: "#25D366" },
-    instagram && { href: instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram}`, icon: Instagram, label: "Instagram", color: "#E4405F" },
+    instagram && { href: instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram}`, icon: Instagram, label: "Instagram", color: "instagram" },
     tiktok && { href: tiktok.startsWith("http") ? tiktok : `https://tiktok.com/@${tiktok}`, icon: TikTokIcon, label: "TikTok", color: "#000000" },
   ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string; note?: string }[];
 
@@ -55,8 +55,10 @@ export default async function ContactPage() {
             className="group flex items-center gap-3 rounded-2xl border border-neutral-200 px-6 py-4 transition-all hover:border-neutral-400 hover:shadow-md"
           >
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110"
-              style={{ backgroundColor: color }}
+              className={`flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110 ${
+                color === "instagram" ? "bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600" : ""
+              }`}
+              style={color !== "instagram" ? { backgroundColor: color } : undefined}
             >
               <Icon className="h-5 w-5" />
             </div>

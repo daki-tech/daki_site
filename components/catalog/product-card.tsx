@@ -101,20 +101,14 @@ export function ProductCard({ model }: ProductCardProps) {
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           {activeImages.length > 0 ? (
-            <>
-              {activeImages.map((url, idx) => (
-                <SmartImage
-                  key={`${selectedColorIdx}-${idx}`}
-                  src={url}
-                  alt={idx === 0 ? model.name : ""}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className={`object-cover transition-opacity duration-500 ease-in-out ${
-                    idx === currentIdx ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              ))}
-            </>
+            <SmartImage
+              key={`${selectedColorIdx}-${currentIdx}`}
+              src={activeImages[currentIdx] || activeImages[0]}
+              alt={model.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground/30">
               <span className="text-xs tracking-wide">Photo</span>
