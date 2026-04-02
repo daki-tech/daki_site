@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useCart, useCartDrawer, updateCartItemColor, replaceCartItemSizes } from "@/lib/cart-store";
@@ -174,36 +174,6 @@ function CartItemCard({
           </div>
         )}
 
-        {/* Quantity controls for selected sizes */}
-        {item.sizes.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {item.sizes.map((sz) => (
-              <div
-                key={sz.sizeLabel}
-                className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5"
-              >
-                <span className="text-[11px] font-medium text-neutral-600">
-                  {sz.sizeLabel}
-                </span>
-                <button
-                  onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity - 1)}
-                  className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                >
-                  <Minus className="h-2.5 w-2.5" />
-                </button>
-                <span className="w-4 text-center text-[11px] font-semibold">
-                  {sz.quantity}
-                </span>
-                <button
-                  onClick={() => updateCartItemSize(item.modelId, sz.sizeLabel, sz.quantity + 1)}
-                  className="flex h-4 w-4 items-center justify-center text-neutral-400 hover:text-neutral-700"
-                >
-                  <Plus className="h-2.5 w-2.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Price */}
         <div className="mt-1 flex items-baseline gap-2">
