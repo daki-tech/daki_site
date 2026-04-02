@@ -48,7 +48,7 @@ export const CONTACTS = {
   telegram_support: "daki_support",
   viber: "+380973952163",
   whatsapp: "",
-  instagram: "https://instagram.com/daki.ua",
+  instagram: "https://www.instagram.com/daki_tm?utm_source=qr&igsh=MXJ6ODZibWJ2dnB6ZQ%3D%3D",
 };
 
 /** Build Viber deep link — opens Viber app directly (no web fallback) */
