@@ -94,9 +94,9 @@ export function ProductCard({ model }: ProductCardProps) {
             </span>
           )}
 
-          {/* Out of stock overlay */}
+          {/* Out of stock label */}
           {outOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+            <div className="absolute inset-x-0 bottom-[5px] flex justify-center">
               <span className="rounded-full bg-neutral-900/70 px-4 py-1.5 text-xs font-medium text-white">
                 Немає в наявності
               </span>
