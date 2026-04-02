@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
@@ -12,8 +13,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "drive.google.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
-    minimumCacheTTL: 31536000,
-    formats: ["image/avif", "image/webp"],
   },
   experimental: {
     serverActions: {

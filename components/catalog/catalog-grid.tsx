@@ -71,7 +71,6 @@ export function CatalogGrid({ models, hideCategoryFilter }: CatalogGridProps) {
               onClick={() => { setCatOpen(!catOpen); setSortOpen(false); }}
               className="flex items-center gap-2 border border-neutral-200 rounded-full px-5 py-2.5 text-sm transition-colors hover:border-neutral-400 bg-white"
             >
-              <span className="text-neutral-500 text-xs uppercase tracking-wider mr-1">{t("catalog.category")}:</span>
               <span className="font-medium">{categoryFilter || t("catalog.allCategories")}</span>
               <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform ${catOpen ? "rotate-180" : ""}`} />
             </button>
