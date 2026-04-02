@@ -121,7 +121,7 @@ function FeaturedCard({ model }: { model: CatalogModel }) {
       </Link>
 
       {/* Color swatches — outside Link so they don't navigate */}
-      {colors.length > 1 && !outOfStock && (
+      {colors.length > 1 && (
         <div className="mt-2 flex items-center gap-1.5">
           {colors.map((color, idx) => (
             <button
