@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Heart, ShoppingBag } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { CatalogModel } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
@@ -21,13 +21,10 @@ export function ProductCard({ model }: ProductCardProps) {
   const finalPrice = model.base_price * (1 - model.discount_percent / 100);
   const displayPrice = finalPrice;
   const images = model.image_urls?.length ? model.image_urls : [];
-  const hasMultipleImages = images.length > 1;
 
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [isHovering, setIsHovering] = useState(false);
+  const [hovered, setHovered] = useState(false);
   // const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Colors with at least one image
   const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
@@ -38,26 +35,8 @@ export function ProductCard({ model }: ProductCardProps) {
       ? colors.map((c) => c.image_urls[0])
       : images;
 
-  const startCarousel = useCallback(() => {
-    if (activeImages.length <= 1) return;
-    intervalRef.current = setInterval(() => {
-      setCurrentIdx((prev) => (prev + 1) % activeImages.length);
-    }, 1500);
-  }, [activeImages.length]);
-
-  const stopCarousel = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setCurrentIdx(0);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+  // On hover show next image, on leave show first
+  const currentIdx = hovered && activeImages.length > 1 ? 1 : 0;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,16 +65,9 @@ export function ProductCard({ model }: ProductCardProps) {
 
   return (
     <div
-      className={`group relative ${outOfStock ? "opacity-50 grayscale" : ""}`}
-      onMouseEnter={() => {
-        if (outOfStock) return;
-        setIsHovering(true);
-        startCarousel();
-      }}
-      onMouseLeave={() => {
-        setIsHovering(false);
-        stopCarousel();
-      }}
+      className="group relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <Wrapper {...wrapperProps}>
         {/* Image */}
@@ -178,7 +150,7 @@ export function ProductCard({ model }: ProductCardProps) {
           )}
 
           {/* Color swatches */}
-          {colors.length > 1 && !outOfStock && (
+          {colors.length > 1 && (
             <div className="mt-2 flex items-center gap-1.5">
               {colors.map((color, idx) => (
                 <button
@@ -188,8 +160,6 @@ export function ProductCard({ model }: ProductCardProps) {
                     e.preventDefault();
                     e.stopPropagation();
                     setSelectedColorIdx(idx === selectedColorIdx ? null : idx);
-                    setCurrentIdx(0);
-                    stopCarousel();
                   }}
                   className={`h-4 w-4 rounded-full border transition-all ${
                     idx === selectedColorIdx

@@ -87,8 +87,8 @@ export default function SizeGuidePage() {
 
                   {/* Measurement 1 - Sleeve length */}
                   <line x1="140" y1="70" x2="160" y2="180" stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4,3" />
-                  <circle cx="155" cy="150" r="10" fill="#f43f5e" opacity="0.15" />
-                  <text x="155" y="154" textAnchor="middle" fontSize="11" fill="#f43f5e" fontWeight="600">1</text>
+                  <circle cx="165" cy="90" r="10" fill="#f43f5e" opacity="0.15" />
+                  <text x="165" y="94" textAnchor="middle" fontSize="11" fill="#f43f5e" fontWeight="600">1</text>
 
                   {/* Measurement 2 - Chest */}
                   <line x1="52" y1="100" x2="148" y2="100" stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4,3" />
