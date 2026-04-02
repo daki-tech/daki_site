@@ -25,7 +25,7 @@ const bodoni = Bodoni_Moda({
 
 export const metadata: Metadata = {
   title: {
-    default: `${APP_NAME} — Верхній жіночий одяг`,
+    default: `${APP_NAME} - Верхній жіночий одяг`,
     template: `%s | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
