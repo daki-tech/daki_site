@@ -60,67 +60,61 @@ export function NewsletterPopup() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" onClick={dismiss}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={dismiss}>
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+        className="relative w-full max-w-sm overflow-hidden bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={dismiss}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-neutral-500 transition hover:bg-white hover:text-black"
+          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center text-neutral-400 transition hover:text-black"
         >
           <X className="h-4 w-4" />
         </button>
 
-        {/* Top decorative band */}
-        <div className="bg-black px-6 py-8 text-center text-white">
-          <p className="font-serif text-2xl tracking-wider">DAKI</p>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.3em] text-white/60">
-            Жіночий верхній одяг
-          </p>
-        </div>
-
         {/* Content */}
-        <div className="px-6 py-6">
+        <div className="px-8 pt-10 pb-8">
           {submitted ? (
-            <div className="flex flex-col items-center py-4 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50">
-                <Send className="h-5 w-5 text-green-600" />
+            <div className="flex flex-col items-center py-6 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200">
+                <Send className="h-4 w-4 text-neutral-600" />
               </div>
-              <p className="mt-3 font-medium">Дякуємо!</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-4 text-sm font-medium tracking-wide uppercase">Дякуємо!</p>
+              <p className="mt-1.5 text-xs text-neutral-500">
                 Ви підписані на оновлення DaKi.
               </p>
             </div>
           ) : (
             <>
-              <h3 className="text-center text-lg font-light uppercase tracking-wider">
+              <p className="text-center text-lg tracking-[0.3em] font-light">DAKI</p>
+              <div className="mx-auto mt-3 h-px w-8 bg-neutral-200" />
+              <h3 className="mt-5 text-center text-[13px] font-medium uppercase tracking-[0.15em]">
                 Будьте першими
               </h3>
-              <p className="mt-2 text-center text-sm text-muted-foreground">
+              <p className="mt-2.5 text-center text-xs leading-relaxed text-neutral-500">
                 Підпишіться та дізнавайтесь про нові колекції, знижки та спеціальні пропозиції.
               </p>
-              <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+              <form onSubmit={handleSubmit} className="mt-6 space-y-3">
                 <input
                   type="email"
                   placeholder="Ваш email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border-b border-neutral-200 bg-transparent px-1 py-2.5 text-sm outline-none transition placeholder:text-neutral-400 focus:border-black"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-black py-3 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-neutral-800 disabled:opacity-50"
+                  className="w-full bg-black py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-white transition hover:bg-neutral-800 disabled:opacity-50"
                 >
                   {loading ? "..." : "Підписатися"}
                 </button>
               </form>
               <button
                 onClick={dismiss}
-                className="mt-3 w-full text-center text-xs text-muted-foreground transition hover:text-foreground"
+                className="mt-4 w-full text-center text-[11px] text-neutral-400 transition hover:text-neutral-600"
               >
                 Ні, дякую
               </button>

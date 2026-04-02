@@ -31,10 +31,12 @@ export function ProductCard({ model }: ProductCardProps) {
 
   // Colors with at least one image
   const colors = (model.model_colors ?? []).filter((c) => c.image_urls?.length > 0);
-  // When a color is selected, use its images; otherwise use model.image_urls
+  // When a color is selected, use its images; otherwise collect first image of each color for carousel preview
   const activeImages = selectedColorIdx !== null && colors[selectedColorIdx]
     ? colors[selectedColorIdx].image_urls
-    : images;
+    : colors.length > 1
+      ? colors.map((c) => c.image_urls[0])
+      : images;
 
   const startCarousel = useCallback(() => {
     if (activeImages.length <= 1) return;

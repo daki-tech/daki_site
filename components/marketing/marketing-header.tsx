@@ -166,7 +166,7 @@ export function MarketingHeader() {
               className="hidden items-center gap-1.5 rounded-full bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 px-3.5 py-1.5 text-[11px] font-medium text-white transition-opacity hover:opacity-90 lg:inline-flex"
             >
               <InstagramIcon className="h-3.5 w-3.5" />
-              daki.ua
+              наш інстаграм
             </a>
 
             {/* Wishlist */}
@@ -360,7 +360,7 @@ export function MarketingHeader() {
                 className="mb-3 flex items-center gap-2.5 rounded-xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white"
               >
                 <InstagramIcon className="h-4 w-4" />
-                Наш Instagram — daki.ua
+                Наш інстаграм
               </a>
               <Link href="/wishlist" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-2 text-sm">
                 <Heart className="h-4 w-4" /> Список бажань

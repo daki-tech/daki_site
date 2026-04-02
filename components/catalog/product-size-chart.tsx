@@ -22,7 +22,10 @@ function renderTable(headers: string[], dataRows: (string | undefined)[][]) {
   return (
     <div>
       <h3 className="flex items-center gap-2 text-xs font-semibold text-neutral-800 mb-6">
-        <span className="text-base">📐</span> Таблиця розмірів
+        <svg className="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 2l20 20M6.5 6.5l-3 3L14 20l3-3M8 8l2.5 2.5M11 5.5l2.5 2.5M14 3l2.5 2.5" />
+        </svg>
+        Таблиця розмірів
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
