@@ -39,7 +39,7 @@ export function Footer({ contacts }: FooterProps) {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6 lg:py-8">
-        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-0 lg:justify-items-center">
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-5 lg:gap-0 lg:justify-items-center">
           {/* Brand */}
           <div className="space-y-3">
             <Link href="/" className="font-logo text-xl tracking-[0.2em] uppercase">
@@ -65,6 +65,18 @@ export function Footer({ contacts }: FooterProps) {
                   {t(item.labelKey)}
                 </Link>
               ))}
+            </nav>
+          </div>
+
+          {/* Information */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-medium">
+              {t("footer.support")}
+            </h3>
+            <nav className="flex flex-col gap-2">
+              <Link href="/privacy-policy" className="text-xs text-muted-foreground transition hover:text-foreground">
+                {t("footer.privacy")}
+              </Link>
             </nav>
           </div>
 
@@ -140,13 +152,7 @@ export function Footer({ contacts }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-6 border-t border-border pt-4 flex flex-col items-center gap-2">
-          <Link
-            href="/privacy-policy"
-            className="text-[11px] text-muted-foreground transition hover:text-foreground"
-          >
-            {t("footer.privacy")}
-          </Link>
+        <div className="mt-6 border-t border-border pt-4">
           <p className="text-center text-[11px] text-muted-foreground" suppressHydrationWarning>
             &copy; {year} {APP_NAME}. {t("footer.rights")}
           </p>
