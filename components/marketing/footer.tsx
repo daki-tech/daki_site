@@ -140,7 +140,13 @@ export function Footer({ contacts }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-6 border-t border-border pt-4">
+        <div className="mt-6 border-t border-border pt-4 flex flex-col items-center gap-2">
+          <Link
+            href="/privacy-policy"
+            className="text-[11px] text-muted-foreground transition hover:text-foreground"
+          >
+            {t("footer.privacy")}
+          </Link>
           <p className="text-center text-[11px] text-muted-foreground" suppressHydrationWarning>
             &copy; {year} {APP_NAME}. {t("footer.rights")}
           </p>
