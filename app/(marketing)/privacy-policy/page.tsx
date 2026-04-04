@@ -40,8 +40,8 @@ export default function PrivacyPolicyPage() {
                 .
               </p>
               <p>
-                Володільцем персональних даних є ТМ &quot;DaKi&quot;, юридична адреса:
-                м. Харків, вул. Полтавський Шлях, 50 (далі — Володілець).
+                Володільцем персональних даних є ТМ &quot;DaKi&quot;, м. Харків
+                (далі — Володілець).
               </p>
               <p>
                 Ця Політика розроблена відповідно до Закону України &quot;Про захист
@@ -349,54 +349,10 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 10. Файли cookie */}
+          {/* 10. Права суб'єкта */}
           <div>
             <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              10. Файли cookie
-            </h2>
-            <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
-              <p>
-                Сайт використовує лише <strong className="text-foreground">технічно
-                необхідні файли cookie</strong>, які забезпечують роботу авторизації
-                та безпеку сесії. Ці файли є обов&apos;язковими для функціонування Сайту
-                та не потребують окремої згоди Користувача.
-              </p>
-              <p>Ми використовуємо такі cookie:</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-200">
-                      <th className="py-2 pr-4 font-medium text-foreground">Назва</th>
-                      <th className="py-2 pr-4 font-medium text-foreground">Призначення</th>
-                      <th className="py-2 font-medium text-foreground">Строк</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100">
-                    <tr>
-                      <td className="py-2 pr-4 font-mono text-xs">sb-*-auth-token</td>
-                      <td className="py-2 pr-4">Токен сесії авторизації</td>
-                      <td className="py-2">Сесія</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pr-4 font-mono text-xs">sb-*-auth-token.2</td>
-                      <td className="py-2 pr-4">Токен оновлення сесії</td>
-                      <td className="py-2">Сесія</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p>
-                Ми <strong className="text-foreground">не використовуємо</strong> аналітичні,
-                рекламні чи маркетингові cookie. Ніякі дані не передаються стороннім
-                рекламним мережам.
-              </p>
-            </div>
-          </div>
-
-          {/* 11. Права суб'єкта */}
-          <div>
-            <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              11. Права суб&apos;єкта персональних даних
+              10. Права суб&apos;єкта персональних даних
             </h2>
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>
@@ -441,10 +397,10 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 12. Як реалізувати свої права */}
+          {/* 11. Як реалізувати свої права */}
           <div>
             <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              12. Порядок реалізації прав
+              11. Порядок реалізації прав
             </h2>
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>
@@ -485,10 +441,10 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 13. Використання Сайту неповнолітніми */}
+          {/* 12. Використання Сайту неповнолітніми */}
           <div>
             <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              13. Використання Сайту неповнолітніми
+              12. Використання Сайту неповнолітніми
             </h2>
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>
@@ -500,10 +456,10 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 14. Зміни до Політики */}
+          {/* 13. Зміни до Політики */}
           <div>
             <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              14. Зміни до Політики конфіденційності
+              13. Зміни до Політики конфіденційності
             </h2>
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>
@@ -518,10 +474,10 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 15. Контакти */}
+          {/* 14. Контакти */}
           <div>
             <h2 className="text-base font-medium uppercase tracking-[0.1em] md:text-lg">
-              15. Контактна інформація
+              14. Контактна інформація
             </h2>
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>
@@ -530,10 +486,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong className="text-foreground">Володілець:</strong> ТМ &quot;DaKi&quot;
-                </li>
-                <li>
-                  <strong className="text-foreground">Адреса:</strong> м. Харків, вул. Полтавський Шлях, 50
+                  <strong className="text-foreground">Володілець:</strong> ТМ &quot;DaKi&quot;, м. Харків
                 </li>
                 <li>
                   <strong className="text-foreground">Email:</strong>{" "}
