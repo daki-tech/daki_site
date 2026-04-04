@@ -37,8 +37,7 @@ export default function PrivacyPolicyPage() {
                 .
               </p>
               <p>
-                Володільцем персональних даних є ТМ &quot;DaKi&quot;, м. Харків
-                (далі — Володілець).
+                Володільцем персональних даних є ТМ &quot;DaKi&quot; (далі — Володілець).
               </p>
               <p>
                 Ця Політика розроблена відповідно до Закону України &quot;Про захист
@@ -483,7 +482,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong className="text-foreground">Володілець:</strong> ТМ &quot;DaKi&quot;, м. Харків
+                  <strong className="text-foreground">Володілець:</strong> ТМ &quot;DaKi&quot;
                 </li>
                 <li>
                   <strong className="text-foreground">Email:</strong>{" "}
