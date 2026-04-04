@@ -35,7 +35,7 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <div className="container flex h-14 sm:h-16 items-center justify-between gap-3">
-        <Link href="/" className="font-logo text-[28px] sm:text-[34px] tracking-[0.04em] uppercase">
+        <Link href="/" className="font-logo text-[28px] sm:text-[34px] tracking-[0.01em] uppercase">
           DAKI
         </Link>
         {links.length > 0 && (

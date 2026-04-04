@@ -42,7 +42,7 @@ export function Footer({ contacts }: FooterProps) {
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-5 lg:gap-0 lg:justify-items-center">
           {/* Brand */}
           <div className="space-y-3">
-            <Link href="/" className="font-logo text-2xl tracking-[0.04em] uppercase">
+            <Link href="/" className="font-logo text-2xl tracking-[0.01em] uppercase">
               {APP_NAME}
             </Link>
             <p className="text-xs leading-relaxed text-muted-foreground">
