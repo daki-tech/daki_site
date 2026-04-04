@@ -15,9 +15,6 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-2xl font-light uppercase tracking-[0.15em] md:text-3xl">
           Політика конфіденційності
         </h1>
-        <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground md:text-base">
-          Останнє оновлення: 04 квітня 2026 року
-        </p>
       </div>
 
       {/* Content */}
