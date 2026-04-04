@@ -106,7 +106,7 @@ export function MarketingHeader() {
           {/* Logo */}
           <Link
             href="/"
-            className="font-logo absolute left-1/2 -translate-x-1/2 text-[34px] tracking-[0.01em] uppercase lg:static lg:translate-x-0"
+            className="font-logo absolute left-1/2 -translate-x-1/2 text-[34px] tracking-[-0.02em] uppercase lg:static lg:translate-x-0"
           >
             DAKI
           </Link>
@@ -287,7 +287,7 @@ export function MarketingHeader() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-[300px] bg-background shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <span className="font-logo text-2xl tracking-[0.01em] uppercase">DAKI</span>
+              <span className="font-logo text-2xl tracking-[-0.02em] uppercase">DAKI</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center"
