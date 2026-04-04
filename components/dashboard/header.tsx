@@ -36,7 +36,7 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <div className="container flex h-14 sm:h-16 items-center justify-between gap-3">
         <Link href="/" className="font-logo text-[28px] sm:text-[34px] tracking-[-0.02em] uppercase">
-          <span className="mr-[-0.06em]">D</span>AKI
+          <span className="mr-[-0.12em]">D</span>AKI
         </Link>
         {links.length > 0 && (
           <>

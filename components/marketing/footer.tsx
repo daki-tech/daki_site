@@ -43,7 +43,7 @@ export function Footer({ contacts }: FooterProps) {
           {/* Brand */}
           <div className="space-y-3">
             <Link href="/" className="font-logo text-2xl tracking-[-0.02em] uppercase">
-              <span className="mr-[-0.06em]">D</span>AKI
+              <span className="mr-[-0.12em]">D</span>AKI
             </Link>
             <p className="text-xs leading-relaxed text-muted-foreground">
               {t("footer.description")}
