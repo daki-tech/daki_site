@@ -20,7 +20,6 @@
 - Tailwind CSS + shadcn-compatible UI
 - Framer Motion
 - Supabase Auth + PostgreSQL
-- LemonSqueezy (webhooks skeleton)
 - Resend (email broadcast)
 
 ## Быстрый запуск
