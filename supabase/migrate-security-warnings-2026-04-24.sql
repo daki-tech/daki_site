@@ -45,10 +45,12 @@ $$;
 --    All legitimate reads happen via admin client (service_role bypasses RLS).
 
 DROP POLICY IF EXISTS "newsletter_select" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "newsletter_select_admin" ON public.newsletter_subscribers;
 CREATE POLICY "newsletter_select_admin" ON public.newsletter_subscribers
   FOR SELECT USING (public.is_admin_user());
 
 DROP POLICY IF EXISTS "newsletter_update" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "newsletter_update_admin" ON public.newsletter_subscribers;
 CREATE POLICY "newsletter_update_admin" ON public.newsletter_subscribers
   FOR UPDATE USING (public.is_admin_user())
   WITH CHECK (public.is_admin_user());
@@ -58,6 +60,7 @@ CREATE POLICY "newsletter_update_admin" ON public.newsletter_subscribers
 --    anonymous guests create orders via the API route (service_role).
 
 DROP POLICY IF EXISTS "orders_insert_any" ON public.orders;
+DROP POLICY IF EXISTS "orders_insert_own_or_guest" ON public.orders;
 CREATE POLICY "orders_insert_own_or_guest" ON public.orders
   FOR INSERT WITH CHECK (
     user_id IS NULL OR auth.uid() = user_id
@@ -67,6 +70,7 @@ CREATE POLICY "orders_insert_own_or_guest" ON public.orders
 --    order or owned by the current user. Service_role bypass remains.
 
 DROP POLICY IF EXISTS "order_items_insert_any" ON public.order_items;
+DROP POLICY IF EXISTS "order_items_insert_own_or_guest" ON public.order_items;
 CREATE POLICY "order_items_insert_own_or_guest" ON public.order_items
   FOR INSERT WITH CHECK (
     EXISTS (
