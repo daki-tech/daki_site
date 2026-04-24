@@ -275,7 +275,8 @@
       "Bash(npx -y add-mcp next-devtools-mcp@latest)",
       "Bash(claude mcp:*)",
       "Bash(ls \"D:/DaKi/app/\\(marketing\\)/catalog/\")",
-      "mcp__5dd035e6-00ab-4abe-8c8d-e404c8b489be__get_project"
+      "mcp__5dd035e6-00ab-4abe-8c8d-e404c8b489be__get_project",
+      "mcp__5dd035e6-00ab-4abe-8c8d-e404c8b489be__get_advisors"
     ],
     "defaultMode": "bypassPermissions"
   }
