@@ -10,7 +10,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- =====================
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
@@ -244,7 +247,11 @@ CREATE TRIGGER orders_updated_at BEFORE UPDATE ON public.orders
 -- =====================
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, full_name)
   VALUES (
@@ -349,8 +356,11 @@ CREATE POLICY "orders_select_own_or_admin" ON public.orders
 DROP POLICY IF EXISTS "orders_insert_own_or_admin" ON public.orders;
 DROP POLICY IF EXISTS "orders_insert_guest_or_user" ON public.orders;
 DROP POLICY IF EXISTS "orders_insert_any" ON public.orders;
-CREATE POLICY "orders_insert_any" ON public.orders
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "orders_insert_own_or_guest" ON public.orders;
+CREATE POLICY "orders_insert_own_or_guest" ON public.orders
+  FOR INSERT WITH CHECK (
+    user_id IS NULL OR auth.uid() = user_id
+  );
 
 DROP POLICY IF EXISTS "orders_update_own_or_admin" ON public.orders;
 CREATE POLICY "orders_update_own_or_admin" ON public.orders
@@ -371,8 +381,15 @@ CREATE POLICY "order_items_select_own_or_admin" ON public.order_items
 
 DROP POLICY IF EXISTS "order_items_insert_own_or_admin" ON public.order_items;
 DROP POLICY IF EXISTS "order_items_insert_any" ON public.order_items;
-CREATE POLICY "order_items_insert_any" ON public.order_items
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "order_items_insert_own_or_guest" ON public.order_items;
+CREATE POLICY "order_items_insert_own_or_guest" ON public.order_items
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_id
+        AND (o.user_id IS NULL OR o.user_id = auth.uid())
+    )
+  );
 
 DROP POLICY IF EXISTS "order_items_update_own_or_admin" ON public.order_items;
 CREATE POLICY "order_items_update_own_or_admin" ON public.order_items
@@ -390,18 +407,21 @@ DROP POLICY IF EXISTS "webhook_events_admin_manage" ON public.webhook_events;
 CREATE POLICY "webhook_events_admin_manage" ON public.webhook_events
   FOR ALL USING (public.is_admin_user()) WITH CHECK (public.is_admin_user());
 
--- newsletter
+-- newsletter: INSERT open (public signup); SELECT/UPDATE admin only (GDPR)
 DROP POLICY IF EXISTS "newsletter_insert" ON public.newsletter_subscribers;
 CREATE POLICY "newsletter_insert" ON public.newsletter_subscribers
   FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "newsletter_select" ON public.newsletter_subscribers;
-CREATE POLICY "newsletter_select" ON public.newsletter_subscribers
-  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "newsletter_select_admin" ON public.newsletter_subscribers;
+CREATE POLICY "newsletter_select_admin" ON public.newsletter_subscribers
+  FOR SELECT USING (public.is_admin_user());
 
 DROP POLICY IF EXISTS "newsletter_update" ON public.newsletter_subscribers;
-CREATE POLICY "newsletter_update" ON public.newsletter_subscribers
-  FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "newsletter_update_admin" ON public.newsletter_subscribers;
+CREATE POLICY "newsletter_update_admin" ON public.newsletter_subscribers
+  FOR UPDATE USING (public.is_admin_user())
+  WITH CHECK (public.is_admin_user());
 
 -- =====================
 -- SEED
