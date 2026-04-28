@@ -307,7 +307,7 @@ export async function POST(req: Request) {
 
     // Voice message → AI parse → save without confirmation
     if (message.voice?.file_id) {
-      return handleVoiceMessage(admin, botToken, chatId, message.voice.file_id);
+      return handleVoiceMessage(admin, botToken, chatId, message.voice.file_id, message.message_id);
     }
 
     // Photo → AI parse → confirmation buttons
@@ -361,7 +361,7 @@ export async function POST(req: Request) {
 
     // No active flow — try to parse text as a finance entry via AI
     if (text && !text.startsWith("/")) {
-      return handleTextAI(admin, botToken, chatId, text);
+      return handleTextAI(admin, botToken, chatId, text, message.message_id);
     }
 
     return NextResponse.json({ ok: true });
@@ -471,7 +471,50 @@ async function handleFinanceCallback(
     return NextResponse.json({ ok: true });
   }
 
-  // Payment method selection callback
+  // AI-driven flow: payment-method selection for an intent that didn't specify one.
+  // Reads the stored intent, sets payment_method on it + all items, deletes the
+  // prompt + the user's original voice/text message, then re-applies the intent.
+  if (action.startsWith("awaitpay:")) {
+    const paymentMethod = action.replace("awaitpay:", "") as PaymentMethod;
+    const { data: state } = await admin
+      .from("telegram_bot_state")
+      .select("*")
+      .eq("chat_id", chatId)
+      .maybeSingle();
+
+    if (!state || state.action !== "awaiting_payment") {
+      await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
+      return NextResponse.json({ ok: true });
+    }
+
+    const intent = state.data?.intent as FinanceIntent | undefined;
+    if (!intent) {
+      await answerCallback(botToken, callbackQuery.id, "Данные потеряны");
+      await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+      return NextResponse.json({ ok: true });
+    }
+
+    intent.payment_method = paymentMethod;
+    if (intent.items) {
+      // Apply chosen payment only to items that didn't already have one — preserve
+      // explicit "наличкой"/"переводом" cues the AI captured per item.
+      intent.items = intent.items.map((it) =>
+        it.payment_method ? it : { ...it, payment_method: paymentMethod }
+      );
+    }
+
+    const promptMsgId = state.data?.prompt_msg_id as number | undefined;
+    const userMsgId = state.data?.user_msg_id as number | undefined;
+    if (promptMsgId) await deleteMessage(botToken, chatId, promptMsgId);
+    if (userMsgId) await deleteMessage(botToken, chatId, userMsgId);
+
+    await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+
+    await answerCallback(botToken, callbackQuery.id, "");
+    return applyIntent(admin, botToken, chatId, intent);
+  }
+
+  // Manual /finance flow: payment-method selection step (after currency, before amount)
   if (action.startsWith("pay:")) {
     const paymentMethod = action.replace("pay:", ""); // "cash" or "bank"
     const { data: state } = await admin
@@ -1039,13 +1082,30 @@ async function answerCallback(botToken: string, callbackQueryId: string, text: s
 
 /* ─────────────────────────── AI handlers (voice / text / photo) ─────────────────────────── */
 
-/** Apply intent → save finance record(s). Handles multi-item intents. */
+/** Apply intent → save finance record(s). Handles multi-item intents.
+ *  If the intent doesn't specify a payment method, asks the user first
+ *  via inline buttons (instead of silently defaulting to "безнал"). */
 async function applyIntent(
   admin: ReturnType<typeof createAdminClient>,
   botToken: string,
   chatId: number,
   intent: FinanceIntent,
+  userMessageId?: number,
 ): Promise<NextResponse> {
+  // Pre-flight: if this is an expense/income that needs a payment method but none
+  // is set, ask the user via inline buttons instead of saving silently.
+  const isWriteAction = intent.action === "expense" || intent.action === "income"
+    || (intent.items && intent.items.some((it) => it.action === "expense" || it.action === "income"));
+  if (isWriteAction) {
+    const allItemsHavePayment = intent.items
+      ? intent.items.every((it) => it.payment_method)
+      : true;
+    const needsPayment = !intent.payment_method && !allItemsHavePayment;
+    if (needsPayment) {
+      return askPaymentMethod(admin, botToken, chatId, intent, userMessageId);
+    }
+  }
+
   // Multi-item: each item gets saved as a separate record
   if (intent.items && intent.items.length > 0) {
     let okCount = 0;
@@ -1174,11 +1234,79 @@ function formatRecordSummary(
   return s;
 }
 
+/** Compact preview of what the bot understood, shown above the payment-method buttons. */
+function describeIntentForPrompt(intent: FinanceIntent): string {
+  const fmt = (n: number) => n.toLocaleString("ru-RU");
+
+  if (intent.items && intent.items.length > 0) {
+    const lines = intent.items.map((it, i) => {
+      const cur = it.currency === "дол" ? "$" : "грн";
+      const cat = it.category && CATEGORY_LABELS[it.category];
+      const amt = fmt(Number(it.amount) || 0);
+      const desc = (it.description as string) || "";
+      const head = it.action === "income" ? "💰" : "📉";
+      return `${i + 1}. ${head} ${desc}${cat ? ` • ${cat}` : ""} — ${amt} ${cur}`;
+    });
+    return `📝 Распознал ${intent.items.length} ${intent.items.length === 1 ? "запись" : "записи"}:\n${lines.join("\n")}`;
+  }
+
+  const isExp = intent.action === "expense";
+  const cur = intent.currency === "дол" ? "$" : "грн";
+  const cat = intent.category && CATEGORY_LABELS[intent.category];
+  const amt = fmt(intent.amount || 0);
+  const typeEmoji = isExp ? "📉" : "💰";
+  const typeLabel = isExp ? "Расход" : "Доход";
+  let s = `${typeEmoji} <b>${typeLabel}</b>`;
+  if (cat) s += ` • ${cat}`;
+  if (intent.description) s += `\n${isExp ? "📝" : "👤"} ${intent.description}`;
+  s += `\n💰 ${amt} ${cur}`;
+  return s;
+}
+
+/** Stash the intent in telegram_bot_state and ask the user to pick a payment method. */
+async function askPaymentMethod(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  intent: FinanceIntent,
+  userMessageId?: number,
+): Promise<NextResponse> {
+  const preview = describeIntentForPrompt(intent);
+  const promptText = `${preview}\n\n💳 Способ оплаты:`;
+
+  const promptMsgId = await sendMessageAndTrack(botToken, chatId, promptText, {
+    inline_keyboard: [
+      [
+        { text: "💵 Наличка", callback_data: "fin:awaitpay:cash" },
+        { text: "💳 Безнал", callback_data: "fin:awaitpay:bank" },
+      ],
+    ],
+  });
+
+  await admin.from("telegram_bot_state").upsert(
+    {
+      chat_id: chatId,
+      action: "awaiting_payment",
+      step: "payment",
+      data: {
+        intent,
+        prompt_msg_id: promptMsgId,
+        user_msg_id: userMessageId,
+      },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "chat_id" },
+  );
+
+  return NextResponse.json({ ok: true });
+}
+
 async function handleVoiceMessage(
   admin: ReturnType<typeof createAdminClient>,
   botToken: string,
   chatId: number,
   fileId: string,
+  userMessageId?: number,
 ): Promise<NextResponse> {
   // Clear any pending finance flow — voice replaces it
   await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
@@ -1186,7 +1314,7 @@ async function handleVoiceMessage(
   try {
     const { base64, mimeType } = await downloadTelegramFile(fileId);
     const intent = await parseVoiceIntent(base64, mimeType);
-    return applyIntent(admin, botToken, chatId, intent);
+    return applyIntent(admin, botToken, chatId, intent, userMessageId);
   } catch (err) {
     console.error("[Voice] Failed:", err);
     await sendMessage(botToken, chatId, `❌ Не получилось распознать голос: ${(err as Error).message?.slice(0, 150) || "ошибка"}\n\nПопробуй ещё раз.`);
@@ -1199,6 +1327,7 @@ async function handleTextAI(
   botToken: string,
   chatId: number,
   text: string,
+  userMessageId?: number,
 ): Promise<NextResponse> {
   try {
     const intent = await parseTextIntent(text);
@@ -1206,7 +1335,7 @@ async function handleTextAI(
       // Stay quiet on casual text — don't spam "не понял" for every message
       return NextResponse.json({ ok: true });
     }
-    return applyIntent(admin, botToken, chatId, intent);
+    return applyIntent(admin, botToken, chatId, intent, userMessageId);
   } catch (err) {
     console.error("[Text AI] Failed:", err);
     return NextResponse.json({ ok: true });
