@@ -1,9 +1,12 @@
 // Apps Script for "Учет финансов" spreadsheet
 // Spreadsheet ID: 1dOMtjAnxGwH-9CPDgFPG2lOzpR2eDrU5wiZFUVax410
 // Columns: A=Дата, B=Описание / От кого, C=Валюта, D=Доход,
-//          E=Зарплата, F=Фурнитура/кнопки, G=Ткань, H=Цех, I=Разработка новой коллекции
+//          E=Зарплата, F=Фурнитура/кнопки, G=Ткань, H=Цех,
+//          I=Разработка новой коллекции, J=Способ оплаты (наличка/безнал)
 // Row 1: headers + summary labels (K-M for ₴, O-Q for $)
-// Row 2+: data
+// Row 2: overall totals
+// Row 3-4: cash totals (label + formula)
+// Row 5-6: bank totals (label + formula)
 
 var CATEGORY_COLS = {
   "Зарплата": 5,
@@ -13,7 +16,9 @@ var CATEGORY_COLS = {
   "Разработка новой коллекции": 9
 };
 
-var NUM_COLS = 9;
+var PAYMENT_COL = 10; // J
+
+var NUM_COLS = 10;
 
 function doPost(e) {
   try {
@@ -52,7 +57,8 @@ function addFinanceRecord(data) {
 
   // Setup headers if structure doesn't match
   var b1 = sheet.getRange(1, 2).getValue();
-  if (b1 !== "Описание / От кого") {
+  var j1 = sheet.getRange(1, 10).getValue();
+  if (b1 !== "Описание / От кого" || j1 !== "Способ оплаты") {
     setupHeaders(sheet);
   }
 
@@ -60,6 +66,7 @@ function addFinanceRecord(data) {
   var currency = data.currency || "грн";
   var isIncome = data.type !== "expense";
   var description = data.description || "";
+  var paymentMethod = data.paymentMethod || "безнал";
 
   var row = [];
   for (var i = 0; i < NUM_COLS; i++) row.push("");
@@ -75,34 +82,86 @@ function addFinanceRecord(data) {
     if (col) row[col - 1] = amount;
   }
 
-  // Use column A to find last data row (getLastRow() counts formula cells in L-R columns)
+  row[PAYMENT_COL - 1] = paymentMethod;
+
+  // Use column A to find last data row (getLastRow() counts formula cells)
   var lastDataRow = getLastDataRow(sheet);
   sheet.getRange(lastDataRow + 1, 1, 1, NUM_COLS).setValues([row]);
 
-  // Always ensure summary formulas exist in L2-R2
+  // Backfill old empty payment-method cells with "безнал" + recreate summary formulas if missing
   ensureFormulas(sheet);
 
   return respond({ ok: true, sheet: sheet.getName() });
 }
 
 function ensureFormulas(sheet) {
-  // Check if K2 has a formula; if not, re-set all summary formulas.
-  // Same column scheme as setupHeaders: K/L/M for ₴, O/P/Q for $, S1/S2 currency labels.
+  // Backfill empty J cells in data rows (≥ row 2) with "безнал"
+  var lastDataRow = getLastDataRow(sheet);
+  if (lastDataRow >= 2) {
+    var jRange = sheet.getRange(2, PAYMENT_COL, lastDataRow - 1, 1);
+    var jValues = jRange.getValues();
+    var changed = false;
+    for (var i = 0; i < jValues.length; i++) {
+      if (!jValues[i][0]) {
+        jValues[i][0] = "безнал";
+        changed = true;
+      }
+    }
+    if (changed) jRange.setValues(jValues);
+  }
+
+  // Check if K2 has a formula; if so, summary cells are intact — nothing to do
   var k2 = sheet.getRange(2, 11).getFormula();
   if (k2) return;
 
+  // Currency labels in S1/S2; payment-method labels in S3/S4
   sheet.getRange(1, 19).setValue("грн");
   sheet.getRange(2, 19).setValue("дол");
+  sheet.getRange(3, 19).setValue("наличка");
+  sheet.getRange(4, 19).setValue("безнал");
 
-  // ₴ totals: K (income), L (expense), M (diff)
+  // Row 1 labels
+  sheet.getRange(1, 11).setValue("Итого доход ₴");
+  sheet.getRange(1, 12).setValue("Итого расход ₴");
+  sheet.getRange(1, 13).setValue("Разница ₴");
+  sheet.getRange(1, 15).setValue("Итого доход $");
+  sheet.getRange(1, 16).setValue("Итого расход $");
+  sheet.getRange(1, 17).setValue("Разница $");
+  sheet.getRange(1, 11, 1, 7).setFontWeight("bold");
+
+  // Row 2: overall totals
   sheet.getRange(2, 11).setFormula("=SUMIFS(D:D,C:C,S1)");
   sheet.getRange(2, 12).setFormula("=SUMIFS(E:E,C:C,S1)+SUMIFS(F:F,C:C,S1)+SUMIFS(G:G,C:C,S1)+SUMIFS(H:H,C:C,S1)+SUMIFS(I:I,C:C,S1)");
   sheet.getRange(2, 13).setFormula("=K2-L2");
-
-  // $ totals: O (income), P (expense), Q (diff)
   sheet.getRange(2, 15).setFormula("=SUMIFS(D:D,C:C,S2)");
   sheet.getRange(2, 16).setFormula("=SUMIFS(E:E,C:C,S2)+SUMIFS(F:F,C:C,S2)+SUMIFS(G:G,C:C,S2)+SUMIFS(H:H,C:C,S2)+SUMIFS(I:I,C:C,S2)");
   sheet.getRange(2, 17).setFormula("=O2-P2");
+
+  // Row 3 labels (cash)
+  sheet.getRange(3, 11).setValue("💵 Нал доход ₴");
+  sheet.getRange(3, 12).setValue("💵 Нал расход ₴");
+  sheet.getRange(3, 15).setValue("💵 Нал доход $");
+  sheet.getRange(3, 16).setValue("💵 Нал расход $");
+  sheet.getRange(3, 11, 1, 7).setFontWeight("bold");
+
+  // Row 4: cash formulas (J column = "наличка" → S3)
+  sheet.getRange(4, 11).setFormula("=SUMIFS(D:D,C:C,S1,J:J,S3)");
+  sheet.getRange(4, 12).setFormula("=SUMIFS(E:E,C:C,S1,J:J,S3)+SUMIFS(F:F,C:C,S1,J:J,S3)+SUMIFS(G:G,C:C,S1,J:J,S3)+SUMIFS(H:H,C:C,S1,J:J,S3)+SUMIFS(I:I,C:C,S1,J:J,S3)");
+  sheet.getRange(4, 15).setFormula("=SUMIFS(D:D,C:C,S2,J:J,S3)");
+  sheet.getRange(4, 16).setFormula("=SUMIFS(E:E,C:C,S2,J:J,S3)+SUMIFS(F:F,C:C,S2,J:J,S3)+SUMIFS(G:G,C:C,S2,J:J,S3)+SUMIFS(H:H,C:C,S2,J:J,S3)+SUMIFS(I:I,C:C,S2,J:J,S3)");
+
+  // Row 5 labels (bank)
+  sheet.getRange(5, 11).setValue("💳 Безнал доход ₴");
+  sheet.getRange(5, 12).setValue("💳 Безнал расход ₴");
+  sheet.getRange(5, 15).setValue("💳 Безнал доход $");
+  sheet.getRange(5, 16).setValue("💳 Безнал расход $");
+  sheet.getRange(5, 11, 1, 7).setFontWeight("bold");
+
+  // Row 6: bank formulas (J column = "безнал" → S4)
+  sheet.getRange(6, 11).setFormula("=SUMIFS(D:D,C:C,S1,J:J,S4)");
+  sheet.getRange(6, 12).setFormula("=SUMIFS(E:E,C:C,S1,J:J,S4)+SUMIFS(F:F,C:C,S1,J:J,S4)+SUMIFS(G:G,C:C,S1,J:J,S4)+SUMIFS(H:H,C:C,S1,J:J,S4)+SUMIFS(I:I,C:C,S1,J:J,S4)");
+  sheet.getRange(6, 15).setFormula("=SUMIFS(D:D,C:C,S2,J:J,S4)");
+  sheet.getRange(6, 16).setFormula("=SUMIFS(E:E,C:C,S2,J:J,S4)+SUMIFS(F:F,C:C,S2,J:J,S4)+SUMIFS(G:G,C:C,S2,J:J,S4)+SUMIFS(H:H,C:C,S2,J:J,S4)+SUMIFS(I:I,C:C,S2,J:J,S4)");
 }
 
 function getLastDataRow(sheet) {
@@ -114,38 +173,17 @@ function getLastDataRow(sheet) {
 }
 
 function setupHeaders(sheet) {
-  sheet.getRange(1, 1, 1, 20).clear();
+  // Clear all summary area + headers
+  sheet.getRange(1, 1, 6, 20).clear();
 
   var headers = ["Дата", "Описание / От кого", "Валюта", "Доход",
-    "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех", "Разработка новой коллекции"];
+    "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех",
+    "Разработка новой коллекции", "Способ оплаты"];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
 
-  // Currency labels in S1, S2 (used by formulas to avoid encoding issues)
-  sheet.getRange(1, 19).setValue("грн");
-  sheet.getRange(2, 19).setValue("дол");
-
-  // ₴ totals: K(11), L(12), M(13)
-  sheet.getRange(1, 11).setValue("Итого доход ₴");
-  sheet.getRange(1, 12).setValue("Итого расход ₴");
-  sheet.getRange(1, 13).setValue("Разница ₴");
-  sheet.getRange(1, 11, 1, 3).setFontWeight("bold");
-
-  sheet.getRange(2, 11).setFormula("=SUMIFS(D:D,C:C,S1)");
-  sheet.getRange(2, 12).setFormula("=SUMIFS(E:E,C:C,S1)+SUMIFS(F:F,C:C,S1)+SUMIFS(G:G,C:C,S1)+SUMIFS(H:H,C:C,S1)+SUMIFS(I:I,C:C,S1)");
-  sheet.getRange(2, 13).setFormula("=K2-L2");
-  sheet.getRange(2, 11, 1, 3).setFontWeight("bold");
-
-  // $ totals: O(15), P(16), Q(17)
-  sheet.getRange(1, 15).setValue("Итого доход $");
-  sheet.getRange(1, 16).setValue("Итого расход $");
-  sheet.getRange(1, 17).setValue("Разница $");
-  sheet.getRange(1, 15, 1, 3).setFontWeight("bold");
-
-  sheet.getRange(2, 15).setFormula("=SUMIFS(D:D,C:C,S2)");
-  sheet.getRange(2, 16).setFormula("=SUMIFS(E:E,C:C,S2)+SUMIFS(F:F,C:C,S2)+SUMIFS(G:G,C:C,S2)+SUMIFS(H:H,C:C,S2)+SUMIFS(I:I,C:C,S2)");
-  sheet.getRange(2, 17).setFormula("=O2-P2");
-  sheet.getRange(2, 15, 1, 3).setFontWeight("bold");
+  // Forces ensureFormulas to recreate everything below
+  ensureFormulas(sheet);
 }
 
 function getFinanceReport(req) {
@@ -165,6 +203,8 @@ function getFinanceReport(req) {
 
   var totalIncome = 0, totalExpense = 0;
   var totalIncomeUsd = 0, totalExpenseUsd = 0;
+  var incomeCash = 0, incomeBank = 0, expenseCash = 0, expenseBank = 0;
+  var incomeCashUsd = 0, incomeBankUsd = 0, expenseCashUsd = 0, expenseBankUsd = 0;
   var incomeByPerson = {}, incomeByPersonUsd = {};
   var expenseByCategory = {}, expenseByCategoryUsd = {};
   var count = 0;
@@ -176,7 +216,7 @@ function getFinanceReport(req) {
     // Filter by date range if requested
     if (fromDate || toDate) {
       var rowDate = parseDateString(row[0]);
-      if (!rowDate) continue; // skip rows with unparseable date when filtering
+      if (!rowDate) continue;
       if (fromDate && rowDate < fromDate) continue;
       if (toDate && rowDate > toDate) continue;
     }
@@ -184,10 +224,12 @@ function getFinanceReport(req) {
     var description = String(row[1] || "");
     var currency = String(row[2] || "грн");
     var incomeAmt = Number(row[3]) || 0;
+    var paymentMethod = String(row[PAYMENT_COL - 1] || "безнал").toLowerCase();
+    var isCash = paymentMethod === "наличка" || paymentMethod === "cash";
     var isUsd = currency === "дол";
 
     var expenseAmt = 0;
-    for (var j = 4; j < NUM_COLS; j++) {
+    for (var j = 4; j < 9; j++) { // expense category cols E..I (indexes 4..8)
       expenseAmt += Number(row[j]) || 0;
     }
 
@@ -197,9 +239,11 @@ function getFinanceReport(req) {
     if (incomeAmt > 0) {
       if (isUsd) {
         totalIncomeUsd += incomeAmt;
+        if (isCash) incomeCashUsd += incomeAmt; else incomeBankUsd += incomeAmt;
         if (description) incomeByPersonUsd[description] = (incomeByPersonUsd[description] || 0) + incomeAmt;
       } else {
         totalIncome += incomeAmt;
+        if (isCash) incomeCash += incomeAmt; else incomeBank += incomeAmt;
         if (description) incomeByPerson[description] = (incomeByPerson[description] || 0) + incomeAmt;
       }
     }
@@ -212,9 +256,11 @@ function getFinanceReport(req) {
         if (catAmt > 0) {
           if (isUsd) {
             totalExpenseUsd += catAmt;
+            if (isCash) expenseCashUsd += catAmt; else expenseBankUsd += catAmt;
             expenseByCategoryUsd[catName] = (expenseByCategoryUsd[catName] || 0) + catAmt;
           } else {
             totalExpense += catAmt;
+            if (isCash) expenseCash += catAmt; else expenseBank += catAmt;
             expenseByCategory[catName] = (expenseByCategory[catName] || 0) + catAmt;
           }
         }
@@ -222,7 +268,6 @@ function getFinanceReport(req) {
     }
   }
 
-  // After filtering, if nothing matched the period — report as empty
   if (count === 0) {
     return respond({ ok: true, empty: true });
   }
@@ -238,6 +283,14 @@ function getFinanceReport(req) {
     totalExpenseUsd: totalExpenseUsd,
     incomeByPersonUsd: incomeByPersonUsd,
     expenseByCategoryUsd: expenseByCategoryUsd,
+    incomeCash: incomeCash,
+    incomeBank: incomeBank,
+    expenseCash: expenseCash,
+    expenseBank: expenseBank,
+    incomeCashUsd: incomeCashUsd,
+    incomeBankUsd: incomeBankUsd,
+    expenseCashUsd: expenseCashUsd,
+    expenseBankUsd: expenseBankUsd,
     count: count
   });
 }
@@ -263,7 +316,7 @@ function deleteFinanceRecord(data) {
       var amt = Number(data.amount);
       var found = false;
       if (Number(rows[i][3]) === amt) found = true;
-      for (var j = 4; j < NUM_COLS; j++) {
+      for (var j = 4; j < 9; j++) {
         if (Number(rows[i][j]) === amt) found = true;
       }
       if (!found) match = false;

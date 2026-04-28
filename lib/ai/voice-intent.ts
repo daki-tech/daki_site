@@ -27,7 +27,17 @@ export const CATEGORY_LABELS: Record<string, string> = {
   newcollection: "Разработка новой коллекции",
 };
 
-export type ReportPeriod = "day" | "week" | "month" | "all";
+export type ReportPeriod =
+  | "day"
+  | "yesterday"
+  | "week"
+  | "month"
+  | "quarter"
+  | "half_year"
+  | "year"
+  | "all";
+
+export type PaymentMethod = "cash" | "bank";
 
 export interface FinanceIntent {
   action: IntentAction;
@@ -44,6 +54,8 @@ export interface FinanceIntent {
   txn_date: string | null;
   /** For action="report": which period to show. Default "all". */
   query_period: ReportPeriod | null;
+  /** "cash" (наличка) | "bank" (безнал/перевод/карта). null → default to "bank". */
+  payment_method: PaymentMethod | null;
   raw_transcript: string;
   confidence: number;
   /** Multiple records in one message ("ткань 5000 и пуговицы 800"). */
@@ -62,6 +74,11 @@ const SYSTEM_PROMPT_TEMPLATE = `Ты — AI-ассистент финансов�
 
 ВАЛЮТА: "доллар(а/ов) / usd / $" → currency="дол", иначе "грн".
 
+СПОСОБ ОПЛАТЫ (payment_method):
+- "наличкой / налом / кешем / наличными" → "cash"
+- "безналом / переводом / картой / на карту / на счёт / по безналу" → "bank"
+- Если не упомянуто → null (бот применит "безнал" по умолчанию)
+
 ДАТЫ:
 - По умолчанию txn_date = null (= сегодня).
 - Если упомянуто "вчера", "позавчера", "5 апреля", "12 числа", конкретная дата — извлеки в формате YYYY-MM-DD.
@@ -73,10 +90,14 @@ const SYSTEM_PROMPT_TEMPLATE = `Ты — AI-ассистент финансов�
 - "expense" — расход. Нужны: amount, category. Опционально: description, currency, txn_date.
 - "income" — доход (приход денег). Нужны: amount, description (от кого). Опционально: currency, txn_date.
 - "report" — пользователь просит отчёт. Опционально query_period:
-   • "day"   — "сегодня", "за день", "за сегодня", "сегодняшний"
-   • "week"  — "за неделю", "эту неделю", "недельный отчёт", "с понедельника"
-   • "month" — "за месяц", "месячный", "в этом месяце"
-   • "all"   — "общий", "за всё время", "вообще", или ничего не указано
+   • "day"       — "сегодня", "за день", "за сегодня", "сегодняшний"
+   • "yesterday" — "вчера", "за вчера", "вчерашние", "а вчера?"
+   • "week"      — "за неделю", "эту неделю", "недельный отчёт", "с понедельника"
+   • "month"     — "за месяц", "месячный", "в этом месяце"
+   • "quarter"   — "за квартал", "за три месяца", "квартальный отчёт"
+   • "half_year" — "за полгода", "за пол года", "за шесть месяцев"
+   • "year"      — "за год", "годовой отчёт", "за этот год"
+   • "all"       — "общий", "за всё время", "вообще", или ничего не указано
 - "unknown" — не понял.
 
 ВАЖНО:
@@ -89,6 +110,12 @@ const SYSTEM_PROMPT_TEMPLATE = `Ты — AI-ассистент финансов�
 "купил ткань 5000":
 {"action":"expense","amount":5000,"category":"fabric","description":"ткань","currency":"грн","raw_transcript":"...","confidence":0.95}
 
+"купил ткань 5000 наличкой":
+{"action":"expense","amount":5000,"category":"fabric","description":"ткань","currency":"грн","payment_method":"cash","raw_transcript":"...","confidence":0.95}
+
+"оплатил ткань 5000 переводом":
+{"action":"expense","amount":5000,"category":"fabric","description":"ткань","currency":"грн","payment_method":"bank","raw_transcript":"...","confidence":0.95}
+
 "вчера зарплата Маше 12 тысяч":
 {"action":"expense","amount":12000,"category":"salary","description":"Маша","currency":"грн","txn_date":"YYYY-MM-DD-вчера","raw_transcript":"...","confidence":0.95}
 
@@ -97,6 +124,9 @@ const SYSTEM_PROMPT_TEMPLATE = `Ты — AI-ассистент финансов�
 
 "получил предоплату от Иры 8000":
 {"action":"income","amount":8000,"description":"Ира (предоплата)","currency":"грн","raw_transcript":"...","confidence":0.95}
+
+"пришло на карту от Иры 8000":
+{"action":"income","amount":8000,"description":"Ира","currency":"грн","payment_method":"bank","raw_transcript":"...","confidence":0.95}
 
 "молнии и пуговицы 1500":
 {"action":"expense","amount":1500,"category":"hardware","description":"молнии и пуговицы","currency":"грн","raw_transcript":"...","confidence":0.95}
@@ -116,11 +146,26 @@ const SYSTEM_PROMPT_TEMPLATE = `Ты — AI-ассистент финансов�
 "какие сегодня были расходы":
 {"action":"report","query_period":"day","raw_transcript":"...","confidence":0.95}
 
+"а вчера?":
+{"action":"report","query_period":"yesterday","raw_transcript":"...","confidence":0.95}
+
+"сколько вчера потратили":
+{"action":"report","query_period":"yesterday","raw_transcript":"...","confidence":0.95}
+
 "сколько потратили за неделю":
 {"action":"report","query_period":"week","raw_transcript":"...","confidence":0.95}
 
 "отчёт за месяц":
 {"action":"report","query_period":"month","raw_transcript":"...","confidence":0.95}
+
+"за квартал":
+{"action":"report","query_period":"quarter","raw_transcript":"...","confidence":0.95}
+
+"отчёт за полгода":
+{"action":"report","query_period":"half_year","raw_transcript":"...","confidence":0.95}
+
+"за год сколько потратили":
+{"action":"report","query_period":"year","raw_transcript":"...","confidence":0.95}
 
 "общий отчёт":
 {"action":"report","query_period":"all","raw_transcript":"...","confidence":0.95}
@@ -141,6 +186,12 @@ function normalize(obj: Record<string, unknown>): FinanceIntent {
     ? (obj.action as IntentAction)
     : "unknown";
 
+  const validPaymentMethods: PaymentMethod[] = ["cash", "bank"];
+  const extractPaymentMethod = (raw: unknown): PaymentMethod | null => {
+    const s = typeof raw === "string" ? raw.toLowerCase() : "";
+    return s && (validPaymentMethods as string[]).includes(s) ? (s as PaymentMethod) : null;
+  };
+
   const items = Array.isArray(obj.items)
     ? (obj.items as Record<string, unknown>[]).map((it) => ({
         action: ((VALID_ACTIONS as string[]).includes(it.action as string)
@@ -151,10 +202,11 @@ function normalize(obj: Record<string, unknown>): FinanceIntent {
         description: (it.description as string | null) ?? null,
         currency: (it.currency as string | null) ?? null,
         txn_date: (it.txn_date as string | null) ?? null,
+        payment_method: extractPaymentMethod(it.payment_method),
       }))
     : null;
 
-  const validPeriods: ReportPeriod[] = ["day", "week", "month", "all"];
+  const validPeriods: ReportPeriod[] = ["day", "yesterday", "week", "month", "quarter", "half_year", "year", "all"];
   const rawPeriod = obj.query_period as string | null | undefined;
   const queryPeriod = rawPeriod && (validPeriods as string[]).includes(rawPeriod)
     ? (rawPeriod as ReportPeriod)
@@ -169,6 +221,7 @@ function normalize(obj: Record<string, unknown>): FinanceIntent {
     currency: (obj.currency as string | null) ?? null,
     txn_date: (obj.txn_date as string | null) ?? null,
     query_period: queryPeriod,
+    payment_method: extractPaymentMethod(obj.payment_method),
     raw_transcript: String(obj.raw_transcript ?? obj.text ?? ""),
     confidence: Number(obj.confidence ?? 0.5),
     items,
@@ -200,6 +253,13 @@ export function periodToRange(period: ReportPeriod | null): {
     return { fromDate: s, toDate: s, label: `Сегодня (${s})` };
   }
 
+  if (period === "yesterday") {
+    const y = new Date(today);
+    y.setDate(today.getDate() - 1);
+    const s = fmt(y);
+    return { fromDate: s, toDate: s, label: `Вчера (${s})` };
+  }
+
   if (period === "week") {
     // Monday as start of week
     const dow = today.getDay();
@@ -224,6 +284,40 @@ export function periodToRange(period: ReportPeriod | null): {
       fromDate: fmt(first),
       toDate: fmt(last),
       label: `${monthCap} ${today.getFullYear()}`,
+    };
+  }
+
+  if (period === "quarter") {
+    // Calendar quarter (Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec)
+    const q = Math.floor(today.getMonth() / 3); // 0..3
+    const first = new Date(today.getFullYear(), q * 3, 1);
+    const last = new Date(today.getFullYear(), q * 3 + 3, 0);
+    return {
+      fromDate: fmt(first),
+      toDate: fmt(last),
+      label: `Q${q + 1} ${today.getFullYear()} (${fmt(first)} — ${fmt(last)})`,
+    };
+  }
+
+  if (period === "half_year") {
+    // Sliding 6-month window ending today
+    const start = new Date(today);
+    start.setMonth(today.getMonth() - 5);
+    start.setDate(1);
+    return {
+      fromDate: fmt(start),
+      toDate: fmt(today),
+      label: `За полгода (${fmt(start)} — ${fmt(today)})`,
+    };
+  }
+
+  if (period === "year") {
+    const first = new Date(today.getFullYear(), 0, 1);
+    const last = new Date(today.getFullYear(), 11, 31);
+    return {
+      fromDate: fmt(first),
+      toDate: fmt(last),
+      label: `${today.getFullYear()} год`,
     };
   }
 

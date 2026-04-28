@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDuplicateUpdate } from "@/lib/telegram-dedupe";
 import { downloadTelegramFile } from "@/lib/ai/router";
-import { parseVoiceIntent, parseTextIntent, parseTxnDateToSheet, periodToRange, CATEGORY_LABELS, type FinanceIntent, type ReportPeriod } from "@/lib/ai/voice-intent";
+import { parseVoiceIntent, parseTextIntent, parseTxnDateToSheet, periodToRange, CATEGORY_LABELS, type FinanceIntent, type ReportPeriod, type PaymentMethod } from "@/lib/ai/voice-intent";
 import { parsePhotoReceipt, type ParsedReceipt } from "@/lib/ai/receipt-vision";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -192,6 +192,7 @@ async function appendToFinanceSheet(record: {
   amount: number;
   currency: string;
   category?: string;
+  paymentMethod?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   // "Личное" goes to separate personal sheet
   const isPersonal = record.category === "Личное";
@@ -450,11 +451,48 @@ async function handleFinanceCallback(
     const currencyLabel = currency === "дол" ? "💵 Доллар" : "🇺🇦 Гривна";
     await editMessage(botToken, chatId, messageId, `💱 Валюта: ${currencyLabel}`);
 
-    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💰 Сума:");
+    const paymentKeyboard = {
+      inline_keyboard: [
+        [
+          { text: "💵 Наличка", callback_data: "fin:pay:cash" },
+          { text: "💳 Безнал", callback_data: "fin:pay:bank" },
+        ],
+      ],
+    };
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💳 Способ оплаты:", paymentKeyboard);
+    const msgIds = (state.data?.msg_ids as number[]) || [];
+    await admin.from("telegram_bot_state").update({
+      step: "payment",
+      data: { ...state.data, currency, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
+      updated_at: new Date().toISOString(),
+    }).eq("chat_id", chatId);
+
+    await answerCallback(botToken, callbackQuery.id, "");
+    return NextResponse.json({ ok: true });
+  }
+
+  // Payment method selection callback
+  if (action.startsWith("pay:")) {
+    const paymentMethod = action.replace("pay:", ""); // "cash" or "bank"
+    const { data: state } = await admin
+      .from("telegram_bot_state")
+      .select("*")
+      .eq("chat_id", chatId)
+      .maybeSingle();
+
+    if (!state || state.step !== "payment") {
+      await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
+      return NextResponse.json({ ok: true });
+    }
+
+    const pmLabel = paymentMethod === "cash" ? "💵 Наличка" : "💳 Безнал";
+    await editMessage(botToken, chatId, messageId, `💳 Способ оплаты: ${pmLabel}`);
+
+    const promptMsgId = await sendMessageAndTrack(botToken, chatId, "💰 Сумма:");
     const msgIds = (state.data?.msg_ids as number[]) || [];
     await admin.from("telegram_bot_state").update({
       step: "amount",
-      data: { ...state.data, currency, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
+      data: { ...state.data, payment_method: paymentMethod, msg_ids: [...msgIds, ...(promptMsgId ? [promptMsgId] : [])] },
       updated_at: new Date().toISOString(),
     }).eq("chat_id", chatId);
 
@@ -480,10 +518,11 @@ async function handleFinanceCallback(
     const amount = state.data.amount as number;
     const currency = (state.data.currency as string) || "грн";
     const category = state.data.category as string;
+    const paymentMethod = (state.data.payment_method as PaymentMethod | undefined) ?? "bank";
     const msgIds = (state.data.msg_ids as number[]) || [];
 
     await answerCallback(botToken, callbackQuery.id, "");
-    return saveFinanceRecord(admin, botToken, chatId, "expense", "", amount, currency, category, msgIds);
+    return saveFinanceRecord(admin, botToken, chatId, "expense", "", amount, currency, category, msgIds, undefined, paymentMethod);
   }
 
   // "Отчет" → show report
@@ -571,6 +610,12 @@ async function handleFinanceStep(
     return NextResponse.json({ ok: true });
   }
 
+  // Payment method step — user must click a button
+  if (state.step === "payment") {
+    await sendMessage(botToken, chatId, "⚠️ Выберите способ оплаты, нажав кнопку выше ☝️");
+    return NextResponse.json({ ok: true });
+  }
+
   if (state.step === "amount") {
     const amount = parseAmount(input);
     if (!amount) {
@@ -597,7 +642,8 @@ async function handleFinanceStep(
     // Income — save immediately
     const currency = (state.data.currency as string) || "грн";
     const descStr = state.data.description as string;
-    return saveFinanceRecord(admin, botToken, chatId, state.action, descStr, amount, currency, undefined, msgIds);
+    const paymentMethod = (state.data.payment_method as PaymentMethod | undefined) ?? "bank";
+    return saveFinanceRecord(admin, botToken, chatId, state.action, descStr, amount, currency, undefined, msgIds, undefined, paymentMethod);
   }
 
   // Expense description step (optional text or skip)
@@ -606,7 +652,8 @@ async function handleFinanceStep(
     const amount = state.data.amount as number;
     const currency = (state.data.currency as string) || "грн";
     const category = state.data.category as string;
-    return saveFinanceRecord(admin, botToken, chatId, "expense", description, amount, currency, category, msgIds);
+    const paymentMethod = (state.data.payment_method as PaymentMethod | undefined) ?? "bank";
+    return saveFinanceRecord(admin, botToken, chatId, "expense", description, amount, currency, category, msgIds, undefined, paymentMethod);
   }
 
   // Unknown step — reset
@@ -626,11 +673,14 @@ async function saveFinanceRecord(
   category: string | undefined,
   msgIds: number[],
   sheetDateOverride?: string,
+  paymentMethod?: PaymentMethod,
 ) {
   const today = new Date();
   const sheetDate = sheetDateOverride
     ?? `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
   const isExpense = action === "expense";
+  const pm = paymentMethod ?? "bank"; // default for B2B
+  const pmLabel = pm === "cash" ? "наличка" : "безнал";
 
   const writeResult = await appendToFinanceSheet({
     type: action,
@@ -638,6 +688,7 @@ async function saveFinanceRecord(
     description,
     amount,
     currency,
+    paymentMethod: pmLabel,
     ...(isExpense && category ? { category } : {}),
   });
 
@@ -668,6 +719,7 @@ async function saveFinanceRecord(
     summaryText += `\n${descIcon} ${description}`;
   }
   summaryText += `\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
+  summaryText += `\n${pm === "cash" ? "💵 Наличка" : "💳 Безнал"}`;
 
   // "Личное" notifications only go to allowed viewers
   if (isExpense && category === "Личное") {
@@ -732,6 +784,14 @@ async function handleReport(
     const expenseByCategory: Record<string, number> = result.expenseByCategory || {};
     const incomeByPersonUsd: Record<string, number> = result.incomeByPersonUsd || {};
     const expenseByCategoryUsd: Record<string, number> = result.expenseByCategoryUsd || {};
+    const incomeCash = result.incomeCash || 0;
+    const incomeBank = result.incomeBank || 0;
+    let expenseCash = result.expenseCash || 0;
+    let expenseBank = result.expenseBank || 0;
+    const incomeCashUsd = result.incomeCashUsd || 0;
+    const incomeBankUsd = result.incomeBankUsd || 0;
+    let expenseCashUsd = result.expenseCashUsd || 0;
+    let expenseBankUsd = result.expenseBankUsd || 0;
     let count = result.count || 0;
 
     // Fetch personal expenses for allowed viewers (same period)
@@ -754,6 +814,10 @@ async function handleReport(
           const pExpUsd = pResult.totalExpenseUsd || 0;
           totalExpense += pExp;
           totalExpenseUsd += pExpUsd;
+          expenseCash += pResult.expenseCash || 0;
+          expenseBank += pResult.expenseBank || 0;
+          expenseCashUsd += pResult.expenseCashUsd || 0;
+          expenseBankUsd += pResult.expenseBankUsd || 0;
           count += pResult.count || 0;
           if (pExp > 0) expenseByCategory["Личное"] = (expenseByCategory["Личное"] || 0) + pExp;
           if (pExpUsd > 0) expenseByCategoryUsd["Личное"] = (expenseByCategoryUsd["Личное"] || 0) + pExpUsd;
@@ -770,9 +834,15 @@ async function handleReport(
 
     // UAH section
     report += `\n🇺🇦 <b>Гривна:</b>\n`;
-    report += `📈 Доходы: ${fmt(totalIncome)} грн\n`;
-    report += `📉 Расходы: ${fmt(totalExpense)} грн\n`;
-    report += `${profit >= 0 ? "✅" : "🔴"} Разница: ${fmt(profit)} грн\n`;
+    report += `📈 Доходы: ${fmt(totalIncome)} грн`;
+    if (incomeCash > 0 || incomeBank > 0) {
+      report += `  (💵 ${fmt(incomeCash)} / 💳 ${fmt(incomeBank)})`;
+    }
+    report += `\n📉 Расходы: ${fmt(totalExpense)} грн`;
+    if (expenseCash > 0 || expenseBank > 0) {
+      report += `  (💵 ${fmt(expenseCash)} / 💳 ${fmt(expenseBank)})`;
+    }
+    report += `\n${profit >= 0 ? "✅" : "🔴"} Разница: ${fmt(profit)} грн\n`;
 
     const topIncome = Object.entries(incomeByPerson)
       .sort((a, b) => (b[1] as number) - (a[1] as number))
@@ -797,9 +867,15 @@ async function handleReport(
     // USD section
     if (totalIncomeUsd > 0 || totalExpenseUsd > 0) {
       report += `\n💵 <b>Доллар:</b>\n`;
-      report += `📈 Доходы: ${fmt(totalIncomeUsd)} $\n`;
-      report += `📉 Расходы: ${fmt(totalExpenseUsd)} $\n`;
-      report += `${profitUsd >= 0 ? "✅" : "🔴"} Разница: ${fmt(profitUsd)} $\n`;
+      report += `📈 Доходы: ${fmt(totalIncomeUsd)} $`;
+      if (incomeCashUsd > 0 || incomeBankUsd > 0) {
+        report += `  (💵 ${fmt(incomeCashUsd)} / 💳 ${fmt(incomeBankUsd)})`;
+      }
+      report += `\n📉 Расходы: ${fmt(totalExpenseUsd)} $`;
+      if (expenseCashUsd > 0 || expenseBankUsd > 0) {
+        report += `  (💵 ${fmt(expenseCashUsd)} / 💳 ${fmt(expenseBankUsd)})`;
+      }
+      report += `\n${profitUsd >= 0 ? "✅" : "🔴"} Разница: ${fmt(profitUsd)} $\n`;
 
       const topIncomeUsd = Object.entries(incomeByPersonUsd)
         .sort((a, b) => (b[1] as number) - (a[1] as number))
@@ -997,6 +1073,8 @@ async function applyIntent(
       const currency = (item.currency as string) === "дол" ? "дол" : "грн";
       const description = (item.description as string) || "";
       const sheetDate = parseTxnDateToSheet((item.txn_date as string | null) || intent.txn_date);
+      const itemPayment = (item.payment_method as PaymentMethod | null | undefined) ?? intent.payment_method ?? "bank";
+      const itemPaymentLabel = itemPayment === "cash" ? "наличка" : "безнал";
 
       const result = await appendToFinanceSheet({
         type: action,
@@ -1004,12 +1082,13 @@ async function applyIntent(
         description,
         amount,
         currency,
+        paymentMethod: itemPaymentLabel,
         ...(action === "expense" && categoryLabel ? { category: categoryLabel } : {}),
       });
 
       if (result.ok) {
         okCount++;
-        const summary = formatRecordSummary(action, sheetDate, categoryLabel, description, amount, currency);
+        const summary = formatRecordSummary(action, sheetDate, categoryLabel, description, amount, currency, itemPayment);
         if (categoryLabel === "Личное") {
           await Promise.allSettled(PERSONAL_EXPENSE_VIEWERS.map((cid) => sendMessage(botToken, cid, summary)));
         } else {
@@ -1069,6 +1148,7 @@ async function applyIntent(
     categoryLabel,
     [],
     sheetDate,
+    intent.payment_method ?? "bank",
   );
 }
 
@@ -1079,6 +1159,7 @@ function formatRecordSummary(
   description: string,
   amount: number,
   currency: string,
+  paymentMethod: PaymentMethod,
 ): string {
   const isExpense = action === "expense";
   const typeEmoji = isExpense ? "📉" : "💰";
@@ -1089,6 +1170,7 @@ function formatRecordSummary(
   if (isExpense && categoryLabel) s += `\n📂 ${categoryLabel}`;
   if (description) s += `\n${isExpense ? "📝" : "👤"} ${description}`;
   s += `\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
+  s += `\n${paymentMethod === "cash" ? "💵 Наличка" : "💳 Безнал"}`;
   return s;
 }
 
@@ -1252,6 +1334,7 @@ async function handleReceiptCallback(
         amount: item.amount,
         currency: receipt.currency,
         category: categoryLabel,
+        paymentMethod: "безнал", // receipts default to non-cash; user can edit cell manually
       });
       if (result.ok) {
         okCount++;
