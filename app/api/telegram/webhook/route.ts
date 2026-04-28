@@ -1096,11 +1096,13 @@ async function applyIntent(
   // is set, ask the user via inline buttons instead of saving silently.
   const isWriteAction = intent.action === "expense" || intent.action === "income"
     || (intent.items && intent.items.some((it) => it.action === "expense" || it.action === "income"));
-  if (isWriteAction) {
-    const allItemsHavePayment = intent.items
-      ? intent.items.every((it) => it.payment_method)
-      : true;
-    const needsPayment = !intent.payment_method && !allItemsHavePayment;
+  if (isWriteAction && !intent.payment_method) {
+    let needsPayment = true;
+    if (intent.items && intent.items.length > 0) {
+      // Multi-item: ask only if at least one item lacks an explicit method.
+      needsPayment = !intent.items.every((it) => it.payment_method);
+    }
+    // Single record (no items) with no top-level payment → always ask.
     if (needsPayment) {
       return askPaymentMethod(admin, botToken, chatId, intent, userMessageId);
     }
