@@ -20,6 +20,24 @@ var PAYMENT_COL = 10; // J
 
 var NUM_COLS = 10;
 
+/** Argument separator for formulas. Russian/Ukrainian/most non-English locales
+ *  use ";" because "," is the decimal separator. setFormula() *should*
+ *  auto-translate, but in practice often doesn't, so we pick the right
+ *  separator ourselves. */
+var ARG_SEP = (function () {
+  try {
+    var loc = String(SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetLocale() || "en_US").toLowerCase();
+    return loc.indexOf("en") === 0 ? "," : ";";
+  } catch (e) {
+    return ",";
+  }
+})();
+
+/** setFormula wrapper that translates "," to the locale's argument separator. */
+function setF(range, formula) {
+  range.setFormula(formula.replace(/,/g, ARG_SEP));
+}
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
@@ -138,12 +156,12 @@ function ensureFormulas(sheet) {
   }
 
   // Row 2: overall totals (all payment methods)
-  sheet.getRange(2, 11).setFormula('=SUMIFS(D:D,C:C,"грн")');
-  sheet.getRange(2, 12).setFormula(expenseSum("грн", null));
-  sheet.getRange(2, 13).setFormula("=K2-L2");
-  sheet.getRange(2, 15).setFormula('=SUMIFS(D:D,C:C,"дол")');
-  sheet.getRange(2, 16).setFormula(expenseSum("дол", null));
-  sheet.getRange(2, 17).setFormula("=O2-P2");
+  setF(sheet.getRange(2, 11), '=SUMIFS(D:D,C:C,"грн")');
+  setF(sheet.getRange(2, 12), expenseSum("грн", null));
+  setF(sheet.getRange(2, 13), "=K2-L2");
+  setF(sheet.getRange(2, 15), '=SUMIFS(D:D,C:C,"дол")');
+  setF(sheet.getRange(2, 16), expenseSum("дол", null));
+  setF(sheet.getRange(2, 17), "=O2-P2");
 
   // Row 3 labels (cash)
   sheet.getRange(3, 11).setValue("💵 Нал доход ₴");
@@ -153,10 +171,10 @@ function ensureFormulas(sheet) {
   sheet.getRange(3, 11, 1, 7).setFontWeight("bold");
 
   // Row 4: cash formulas (J = "наличка")
-  sheet.getRange(4, 11).setFormula('=SUMIFS(D:D,C:C,"грн",J:J,"наличка")');
-  sheet.getRange(4, 12).setFormula(expenseSum("грн", "наличка"));
-  sheet.getRange(4, 15).setFormula('=SUMIFS(D:D,C:C,"дол",J:J,"наличка")');
-  sheet.getRange(4, 16).setFormula(expenseSum("дол", "наличка"));
+  setF(sheet.getRange(4, 11), '=SUMIFS(D:D,C:C,"грн",J:J,"наличка")');
+  setF(sheet.getRange(4, 12), expenseSum("грн", "наличка"));
+  setF(sheet.getRange(4, 15), '=SUMIFS(D:D,C:C,"дол",J:J,"наличка")');
+  setF(sheet.getRange(4, 16), expenseSum("дол", "наличка"));
 
   // Row 5 labels (bank)
   sheet.getRange(5, 11).setValue("💳 Безнал доход ₴");
@@ -166,10 +184,10 @@ function ensureFormulas(sheet) {
   sheet.getRange(5, 11, 1, 7).setFontWeight("bold");
 
   // Row 6: bank formulas (J = "безнал")
-  sheet.getRange(6, 11).setFormula('=SUMIFS(D:D,C:C,"грн",J:J,"безнал")');
-  sheet.getRange(6, 12).setFormula(expenseSum("грн", "безнал"));
-  sheet.getRange(6, 15).setFormula('=SUMIFS(D:D,C:C,"дол",J:J,"безнал")');
-  sheet.getRange(6, 16).setFormula(expenseSum("дол", "безнал"));
+  setF(sheet.getRange(6, 11), '=SUMIFS(D:D,C:C,"грн",J:J,"безнал")');
+  setF(sheet.getRange(6, 12), expenseSum("грн", "безнал"));
+  setF(sheet.getRange(6, 15), '=SUMIFS(D:D,C:C,"дол",J:J,"безнал")');
+  setF(sheet.getRange(6, 16), expenseSum("дол", "безнал"));
 }
 
 function getLastDataRow(sheet) {

@@ -8,6 +8,22 @@
 var NUM_COLS = 5;
 var PAYMENT_COL = 5; // E
 
+/** Argument separator for formulas. RU/UK locales use ";" because "," is the
+ *  decimal separator. setFormula() *should* auto-translate, but in practice
+ *  often doesn't, so we pick the right separator ourselves. */
+var ARG_SEP = (function () {
+  try {
+    var loc = String(SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetLocale() || "en_US").toLowerCase();
+    return loc.indexOf("en") === 0 ? "," : ";";
+  } catch (e) {
+    return ",";
+  }
+})();
+
+function setF(range, formula) {
+  range.setFormula(formula.replace(/,/g, ARG_SEP));
+}
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
@@ -97,8 +113,8 @@ function ensureFormulas(sheet) {
   sheet.getRange(1, 6, 1, 2).setFontWeight("bold");
 
   // Row 2: overall (all payment methods)
-  sheet.getRange(2, 6).setFormula('=SUMIFS(D:D,C:C,"грн")');
-  sheet.getRange(2, 7).setFormula('=SUMIFS(D:D,C:C,"дол")');
+  setF(sheet.getRange(2, 6), '=SUMIFS(D:D,C:C,"грн")');
+  setF(sheet.getRange(2, 7), '=SUMIFS(D:D,C:C,"дол")');
 
   // Row 3: cash labels
   sheet.getRange(3, 6).setValue("💵 Нал ₴");
@@ -106,8 +122,8 @@ function ensureFormulas(sheet) {
   sheet.getRange(3, 6, 1, 2).setFontWeight("bold");
 
   // Row 4: cash formulas
-  sheet.getRange(4, 6).setFormula('=SUMIFS(D:D,C:C,"грн",E:E,"наличка")');
-  sheet.getRange(4, 7).setFormula('=SUMIFS(D:D,C:C,"дол",E:E,"наличка")');
+  setF(sheet.getRange(4, 6), '=SUMIFS(D:D,C:C,"грн",E:E,"наличка")');
+  setF(sheet.getRange(4, 7), '=SUMIFS(D:D,C:C,"дол",E:E,"наличка")');
 
   // Row 5: bank labels
   sheet.getRange(5, 6).setValue("💳 Безнал ₴");
@@ -115,8 +131,8 @@ function ensureFormulas(sheet) {
   sheet.getRange(5, 6, 1, 2).setFontWeight("bold");
 
   // Row 6: bank formulas
-  sheet.getRange(6, 6).setFormula('=SUMIFS(D:D,C:C,"грн",E:E,"безнал")');
-  sheet.getRange(6, 7).setFormula('=SUMIFS(D:D,C:C,"дол",E:E,"безнал")');
+  setF(sheet.getRange(6, 6), '=SUMIFS(D:D,C:C,"грн",E:E,"безнал")');
+  setF(sheet.getRange(6, 7), '=SUMIFS(D:D,C:C,"дол",E:E,"безнал")');
 }
 
 function setupHeaders(sheet) {
