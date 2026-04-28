@@ -91,38 +91,32 @@ function ensureFormulas(sheet) {
   var f2 = sheet.getRange(2, 6).getFormula();
   if (f2) return;
 
-  // Currency labels in I1/I2; payment-method labels in I3/I4
-  sheet.getRange(1, 9).setValue("грн");
-  sheet.getRange(2, 9).setValue("дол");
-  sheet.getRange(3, 9).setValue("наличка");
-  sheet.getRange(4, 9).setValue("безнал");
-
   // Row 1: Итого ₴ / Итого $
   sheet.getRange(1, 6).setValue("Итого ₴");
   sheet.getRange(1, 7).setValue("Итого $");
   sheet.getRange(1, 6, 1, 2).setFontWeight("bold");
 
-  // Row 2: overall
-  sheet.getRange(2, 6).setFormula("=SUMIFS(D:D,C:C,I1)");
-  sheet.getRange(2, 7).setFormula("=SUMIFS(D:D,C:C,I2)");
+  // Row 2: overall (all payment methods)
+  sheet.getRange(2, 6).setFormula('=SUMIFS(D:D,C:C,"грн")');
+  sheet.getRange(2, 7).setFormula('=SUMIFS(D:D,C:C,"дол")');
 
   // Row 3: cash labels
   sheet.getRange(3, 6).setValue("💵 Нал ₴");
   sheet.getRange(3, 7).setValue("💵 Нал $");
   sheet.getRange(3, 6, 1, 2).setFontWeight("bold");
 
-  // Row 4: cash formulas (E = "наличка" → I3)
-  sheet.getRange(4, 6).setFormula("=SUMIFS(D:D,C:C,I1,E:E,I3)");
-  sheet.getRange(4, 7).setFormula("=SUMIFS(D:D,C:C,I2,E:E,I3)");
+  // Row 4: cash formulas
+  sheet.getRange(4, 6).setFormula('=SUMIFS(D:D,C:C,"грн",E:E,"наличка")');
+  sheet.getRange(4, 7).setFormula('=SUMIFS(D:D,C:C,"дол",E:E,"наличка")');
 
   // Row 5: bank labels
   sheet.getRange(5, 6).setValue("💳 Безнал ₴");
   sheet.getRange(5, 7).setValue("💳 Безнал $");
   sheet.getRange(5, 6, 1, 2).setFontWeight("bold");
 
-  // Row 6: bank formulas (E = "безнал" → I4)
-  sheet.getRange(6, 6).setFormula("=SUMIFS(D:D,C:C,I1,E:E,I4)");
-  sheet.getRange(6, 7).setFormula("=SUMIFS(D:D,C:C,I2,E:E,I4)");
+  // Row 6: bank formulas
+  sheet.getRange(6, 6).setFormula('=SUMIFS(D:D,C:C,"грн",E:E,"безнал")');
+  sheet.getRange(6, 7).setFormula('=SUMIFS(D:D,C:C,"дол",E:E,"безнал")');
 }
 
 function setupHeaders(sheet) {

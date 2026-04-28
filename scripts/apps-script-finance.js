@@ -114,12 +114,6 @@ function ensureFormulas(sheet) {
   var k2 = sheet.getRange(2, 11).getFormula();
   if (k2) return;
 
-  // Currency labels in S1/S2; payment-method labels in S3/S4
-  sheet.getRange(1, 19).setValue("грн");
-  sheet.getRange(2, 19).setValue("дол");
-  sheet.getRange(3, 19).setValue("наличка");
-  sheet.getRange(4, 19).setValue("безнал");
-
   // Row 1 labels
   sheet.getRange(1, 11).setValue("Итого доход ₴");
   sheet.getRange(1, 12).setValue("Итого расход ₴");
@@ -129,12 +123,26 @@ function ensureFormulas(sheet) {
   sheet.getRange(1, 17).setValue("Разница $");
   sheet.getRange(1, 11, 1, 7).setFontWeight("bold");
 
-  // Row 2: overall totals
-  sheet.getRange(2, 11).setFormula("=SUMIFS(D:D,C:C,S1)");
-  sheet.getRange(2, 12).setFormula("=SUMIFS(E:E,C:C,S1)+SUMIFS(F:F,C:C,S1)+SUMIFS(G:G,C:C,S1)+SUMIFS(H:H,C:C,S1)+SUMIFS(I:I,C:C,S1)");
+  // Helper to build the 5-category SUMIFS expression (E..I)
+  // with optional currency + payment-method criteria, all hard-coded.
+  function expenseSum(currencyText, paymentText) {
+    var cols = ["E", "F", "G", "H", "I"];
+    var parts = [];
+    for (var i = 0; i < cols.length; i++) {
+      var formula = 'SUMIFS(' + cols[i] + ':' + cols[i] + ',C:C,"' + currencyText + '"';
+      if (paymentText) formula += ',J:J,"' + paymentText + '"';
+      formula += ')';
+      parts.push(formula);
+    }
+    return "=" + parts.join("+");
+  }
+
+  // Row 2: overall totals (all payment methods)
+  sheet.getRange(2, 11).setFormula('=SUMIFS(D:D,C:C,"грн")');
+  sheet.getRange(2, 12).setFormula(expenseSum("грн", null));
   sheet.getRange(2, 13).setFormula("=K2-L2");
-  sheet.getRange(2, 15).setFormula("=SUMIFS(D:D,C:C,S2)");
-  sheet.getRange(2, 16).setFormula("=SUMIFS(E:E,C:C,S2)+SUMIFS(F:F,C:C,S2)+SUMIFS(G:G,C:C,S2)+SUMIFS(H:H,C:C,S2)+SUMIFS(I:I,C:C,S2)");
+  sheet.getRange(2, 15).setFormula('=SUMIFS(D:D,C:C,"дол")');
+  sheet.getRange(2, 16).setFormula(expenseSum("дол", null));
   sheet.getRange(2, 17).setFormula("=O2-P2");
 
   // Row 3 labels (cash)
@@ -144,11 +152,11 @@ function ensureFormulas(sheet) {
   sheet.getRange(3, 16).setValue("💵 Нал расход $");
   sheet.getRange(3, 11, 1, 7).setFontWeight("bold");
 
-  // Row 4: cash formulas (J column = "наличка" → S3)
-  sheet.getRange(4, 11).setFormula("=SUMIFS(D:D,C:C,S1,J:J,S3)");
-  sheet.getRange(4, 12).setFormula("=SUMIFS(E:E,C:C,S1,J:J,S3)+SUMIFS(F:F,C:C,S1,J:J,S3)+SUMIFS(G:G,C:C,S1,J:J,S3)+SUMIFS(H:H,C:C,S1,J:J,S3)+SUMIFS(I:I,C:C,S1,J:J,S3)");
-  sheet.getRange(4, 15).setFormula("=SUMIFS(D:D,C:C,S2,J:J,S3)");
-  sheet.getRange(4, 16).setFormula("=SUMIFS(E:E,C:C,S2,J:J,S3)+SUMIFS(F:F,C:C,S2,J:J,S3)+SUMIFS(G:G,C:C,S2,J:J,S3)+SUMIFS(H:H,C:C,S2,J:J,S3)+SUMIFS(I:I,C:C,S2,J:J,S3)");
+  // Row 4: cash formulas (J = "наличка")
+  sheet.getRange(4, 11).setFormula('=SUMIFS(D:D,C:C,"грн",J:J,"наличка")');
+  sheet.getRange(4, 12).setFormula(expenseSum("грн", "наличка"));
+  sheet.getRange(4, 15).setFormula('=SUMIFS(D:D,C:C,"дол",J:J,"наличка")');
+  sheet.getRange(4, 16).setFormula(expenseSum("дол", "наличка"));
 
   // Row 5 labels (bank)
   sheet.getRange(5, 11).setValue("💳 Безнал доход ₴");
@@ -157,11 +165,11 @@ function ensureFormulas(sheet) {
   sheet.getRange(5, 16).setValue("💳 Безнал расход $");
   sheet.getRange(5, 11, 1, 7).setFontWeight("bold");
 
-  // Row 6: bank formulas (J column = "безнал" → S4)
-  sheet.getRange(6, 11).setFormula("=SUMIFS(D:D,C:C,S1,J:J,S4)");
-  sheet.getRange(6, 12).setFormula("=SUMIFS(E:E,C:C,S1,J:J,S4)+SUMIFS(F:F,C:C,S1,J:J,S4)+SUMIFS(G:G,C:C,S1,J:J,S4)+SUMIFS(H:H,C:C,S1,J:J,S4)+SUMIFS(I:I,C:C,S1,J:J,S4)");
-  sheet.getRange(6, 15).setFormula("=SUMIFS(D:D,C:C,S2,J:J,S4)");
-  sheet.getRange(6, 16).setFormula("=SUMIFS(E:E,C:C,S2,J:J,S4)+SUMIFS(F:F,C:C,S2,J:J,S4)+SUMIFS(G:G,C:C,S2,J:J,S4)+SUMIFS(H:H,C:C,S2,J:J,S4)+SUMIFS(I:I,C:C,S2,J:J,S4)");
+  // Row 6: bank formulas (J = "безнал")
+  sheet.getRange(6, 11).setFormula('=SUMIFS(D:D,C:C,"грн",J:J,"безнал")');
+  sheet.getRange(6, 12).setFormula(expenseSum("грн", "безнал"));
+  sheet.getRange(6, 15).setFormula('=SUMIFS(D:D,C:C,"дол",J:J,"безнал")');
+  sheet.getRange(6, 16).setFormula(expenseSum("дол", "безнал"));
 }
 
 function getLastDataRow(sheet) {
