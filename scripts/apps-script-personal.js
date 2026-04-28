@@ -8,11 +8,24 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     if (data.action === "addFinance") return addPersonalRecord(data);
-    if (data.action === "getReport") return getPersonalReport();
+    if (data.action === "getReport") return getPersonalReport(data);
     return respond({ ok: false, error: "Unknown action" });
   } catch (err) {
     return respond({ ok: false, error: err.message });
   }
+}
+
+/** Parse "DD.MM.YYYY" → Date at midnight, or null. */
+function parseDateString(s) {
+  if (!s) return null;
+  if (s instanceof Date) return new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  var parts = String(s).split(".");
+  if (parts.length !== 3) return null;
+  var d = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10) - 1;
+  var y = parseInt(parts[2], 10);
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  return new Date(y, m, d);
 }
 
 function respond(obj) {
@@ -65,7 +78,7 @@ function setupHeaders(sheet) {
   sheet.getRange(2, 7).setFormula("=SUMIFS(D:D,C:C,I2)");
 }
 
-function getPersonalReport() {
+function getPersonalReport(req) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheets()[0];
   var lastDataRow = getLastDataRow(sheet);
@@ -74,12 +87,23 @@ function getPersonalReport() {
     return respond({ ok: true, empty: true });
   }
 
+  var fromDate = req && req.fromDate ? parseDateString(req.fromDate) : null;
+  var toDate = req && req.toDate ? parseDateString(req.toDate) : null;
+
   var data = sheet.getRange(2, 1, lastDataRow - 1, NUM_COLS).getValues();
   var totalExpense = 0, totalExpenseUsd = 0;
   var count = 0;
 
   for (var i = 0; i < data.length; i++) {
     var row = data[i];
+
+    if (fromDate || toDate) {
+      var rowDate = parseDateString(row[0]);
+      if (!rowDate) continue;
+      if (fromDate && rowDate < fromDate) continue;
+      if (toDate && rowDate > toDate) continue;
+    }
+
     var amount = Number(row[3]) || 0;
     if (amount <= 0) continue;
     count++;
@@ -88,6 +112,10 @@ function getPersonalReport() {
     } else {
       totalExpense += amount;
     }
+  }
+
+  if (count === 0) {
+    return respond({ ok: true, empty: true });
   }
 
   return respond({

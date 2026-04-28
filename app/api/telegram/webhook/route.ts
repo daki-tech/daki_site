@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDuplicateUpdate } from "@/lib/telegram-dedupe";
 import { downloadTelegramFile } from "@/lib/ai/router";
-import { parseVoiceIntent, parseTextIntent, parseTxnDateToSheet, CATEGORY_LABELS, type FinanceIntent } from "@/lib/ai/voice-intent";
+import { parseVoiceIntent, parseTextIntent, parseTxnDateToSheet, periodToRange, CATEGORY_LABELS, type FinanceIntent, type ReportPeriod } from "@/lib/ai/voice-intent";
 import { parsePhotoReceipt, type ParsedReceipt } from "@/lib/ai/receipt-vision";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -686,6 +686,7 @@ async function handleReport(
   admin: ReturnType<typeof createAdminClient>,
   botToken: string,
   chatId: number,
+  period: ReportPeriod | null = null,
 ) {
   // Read report data from Google Sheet (single source of truth)
   const webhookUrl = process.env.GOOGLE_FINANCE_WEBHOOK_URL;
@@ -694,11 +695,16 @@ async function handleReport(
     return NextResponse.json({ ok: true });
   }
 
+  const range = periodToRange(period);
+  const reportRequest: Record<string, unknown> = { action: "getReport" };
+  if (range.fromDate) reportRequest.fromDate = range.fromDate;
+  if (range.toDate) reportRequest.toDate = range.toDate;
+
   try {
     const resp = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "getReport" }),
+      body: JSON.stringify(reportRequest),
     });
 
     // Apps Script redirects, follow manually
@@ -714,7 +720,7 @@ async function handleReport(
     const result = JSON.parse(jsonText);
 
     if (!result.ok || result.empty) {
-      await sendMessage(botToken, chatId, "📊 Пока нет записей в таблице.");
+      await sendMessage(botToken, chatId, `📊 <b>Финансовый отчёт</b>\n📅 ${range.label}\n\nЗа этот период записей нет.`);
       return NextResponse.json({ ok: true });
     }
 
@@ -728,14 +734,14 @@ async function handleReport(
     const expenseByCategoryUsd: Record<string, number> = result.expenseByCategoryUsd || {};
     let count = result.count || 0;
 
-    // Fetch personal expenses for allowed viewers
+    // Fetch personal expenses for allowed viewers (same period)
     const canSeePersonal = PERSONAL_EXPENSE_VIEWERS.includes(chatId);
     if (canSeePersonal && process.env.GOOGLE_PERSONAL_WEBHOOK_URL) {
       try {
         const pResp = await fetch(process.env.GOOGLE_PERSONAL_WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "getReport" }),
+          body: JSON.stringify(reportRequest),
         });
         let pText = await pResp.text();
         if (pResp.status === 302 || pResp.headers.get("location")) {
@@ -760,7 +766,7 @@ async function handleReport(
 
     const fmt = (n: number) => n.toLocaleString("ru-RU");
 
-    let report = `📊 <b>Финансовый отчет</b>\n`;
+    let report = `📊 <b>Финансовый отчёт</b>\n📅 ${range.label}\n`;
 
     // UAH section
     report += `\n🇺🇦 <b>Гривна:</b>\n`;
@@ -1021,7 +1027,7 @@ async function applyIntent(
 
   // Single record
   if (intent.action === "report") {
-    return handleReport(admin, botToken, chatId);
+    return handleReport(admin, botToken, chatId, intent.query_period);
   }
 
   if (intent.action !== "expense" && intent.action !== "income") {

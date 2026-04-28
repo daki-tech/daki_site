@@ -19,12 +19,25 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     if (data.action === "addFinance") return addFinanceRecord(data);
-    if (data.action === "getReport") return getFinanceReport();
+    if (data.action === "getReport") return getFinanceReport(data);
     if (data.action === "deleteFinance") return deleteFinanceRecord(data);
     return respond({ ok: false, error: "Unknown action" });
   } catch (err) {
     return respond({ ok: false, error: err.message });
   }
+}
+
+/** Parse "DD.MM.YYYY" → Date object at midnight, or null. */
+function parseDateString(s) {
+  if (!s) return null;
+  if (s instanceof Date) return new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  var parts = String(s).split(".");
+  if (parts.length !== 3) return null;
+  var d = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10) - 1;
+  var y = parseInt(parts[2], 10);
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  return new Date(y, m, d);
 }
 
 function respond(obj) {
@@ -135,7 +148,7 @@ function setupHeaders(sheet) {
   sheet.getRange(2, 15, 1, 3).setFontWeight("bold");
 }
 
-function getFinanceReport() {
+function getFinanceReport(req) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheets = ss.getSheets();
   var sheet = sheets[sheets.length - 1];
@@ -144,6 +157,9 @@ function getFinanceReport() {
   if (lastDataRow < 2) {
     return respond({ ok: true, empty: true });
   }
+
+  var fromDate = req && req.fromDate ? parseDateString(req.fromDate) : null;
+  var toDate = req && req.toDate ? parseDateString(req.toDate) : null;
 
   var data = sheet.getRange(2, 1, lastDataRow - 1, NUM_COLS).getValues();
 
@@ -156,6 +172,15 @@ function getFinanceReport() {
 
   for (var i = 0; i < data.length; i++) {
     var row = data[i];
+
+    // Filter by date range if requested
+    if (fromDate || toDate) {
+      var rowDate = parseDateString(row[0]);
+      if (!rowDate) continue; // skip rows with unparseable date when filtering
+      if (fromDate && rowDate < fromDate) continue;
+      if (toDate && rowDate > toDate) continue;
+    }
+
     var description = String(row[1] || "");
     var currency = String(row[2] || "грн");
     var incomeAmt = Number(row[3]) || 0;
@@ -195,6 +220,11 @@ function getFinanceReport() {
         }
       }
     }
+  }
+
+  // After filtering, if nothing matched the period — report as empty
+  if (count === 0) {
+    return respond({ ok: true, empty: true });
   }
 
   return respond({
