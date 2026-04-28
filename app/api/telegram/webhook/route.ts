@@ -317,21 +317,21 @@ export async function POST(req: Request) {
       return handlePhotoMessage(admin, botToken, chatId, largest.file_id);
     }
 
-    // /start command — show welcome + persistent "Финансы" button
+    // /start command — welcome + remove any old persistent reply keyboard
     if (text.startsWith("/start")) {
       await sendMessage(
         botToken,
         chatId,
-        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.\n\n💬 Можно вводить расходы/доходы текстом, голосом или фото чека.\n📒 Или нажать «Финансы» для меню.`,
-        { keyboard: [[{ text: "Финансы" }]], resize_keyboard: true, is_persistent: true }
+        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.\n\n💬 Пиши расходы/доходы текстом, голосом или присылай фото чека — я всё запишу.\n📊 Спроси «покажи отчёт» / «сколько потратили сегодня» — выдам сводку.`,
+        { remove_keyboard: true }
       );
       return NextResponse.json({ ok: true });
     }
 
-    // /finance command — show finance menu (delete the command message itself to keep chat clean)
-    if (text === "/finance" || text === "Финансы" || text === "📒 Финансы") {
+    // /finance — silent fallback for power users (typed manually). Not advertised in UI.
+    if (text === "/finance") {
       await deleteMessage(botToken, chatId, message.message_id);
-      await sendMessage(botToken, chatId, "💼 <b>Финансовый учет:</b>", getFinanceMenuKeyboard());
+      await sendMessage(botToken, chatId, "💼 <b>Финансовый учёт:</b>", getFinanceMenuKeyboard());
       return NextResponse.json({ ok: true });
     }
 
@@ -569,7 +569,7 @@ async function handleFinanceStep(
 ) {
   if (!["income", "expense"].includes(state.action)) {
     await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-    await sendMessage(botToken, chatId, "❌ Ошибка. Попробуйте снова. Нажмите 📒 Финансы.");
+    await sendMessage(botToken, chatId, "❌ Ошибка. Попробуй ещё раз — напиши голосом или текстом.");
     return NextResponse.json({ ok: true });
   }
 
@@ -658,7 +658,7 @@ async function handleFinanceStep(
 
   // Unknown step — reset
   await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
-  await sendMessage(botToken, chatId, "❌ Ошибка. Нажмите 📒 Финансы.");
+  await sendMessage(botToken, chatId, "❌ Ошибка. Попробуй ещё раз — напиши голосом или текстом.");
   return NextResponse.json({ ok: true });
 }
 
@@ -693,7 +693,7 @@ async function saveFinanceRecord(
   });
 
   if (!writeResult.ok) {
-    await sendMessage(botToken, chatId, `❌ Не записал в таблицу: ${writeResult.error || "ошибка"}\n\nПопробуй ещё раз через /finance.`);
+    await sendMessage(botToken, chatId, `❌ Не записал в таблицу: ${writeResult.error || "ошибка"}\n\nПовтори запрос.`);
     return NextResponse.json({ ok: true });
   }
 
@@ -1110,7 +1110,7 @@ async function applyIntent(
   }
 
   if (intent.action !== "expense" && intent.action !== "income") {
-    await sendMessage(botToken, chatId, `🤔 Не понял запись. Нажми 📒 Финансы для меню.`);
+    await sendMessage(botToken, chatId, `🤔 Не понял. Повтори голосом или текстом — например, «купил ткань 5000».`);
     return NextResponse.json({ ok: true });
   }
 
@@ -1123,11 +1123,11 @@ async function applyIntent(
   let categoryLabel: string | undefined;
   if (intent.action === "expense") {
     if (!intent.category || !CATEGORY_LABELS[intent.category]) {
-      await sendMessage(botToken, chatId, "🤔 Не определил категорию. Используй 📒 Финансы для ручного ввода.");
+      await sendMessage(botToken, chatId, "🤔 Не определил категорию. Уточни описание — например, «купил ткани на 5000» или «пуговицы 800».");
       return NextResponse.json({ ok: true });
     }
     if (intent.category === "personal" && !canCreatePersonal(chatId)) {
-      await sendMessage(botToken, chatId, "⛔ Категория «Личное» недоступна. Используй 📒 Финансы для выбора другой категории.");
+      await sendMessage(botToken, chatId, "⛔ Категория «Личное» вам недоступна.");
       return NextResponse.json({ ok: true });
     }
     categoryLabel = CATEGORY_LABELS[intent.category];
@@ -1189,7 +1189,7 @@ async function handleVoiceMessage(
     return applyIntent(admin, botToken, chatId, intent);
   } catch (err) {
     console.error("[Voice] Failed:", err);
-    await sendMessage(botToken, chatId, `❌ Не получилось распознать голос: ${(err as Error).message?.slice(0, 150) || "ошибка"}\n\nПопробуй ещё раз или используй 📒 Финансы.`);
+    await sendMessage(botToken, chatId, `❌ Не получилось распознать голос: ${(err as Error).message?.slice(0, 150) || "ошибка"}\n\nПопробуй ещё раз.`);
     return NextResponse.json({ ok: true });
   }
 }
