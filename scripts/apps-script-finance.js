@@ -110,9 +110,9 @@ function ensureFormulas(sheet) {
     if (changed) jRange.setValues(jValues);
   }
 
-  // Check if K2 has a formula; if so, summary cells are intact — nothing to do
-  var k2 = sheet.getRange(2, 11).getFormula();
-  if (k2) return;
+  // Always wipe and rewrite the summary area to recover from any broken state.
+  // Summary area: cols K..T (11..20), rows 1..6 — never touches user data in cols A..J.
+  sheet.getRange(1, 11, 6, 10).clear();
 
   // Row 1 labels
   sheet.getRange(1, 11).setValue("Итого доход ₴");
@@ -181,8 +181,10 @@ function getLastDataRow(sheet) {
 }
 
 function setupHeaders(sheet) {
-  // Clear all summary area + headers
-  sheet.getRange(1, 1, 6, 20).clear();
+  // Clear ONLY the header row + summary cols K..T (NEVER columns A..J rows 2+,
+  // which would erase real data records).
+  sheet.getRange(1, 1, 1, 20).clear();          // header row, all summary cols
+  sheet.getRange(1, 11, 6, 10).clear();         // summary block rows 1-6, cols K..T
 
   var headers = ["Дата", "Описание / От кого", "Валюта", "Доход",
     "Зарплата", "Фурнитура/кнопки", "Ткань", "Цех",
@@ -190,7 +192,18 @@ function setupHeaders(sheet) {
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
 
-  // Forces ensureFormulas to recreate everything below
+  ensureFormulas(sheet);
+}
+
+/** Manually rebuild the summary area without touching any data rows.
+ *  Run this from the Apps Script editor (function dropdown → resetSummary → ▶).
+ */
+function resetSummary() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var sheet = sheets[sheets.length - 1];
+  // Wipe summary cols K..T rows 1..6 (data in A..J untouched)
+  sheet.getRange(1, 11, 6, 10).clear();
   ensureFormulas(sheet);
 }
 

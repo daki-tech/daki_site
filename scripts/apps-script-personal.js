@@ -87,9 +87,9 @@ function ensureFormulas(sheet) {
     if (changed) eRange.setValues(eValues);
   }
 
-  // Already set up?
-  var f2 = sheet.getRange(2, 6).getFormula();
-  if (f2) return;
+  // Always wipe and rewrite the summary area to recover from any broken state.
+  // Summary block: cols F..I (6..9), rows 1..6 — never touches user data in cols A..E.
+  sheet.getRange(1, 6, 6, 4).clear();
 
   // Row 1: Итого ₴ / Итого $
   sheet.getRange(1, 6).setValue("Итого ₴");
@@ -120,13 +120,24 @@ function ensureFormulas(sheet) {
 }
 
 function setupHeaders(sheet) {
-  // Clear summary area + headers
-  sheet.getRange(1, 1, 6, 9).clear();
+  // Clear ONLY header row + summary cols F..I (never touches data rows 2+ in cols A..E).
+  sheet.getRange(1, 1, 1, 9).clear();
+  sheet.getRange(1, 6, 6, 4).clear();
 
   var headers = ["Дата", "Описание", "Валюта", "Сумма", "Способ оплаты"];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
 
+  ensureFormulas(sheet);
+}
+
+/** Manually rebuild the summary area without touching any data rows.
+ *  Run this from the Apps Script editor (function dropdown → resetSummary → ▶).
+ */
+function resetSummary() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0];
+  sheet.getRange(1, 6, 6, 4).clear();
   ensureFormulas(sheet);
 }
 
