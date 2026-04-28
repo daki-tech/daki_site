@@ -73,23 +73,23 @@ function addFinanceRecord(data) {
 }
 
 function ensureFormulas(sheet) {
-  // Check if L2 has a formula; if not, re-set all summary formulas
-  var l2 = sheet.getRange(2, 12).getFormula();
-  if (l2) return; // formulas already exist
+  // Check if K2 has a formula; if not, re-set all summary formulas.
+  // Same column scheme as setupHeaders: K/L/M for ₴, O/P/Q for $, S1/S2 currency labels.
+  var k2 = sheet.getRange(2, 11).getFormula();
+  if (k2) return;
 
-  // Currency helper cells
-  sheet.getRange(1, 20).setValue("грн");
-  sheet.getRange(2, 20).setValue("дол");
+  sheet.getRange(1, 19).setValue("грн");
+  sheet.getRange(2, 19).setValue("дол");
 
-  // ₴ totals
-  sheet.getRange(2, 12).setFormula("=SUMIFS(D:D,C:C,T1)");
-  sheet.getRange(2, 13).setFormula("=SUMIFS(E:E,C:C,T1)+SUMIFS(F:F,C:C,T1)+SUMIFS(G:G,C:C,T1)+SUMIFS(H:H,C:C,T1)+SUMIFS(I:I,C:C,T1)+SUMIFS(J:J,C:C,T1)");
-  sheet.getRange(2, 14).setFormula("=L2-M2");
+  // ₴ totals: K (income), L (expense), M (diff)
+  sheet.getRange(2, 11).setFormula("=SUMIFS(D:D,C:C,S1)");
+  sheet.getRange(2, 12).setFormula("=SUMIFS(E:E,C:C,S1)+SUMIFS(F:F,C:C,S1)+SUMIFS(G:G,C:C,S1)+SUMIFS(H:H,C:C,S1)+SUMIFS(I:I,C:C,S1)");
+  sheet.getRange(2, 13).setFormula("=K2-L2");
 
-  // $ totals
-  sheet.getRange(2, 16).setFormula("=SUMIFS(D:D,C:C,T2)");
-  sheet.getRange(2, 17).setFormula("=SUMIFS(E:E,C:C,T2)+SUMIFS(F:F,C:C,T2)+SUMIFS(G:G,C:C,T2)+SUMIFS(H:H,C:C,T2)+SUMIFS(I:I,C:C,T2)+SUMIFS(J:J,C:C,T2)");
-  sheet.getRange(2, 18).setFormula("=P2-Q2");
+  // $ totals: O (income), P (expense), Q (diff)
+  sheet.getRange(2, 15).setFormula("=SUMIFS(D:D,C:C,S2)");
+  sheet.getRange(2, 16).setFormula("=SUMIFS(E:E,C:C,S2)+SUMIFS(F:F,C:C,S2)+SUMIFS(G:G,C:C,S2)+SUMIFS(H:H,C:C,S2)+SUMIFS(I:I,C:C,S2)");
+  sheet.getRange(2, 17).setFormula("=O2-P2");
 }
 
 function getLastDataRow(sheet) {

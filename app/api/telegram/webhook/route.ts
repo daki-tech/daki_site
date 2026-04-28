@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDuplicateUpdate } from "@/lib/telegram-dedupe";
+import { downloadTelegramFile } from "@/lib/ai/router";
+import { parseVoiceIntent, parseTextIntent, parseTxnDateToSheet, CATEGORY_LABELS, type FinanceIntent } from "@/lib/ai/voice-intent";
+import { parsePhotoReceipt, type ParsedReceipt } from "@/lib/ai/receipt-vision";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "🆕 Новый",
@@ -18,10 +22,14 @@ const EXPENSE_CATEGORIES: Record<string, { label: string; emoji: string; hint?: 
   newcollection: { label: "Разработка новой коллекции", emoji: "✨", hint: "лекала и прочее" },
 };
 
-// Only this user can create "Личное" expenses
-const PERSONAL_EXPENSE_CREATOR_ID = 729892588;
-// These users can see "Личное" in reports
+// Users who can create "Личное" expenses (see the button + voice/photo for personal category)
+const PERSONAL_EXPENSE_CREATORS = [729892588, 330206846];
+// Users who can see "Личное" in reports + receive notifications
 const PERSONAL_EXPENSE_VIEWERS = [330206846, 729892588];
+
+function canCreatePersonal(chatId: number): boolean {
+  return PERSONAL_EXPENSE_CREATORS.includes(chatId);
+}
 
 function isAllowedUser(chatId: number): boolean {
   const allowedStr = process.env.TELEGRAM_ALLOWED_USERS || process.env.TELEGRAM_CHAT_ID || "";
@@ -147,7 +155,7 @@ function getFinanceMenuKeyboard() {
 
 function getExpenseCategoryKeyboard(chatId: number) {
   const rows: { text: string; callback_data: string }[][] = [];
-  if (chatId === PERSONAL_EXPENSE_CREATOR_ID) {
+  if (canCreatePersonal(chatId)) {
     rows.push([
       { text: "👤 Личное", callback_data: "fin:cat:personal" },
       { text: "💰 Зарплата", callback_data: "fin:cat:salary" },
@@ -184,7 +192,7 @@ async function appendToFinanceSheet(record: {
   amount: number;
   currency: string;
   category?: string;
-}) {
+}): Promise<{ ok: boolean; error?: string }> {
   // "Личное" goes to separate personal sheet
   const isPersonal = record.category === "Личное";
   const webhookUrl = isPersonal
@@ -192,8 +200,9 @@ async function appendToFinanceSheet(record: {
     : process.env.GOOGLE_FINANCE_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    console.warn(`[Finance] ${isPersonal ? "GOOGLE_PERSONAL_WEBHOOK_URL" : "GOOGLE_FINANCE_WEBHOOK_URL"} not configured`);
-    return;
+    const missing = isPersonal ? "GOOGLE_PERSONAL_WEBHOOK_URL" : "GOOGLE_FINANCE_WEBHOOK_URL";
+    console.warn(`[Finance] ${missing} not configured`);
+    return { ok: false, error: `${missing} not configured` };
   }
   try {
     const resp = await fetch(webhookUrl, {
@@ -203,15 +212,39 @@ async function appendToFinanceSheet(record: {
     });
     const text = await resp.text();
     console.log(`[Finance Sheet] Response: ${resp.status} ${text.slice(0, 200)}`);
+    if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}` };
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.ok === false) return { ok: false, error: String(parsed.error || "sheet rejected") };
+    } catch {
+      // Apps Script may redirect to a non-JSON page; treat 2xx as success.
+    }
+    return { ok: true };
   } catch (err) {
     console.error("[Finance Sheet] Failed:", err);
+    return { ok: false, error: (err as Error).message };
   }
 }
 
 export async function POST(req: Request) {
   try {
+    // Verify Telegram webhook secret if configured
+    const expectedSecret = (process.env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+    if (expectedSecret) {
+      const got = req.headers.get("x-telegram-bot-api-secret-token");
+      if (got !== expectedSecret) {
+        return NextResponse.json({ ok: true });
+      }
+    }
+
     const body = await req.json();
     const botToken = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
+
+    // Suppress duplicate Telegram retries (60s window)
+    const updateId = body.update_id;
+    if (updateId != null && isDuplicateUpdate(`u:${updateId}`)) {
+      return NextResponse.json({ ok: true });
+    }
 
     // Handle inline button callback
     if (body.callback_query) {
@@ -226,6 +259,11 @@ export async function POST(req: Request) {
       // Finance menu callbacks
       if (cbData.startsWith("fin:")) {
         return handleFinanceCallback(body.callback_query, botToken);
+      }
+
+      // Receipt confirmation callbacks
+      if (cbData.startsWith("rcpt:")) {
+        return handleReceiptCallback(body.callback_query, botToken);
       }
 
       // Order status callbacks
@@ -266,12 +304,24 @@ export async function POST(req: Request) {
       { onConflict: "chat_id" }
     );
 
+    // Voice message → AI parse → save without confirmation
+    if (message.voice?.file_id) {
+      return handleVoiceMessage(admin, botToken, chatId, message.voice.file_id);
+    }
+
+    // Photo → AI parse → confirmation buttons
+    if (Array.isArray(message.photo) && message.photo.length > 0) {
+      const photos = message.photo as { file_id: string }[];
+      const largest = photos[photos.length - 1];
+      return handlePhotoMessage(admin, botToken, chatId, largest.file_id);
+    }
+
     // /start command — show welcome + persistent "Финансы" button
     if (text.startsWith("/start")) {
       await sendMessage(
         botToken,
         chatId,
-        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.`,
+        `Привет, ${firstName || "друг"}! Вы подписаны на уведомления DaKi.\n\n💬 Можно вводить расходы/доходы текстом, голосом или фото чека.\n📒 Или нажать «Финансы» для меню.`,
         { keyboard: [[{ text: "Финансы" }]], resize_keyboard: true, is_persistent: true }
       );
       return NextResponse.json({ ok: true });
@@ -296,9 +346,9 @@ export async function POST(req: Request) {
       .from("telegram_bot_state")
       .select("*")
       .eq("chat_id", chatId)
-      .single();
+      .maybeSingle();
 
-    if (state) {
+    if (state && state.action !== "receipt_pending") {
       // Track user's input message ID for cleanup
       const userMsgId = message.message_id;
       const existingMsgIds = (state.data?.msg_ids as number[]) || [];
@@ -308,7 +358,11 @@ export async function POST(req: Request) {
       return handleFinanceStep(admin, botToken, chatId, state, text);
     }
 
-    // Default: unknown text — just acknowledge
+    // No active flow — try to parse text as a finance entry via AI
+    if (text && !text.startsWith("/")) {
+      return handleTextAI(admin, botToken, chatId, text);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[Telegram Webhook] Error:", err);
@@ -350,7 +404,7 @@ async function handleFinanceCallback(
       .from("telegram_bot_state")
       .select("*")
       .eq("chat_id", chatId)
-      .single();
+      .maybeSingle();
 
     if (!state || state.step !== "category") {
       await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
@@ -386,7 +440,7 @@ async function handleFinanceCallback(
       .from("telegram_bot_state")
       .select("*")
       .eq("chat_id", chatId)
-      .single();
+      .maybeSingle();
 
     if (!state || state.step !== "currency") {
       await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
@@ -414,7 +468,7 @@ async function handleFinanceCallback(
       .from("telegram_bot_state")
       .select("*")
       .eq("chat_id", chatId)
-      .single();
+      .maybeSingle();
 
     if (!state || state.step !== "expense_description") {
       await answerCallback(botToken, callbackQuery.id, "Сессия устарела");
@@ -571,21 +625,31 @@ async function saveFinanceRecord(
   currency: string,
   category: string | undefined,
   msgIds: number[],
+  sheetDateOverride?: string,
 ) {
   const today = new Date();
-  const sheetDate = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
+  const sheetDate = sheetDateOverride
+    ?? `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
   const isExpense = action === "expense";
 
-  appendToFinanceSheet({
+  const writeResult = await appendToFinanceSheet({
     type: action,
     date: sheetDate,
-    description: isExpense ? description : description,
+    description,
     amount,
     currency,
     ...(isExpense && category ? { category } : {}),
   });
 
-  await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+  if (!writeResult.ok) {
+    await sendMessage(botToken, chatId, `❌ Не записал в таблицу: ${writeResult.error || "ошибка"}\n\nПопробуй ещё раз через /finance.`);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Only clear finance flow state — never touch a pending receipt confirmation
+  await admin.from("telegram_bot_state").delete()
+    .eq("chat_id", chatId)
+    .in("action", ["income", "expense"]);
 
   for (const mid of msgIds) {
     await deleteMessage(botToken, chatId, mid);
@@ -889,4 +953,324 @@ async function answerCallback(botToken: string, callbackQueryId: string, text: s
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ callback_query_id: callbackQueryId, text, show_alert: false }),
   });
+}
+
+/* ─────────────────────────── AI handlers (voice / text / photo) ─────────────────────────── */
+
+/** Apply intent → save finance record(s). Handles multi-item intents. */
+async function applyIntent(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  intent: FinanceIntent,
+): Promise<NextResponse> {
+  // Multi-item: each item gets saved as a separate record
+  if (intent.items && intent.items.length > 0) {
+    let okCount = 0;
+    const errors: string[] = [];
+    for (const item of intent.items) {
+      const action = (item.action as string) || intent.action;
+      if (action !== "expense" && action !== "income") continue;
+      const amount = item.amount != null ? Number(item.amount) : null;
+      if (!amount || amount <= 0) continue;
+
+      const categoryKey = (item.category as string | null | undefined) || null;
+      let categoryLabel: string | undefined;
+      if (action === "expense") {
+        if (!categoryKey || !CATEGORY_LABELS[categoryKey]) {
+          errors.push(`«${item.description || "?"}» — категория не определена`);
+          continue;
+        }
+        if (categoryKey === "personal" && !canCreatePersonal(chatId)) {
+          errors.push(`«${item.description || "?"}» — категория «Личное» недоступна`);
+          continue;
+        }
+        categoryLabel = CATEGORY_LABELS[categoryKey];
+      }
+
+      const currency = (item.currency as string) === "дол" ? "дол" : "грн";
+      const description = (item.description as string) || "";
+      const sheetDate = parseTxnDateToSheet((item.txn_date as string | null) || intent.txn_date);
+
+      const result = await appendToFinanceSheet({
+        type: action,
+        date: sheetDate,
+        description,
+        amount,
+        currency,
+        ...(action === "expense" && categoryLabel ? { category: categoryLabel } : {}),
+      });
+
+      if (result.ok) {
+        okCount++;
+        const summary = formatRecordSummary(action, sheetDate, categoryLabel, description, amount, currency);
+        if (categoryLabel === "Личное") {
+          await Promise.allSettled(PERSONAL_EXPENSE_VIEWERS.map((cid) => sendMessage(botToken, cid, summary)));
+        } else {
+          await sendToAllSubscribers(botToken, summary);
+        }
+      } else {
+        errors.push(`«${description || "?"}» — ${result.error || "ошибка"}`);
+      }
+    }
+    if (errors.length > 0) {
+      await sendMessage(botToken, chatId, `${okCount > 0 ? `✅ Записано: ${okCount}` : "❌ Ничего не записал"}\n\n⚠️ Не записал:\n• ${errors.join("\n• ")}`);
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // Single record
+  if (intent.action === "report") {
+    return handleReport(admin, botToken, chatId);
+  }
+
+  if (intent.action !== "expense" && intent.action !== "income") {
+    await sendMessage(botToken, chatId, `🤔 Не понял запись. Нажми 📒 Финансы для меню.`);
+    return NextResponse.json({ ok: true });
+  }
+
+  const amount = intent.amount;
+  if (!amount || amount <= 0) {
+    await sendMessage(botToken, chatId, "🤔 Не уловил сумму, повтори.");
+    return NextResponse.json({ ok: true });
+  }
+
+  let categoryLabel: string | undefined;
+  if (intent.action === "expense") {
+    if (!intent.category || !CATEGORY_LABELS[intent.category]) {
+      await sendMessage(botToken, chatId, "🤔 Не определил категорию. Используй 📒 Финансы для ручного ввода.");
+      return NextResponse.json({ ok: true });
+    }
+    if (intent.category === "personal" && !canCreatePersonal(chatId)) {
+      await sendMessage(botToken, chatId, "⛔ Категория «Личное» недоступна. Используй 📒 Финансы для выбора другой категории.");
+      return NextResponse.json({ ok: true });
+    }
+    categoryLabel = CATEGORY_LABELS[intent.category];
+  }
+
+  const currency = intent.currency === "дол" ? "дол" : "грн";
+  const description = intent.description || "";
+  const sheetDate = parseTxnDateToSheet(intent.txn_date);
+
+  return saveFinanceRecord(
+    admin,
+    botToken,
+    chatId,
+    intent.action,
+    description,
+    amount,
+    currency,
+    categoryLabel,
+    [],
+    sheetDate,
+  );
+}
+
+function formatRecordSummary(
+  action: string,
+  sheetDate: string,
+  categoryLabel: string | undefined,
+  description: string,
+  amount: number,
+  currency: string,
+): string {
+  const isExpense = action === "expense";
+  const typeEmoji = isExpense ? "📉" : "💰";
+  const typeLabel = isExpense ? "Расход" : "Доход";
+  const currencySymbol = currency === "дол" ? "$" : "грн";
+
+  let s = `${typeEmoji} ${typeLabel}\n📅 ${sheetDate}`;
+  if (isExpense && categoryLabel) s += `\n📂 ${categoryLabel}`;
+  if (description) s += `\n${isExpense ? "📝" : "👤"} ${description}`;
+  s += `\n💰 ${amount.toLocaleString("ru-RU")} ${currencySymbol}`;
+  return s;
+}
+
+async function handleVoiceMessage(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  fileId: string,
+): Promise<NextResponse> {
+  // Clear any pending finance flow — voice replaces it
+  await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+
+  try {
+    const { base64, mimeType } = await downloadTelegramFile(fileId);
+    const intent = await parseVoiceIntent(base64, mimeType);
+    return applyIntent(admin, botToken, chatId, intent);
+  } catch (err) {
+    console.error("[Voice] Failed:", err);
+    await sendMessage(botToken, chatId, `❌ Не получилось распознать голос: ${(err as Error).message?.slice(0, 150) || "ошибка"}\n\nПопробуй ещё раз или используй 📒 Финансы.`);
+    return NextResponse.json({ ok: true });
+  }
+}
+
+async function handleTextAI(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  text: string,
+): Promise<NextResponse> {
+  try {
+    const intent = await parseTextIntent(text);
+    if (intent.action === "unknown" || intent.confidence < 0.6) {
+      // Stay quiet on casual text — don't spam "не понял" for every message
+      return NextResponse.json({ ok: true });
+    }
+    return applyIntent(admin, botToken, chatId, intent);
+  } catch (err) {
+    console.error("[Text AI] Failed:", err);
+    return NextResponse.json({ ok: true });
+  }
+}
+
+async function handlePhotoMessage(
+  admin: ReturnType<typeof createAdminClient>,
+  botToken: string,
+  chatId: number,
+  fileId: string,
+): Promise<NextResponse> {
+  // Clear any pending finance flow — photo replaces it
+  await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+
+  try {
+    const { base64, mimeType } = await downloadTelegramFile(fileId);
+    const receipt = await parsePhotoReceipt(base64, mimeType);
+
+    if (!receipt.items.length) {
+      await sendMessage(botToken, chatId, "❌ Не удалось распознать чек. Попробуй сфотографировать чётче.");
+      return NextResponse.json({ ok: true });
+    }
+
+    // Strip "personal" items for users not allowed to create them — remap to "hardware" silently
+    const isAllowedPersonal = canCreatePersonal(chatId);
+    if (!isAllowedPersonal) {
+      receipt.items = receipt.items.map((it) => (it.category === "personal" ? { ...it, category: "hardware" } : it));
+    }
+
+    let preview = "🧾 <b>Распознал чек:</b>\n";
+    if (receipt.store) preview += `🏪 ${receipt.store}\n`;
+    if (receipt.date) preview += `📅 ${receipt.date}\n`;
+    preview += "\n";
+    receipt.items.forEach((it, i) => {
+      const catLabel = CATEGORY_LABELS[it.category] || it.category;
+      preview += `${i + 1}. ${it.name} — ${it.amount.toLocaleString("ru-RU")} ${receipt.currency === "дол" ? "$" : "грн"} → ${catLabel}\n`;
+    });
+    preview += `\n💳 Итого: ${receipt.total.toLocaleString("ru-RU")} ${receipt.currency === "дол" ? "$" : "грн"}\n\nЗаписать всё?`;
+
+    const sentMsgId = await sendMessageAndTrack(botToken, chatId, preview, {
+      inline_keyboard: [[
+        { text: "✅ Записать всё", callback_data: "rcpt:ok" },
+        { text: "❌ Отмена", callback_data: "rcpt:no" },
+      ]],
+    });
+
+    await admin.from("telegram_bot_state").upsert(
+      {
+        chat_id: chatId,
+        action: "receipt_pending",
+        step: "confirm",
+        data: { receipt, preview_msg_id: sentMsgId },
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "chat_id" },
+    );
+  } catch (err) {
+    console.error("[Photo] Failed:", err);
+    await sendMessage(botToken, chatId, `❌ Не получилось распознать чек: ${(err as Error).message?.slice(0, 150) || "ошибка"}`);
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+async function handleReceiptCallback(
+  callbackQuery: {
+    id: string;
+    from: { id: number };
+    message?: { chat: { id: number }; message_id: number };
+    data?: string;
+  },
+  botToken: string,
+): Promise<NextResponse> {
+  const chatId = callbackQuery.message?.chat?.id;
+  const messageId = callbackQuery.message?.message_id;
+  const action = (callbackQuery.data || "").replace("rcpt:", "");
+
+  if (!chatId || !messageId) {
+    await answerCallback(botToken, callbackQuery.id, "Ошибка");
+    return NextResponse.json({ ok: true });
+  }
+
+  const admin = createAdminClient();
+
+  const { data: state } = await admin
+    .from("telegram_bot_state")
+    .select("*")
+    .eq("chat_id", chatId)
+    .maybeSingle();
+
+  if (!state || state.action !== "receipt_pending") {
+    await answerCallback(botToken, callbackQuery.id, "⏰ запрос устарел");
+    await editMessage(botToken, chatId, messageId, "⏰ Запрос устарел — отправь фото заново.");
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "no") {
+    await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+    await answerCallback(botToken, callbackQuery.id, "Отменено");
+    await editMessage(botToken, chatId, messageId, "❌ Чек отменён, ничего не записал.");
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "ok") {
+    const receipt = state.data?.receipt as ParsedReceipt | undefined;
+    if (!receipt) {
+      await answerCallback(botToken, callbackQuery.id, "Данные потеряны");
+      await editMessage(botToken, chatId, messageId, "❌ Данные чека потеряны. Отправь фото заново.");
+      await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+      return NextResponse.json({ ok: true });
+    }
+
+    await answerCallback(botToken, callbackQuery.id, "Записываю...");
+
+    const sheetDate = parseTxnDateToSheet(receipt.date);
+    const lines: string[] = [];
+    let okCount = 0;
+    for (const item of receipt.items) {
+      const categoryLabel = CATEGORY_LABELS[item.category] || CATEGORY_LABELS.hardware;
+      const result = await appendToFinanceSheet({
+        type: "expense",
+        date: sheetDate,
+        description: item.name,
+        amount: item.amount,
+        currency: receipt.currency,
+        category: categoryLabel,
+      });
+      if (result.ok) {
+        okCount++;
+        lines.push(`• ${item.name} — ${item.amount.toLocaleString("ru-RU")} ${receipt.currency === "дол" ? "$" : "грн"} → ${categoryLabel}`);
+      } else {
+        lines.push(`❌ ${item.name}: ${result.error || "ошибка"}`);
+      }
+    }
+
+    await admin.from("telegram_bot_state").delete().eq("chat_id", chatId);
+
+    const header = receipt.store ? `🏪 ${receipt.store}\n` : "";
+    const summary = `${header}✅ Записано (${okCount}/${receipt.items.length}):\n${lines.join("\n")}\n\n💳 Итого: ${receipt.total.toLocaleString("ru-RU")} ${receipt.currency === "дол" ? "$" : "грн"}`;
+    await editMessage(botToken, chatId, messageId, summary);
+
+    // Notify other subscribers (mirrors the manual flow); "Личное" only goes to viewers
+    const hasPersonal = receipt.items.some((it) => CATEGORY_LABELS[it.category] === "Личное");
+    if (hasPersonal) {
+      await Promise.allSettled(PERSONAL_EXPENSE_VIEWERS.map((cid) => sendMessage(botToken, cid, summary)));
+    } else {
+      await sendToAllSubscribers(botToken, summary);
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  await answerCallback(botToken, callbackQuery.id, "Неизвестное действие");
+  return NextResponse.json({ ok: true });
 }

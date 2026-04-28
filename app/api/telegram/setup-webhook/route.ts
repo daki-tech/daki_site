@@ -14,13 +14,19 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
   const webhookUrl = `${baseUrl}/api/telegram/webhook`;
+  const secretToken = (process.env.TELEGRAM_WEBHOOK_SECRET || "").trim();
 
   const res = await fetch(
     `https://api.telegram.org/bot${botToken}/setWebhook`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: webhookUrl }),
+      body: JSON.stringify({
+        url: webhookUrl,
+        allowed_updates: ["message", "callback_query"],
+        drop_pending_updates: true,
+        ...(secretToken ? { secret_token: secretToken } : {}),
+      }),
     }
   );
 
