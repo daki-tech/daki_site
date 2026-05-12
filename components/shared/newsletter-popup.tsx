@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { X, Send } from "lucide-react";
 
 const STORAGE_KEY = "daki_newsletter_popup_shown";
@@ -87,7 +88,7 @@ export function NewsletterPopup() {
             </div>
           ) : (
             <>
-              <p className="text-center text-lg tracking-[0.3em] font-light">DAKI</p>
+              <Image src="/wordmark.png" alt="DAKI" width={1442} height={468} className="mx-auto h-6 w-auto" />
               <div className="mx-auto mt-3 h-px w-8 bg-neutral-200" />
               <h3 className="mt-5 text-center text-[13px] font-medium uppercase tracking-[0.15em]">
                 Будьте першими

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Heart, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -106,9 +107,17 @@ export function MarketingHeader() {
           {/* Logo */}
           <Link
             href="/"
-            className="font-logo absolute left-1/2 -translate-x-1/2 text-[34px] tracking-[-0.02em] uppercase lg:static lg:translate-x-0"
+            aria-label="DAKI"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
           >
-            <span className="mr-[-0.2em]">D</span>AKI
+            <Image
+              src="/wordmark.png"
+              alt="DAKI"
+              width={1442}
+              height={468}
+              priority
+              className="h-9 w-auto"
+            />
           </Link>
 
           {/* Desktop navigation — centered */}
@@ -287,7 +296,7 @@ export function MarketingHeader() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-[300px] bg-background shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <span className="font-logo text-2xl tracking-[-0.02em] uppercase"><span className="mr-[-0.2em]">D</span>AKI</span>
+              <Image src="/wordmark.png" alt="DAKI" width={1442} height={468} className="h-7 w-auto" />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center"

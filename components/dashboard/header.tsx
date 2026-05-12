@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
@@ -35,8 +36,8 @@ export function DashboardHeader({ profile }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <div className="container flex h-14 sm:h-16 items-center justify-between gap-3">
-        <Link href="/" className="font-logo text-[28px] sm:text-[34px] tracking-[-0.02em] uppercase">
-          <span className="mr-[-0.2em]">D</span>AKI
+        <Link href="/" aria-label="DAKI">
+          <Image src="/wordmark.png" alt="DAKI" width={1442} height={468} priority className="h-8 sm:h-9 w-auto" />
         </Link>
         {links.length > 0 && (
           <>
