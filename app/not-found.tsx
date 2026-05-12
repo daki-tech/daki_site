@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function NotFound() {
   return (
@@ -9,9 +10,14 @@ export default function NotFound() {
           404
         </p>
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="font-serif text-5xl font-semibold tracking-tight sm:text-6xl">
-            DAKI
-          </p>
+          <Image
+            src="/wordmark.png"
+            alt="DAKI"
+            width={1442}
+            height={468}
+            priority
+            className="h-12 w-auto sm:h-14"
+          />
         </div>
       </div>
 

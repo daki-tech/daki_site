@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Instagram, Mail, Phone } from "lucide-react";
 
 import { useLanguage } from "@/components/providers/language-provider";
@@ -42,8 +43,8 @@ export function Footer({ contacts }: FooterProps) {
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-5 lg:gap-0 lg:justify-items-center">
           {/* Brand */}
           <div className="space-y-3">
-            <Link href="/" className="font-logo text-2xl tracking-[-0.02em] uppercase">
-              <span className="mr-[-0.2em]">D</span>AKI
+            <Link href="/" aria-label="DAKI">
+              <Image src="/wordmark.png" alt="DAKI" width={1442} height={468} className="h-7 w-auto" />
             </Link>
             <p className="text-xs leading-relaxed text-muted-foreground">
               {t("footer.description")}
