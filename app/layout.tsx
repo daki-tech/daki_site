@@ -30,9 +30,9 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   icons: {
-    icon: "/mini-logo.svg",
-    shortcut: "/mini-logo.svg",
-    apple: "/mini-logo.svg",
+    icon: "/mini-logo.png",
+    shortcut: "/mini-logo.png",
+    apple: "/mini-logo.png",
   },
   metadataBase: new URL("https://dakifashion.com"),
   openGraph: {
